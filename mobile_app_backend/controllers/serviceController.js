@@ -1,0 +1,507 @@
+import Service from "../models/service.js";
+// ===========================================================
+// ✅ DISTANCE FUNCTION
+// ===========================================================
+function getDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1 * Math.PI / 180) *
+    Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) ** 2;
+
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+// ===========================================================
+// ✅ CREATE SERVICE
+// ===========================================================
+export const createService = async (req, res) => {
+  try {
+
+    if (req.user?.role !== "provider") {
+      return res.status(403).json({
+        message: "❌ Only service providers can add services",
+      });
+    }
+
+    const {
+      name,
+      providerName,
+      category,
+      categories,
+      description,
+      pricePerDay,
+      pricePerHour,
+      basePrice,
+      location,
+      serviceType,
+      imageUrl,
+      image,
+      images,
+      tags,
+      locationGeo,
+      latitude,
+      longitude,// allow geo from frontend
+    } = req.body;
+
+    if (!name || (!category && !categories) || !location) {
+      return res.status(400).json({
+        message: "Required fields missing",
+      });
+    }
+
+    const normalizedCategories = categories?.length
+      ? categories.map((c) => c.toLowerCase().trim())
+      : [category.toLowerCase().trim()];
+
+    const service = await Service.create({
+      name: name.trim(),
+
+      providerName:
+        providerName?.trim() || req.user?.firstName || "Provider",
+
+      category: normalizedCategories[0],
+      categories: normalizedCategories,
+
+      description: description || "",
+      serviceType: serviceType || "",
+
+      pricePerDay: Number(pricePerDay) || 0,
+      pricePerHour: Number(pricePerHour) || 0,
+      basePrice: Number(basePrice) || 0,
+
+      location: location.trim(),
+      locationGeo:
+      locationGeo ||
+      {
+        type: "Point",
+        coordinates: [
+          Number(longitude) || 0,
+          Number(latitude) || 0,
+        ],
+      },
+      locationPoint: {
+        type: "Point",
+        coordinates: [
+          Number(longitude) || 0,
+          Number(latitude) || 0,
+        ],
+      },
+      image: image || imageUrl || "",
+      imageUrl: imageUrl || image || "",
+
+      images: images?.length
+        ? images
+        : imageUrl
+        ? [imageUrl]
+        : [],
+
+      tags: tags || [],
+
+      provider: req.user.id,
+
+      isAvailable: true,
+      isActive: true,
+    });
+
+    console.log("✅ Service Created:", service.name);
+
+    if (global.io) global.io.emit("refreshServices");
+
+    res.status(201).json({
+      message: "✅ Service created successfully",
+      service,
+    });
+
+  } catch (err) {
+    console.error("❌ Create Service Error:", err.message);
+
+    res.status(500).json({
+      message: "Failed to create service",
+      error: err.message,
+    });
+  }
+};
+// ===========================================================
+// ✅ SEARCH SERVICES (GEO + TEXT + CATEGORY)
+// ===========================================================
+export const searchServices = async (req, res) => {
+  try {
+    const {
+      keyword,
+      lat,
+      lng,
+      radius = 30000,
+      category,
+    } = req.query;
+
+    const query = {
+      isAvailable: true,
+      isActive: true,
+    };
+
+    /// ✅ KEYWORD SEARCH
+    if (keyword) {
+      query.$or = [
+        { name: new RegExp(keyword, "i") },
+        { description: new RegExp(keyword, "i") },
+        { providerName: new RegExp(keyword, "i") },
+      ];
+    }
+
+    /// ✅ CATEGORY FILTER
+    if (category) {
+      query.$and = [
+        ...(query.$and || []),
+        {
+          $or: [
+            { category: category.toLowerCase().trim() },
+            {
+              categories: {
+                $in: [category.toLowerCase().trim()],
+              },
+            },
+          ],
+        },
+      ];
+    }
+
+    let services;
+
+    /// ✅ GEO SEARCH
+    if (lat && lng) {
+      services = await Service.find({
+        ...query,
+
+        locationPoint: {
+          $near: {
+            $geometry: {
+              type: "Point",
+              coordinates: [
+                Number(lng),
+                Number(lat),
+              ],
+            },
+            $maxDistance: Number(radius),
+          },
+        },
+      }).limit(100);
+    } else {
+      services = await Service.find(query)
+        .sort({ createdAt: -1 })
+        .limit(100);
+    }
+
+    console.log(
+      `🔍 Search results found: ${services.length}`
+    );
+
+    res.json(services);
+  } catch (error) {
+    console.error("❌ Search Error:", error);
+
+    res.status(500).json({
+      message: error.message,
+    });
+  }
+};
+export const getServiceById = async (req, res) => {
+  try {
+    const service = await Service.findById(req.params.id);
+
+    if (!service) {
+      return res.status(404).json({
+        message: "Service not found",
+      });
+    }
+
+    res.json(service);
+  } catch (error) {
+    res.status(500).json({
+      message: error.message,
+    });
+  }
+};
+
+// ===========================================================
+// ✅ GET SERVICES
+// ===========================================================
+export const getServices = async (req, res) => {
+  try {
+    const {
+      category,
+      search,
+      minPrice,
+      maxPrice,
+      lat,
+      lng,
+      sort,
+    } = req.query;
+
+    const filter = {
+      isAvailable: true,
+      isActive: true,
+    };
+
+    if (category) {
+      filter.$or = [
+        { category: category.toLowerCase().trim() },
+        { categories: { $in: [category.toLowerCase().trim()] } },
+      ];
+    }
+
+    if (minPrice || maxPrice) {
+      filter.pricePerDay = {};
+
+      if (minPrice) filter.pricePerDay.$gte = Number(minPrice);
+      if (maxPrice) filter.pricePerDay.$lte = Number(maxPrice);
+    }
+
+    if (search) {
+      const query = search.toLowerCase().trim();
+
+      filter.$or = [
+        { name: { $regex: query, $options: "i" } },
+        { providerName: { $regex: query, $options: "i" } },
+        { serviceType: { $regex: query, $options: "i" } },
+        { location: { $regex: query, $options: "i" } },
+      ];
+    }
+
+    const services = await Service.find(filter)
+      .populate("provider")
+      .sort({ createdAt: -1 });
+
+    let updated = services.map((s) => {
+      let distance = 999;
+
+      if (lat && lng && s.locationPoint?.coordinates?.length === 2) {
+        const lat2 = s.locationPoint.coordinates[1];
+        const lng2 = s.locationPoint.coordinates[0];
+        //const lat2 = s.provider.location.coordinates[1];
+        //const lng2 = s.provider.location.coordinates[0];
+
+        distance = getDistance(Number(lat), Number(lng), lat2, lng2);
+      }
+
+      return {
+        ...s._doc,
+        distance,
+      };
+    });
+
+    updated.sort((a, b) => {
+      const scoreA =
+        (a.distance || 999) * 0.7 +
+        (a.pricePerDay || 500) * 0.3;
+
+      const scoreB =
+        (b.distance || 999) * 0.7 +
+        (b.pricePerDay || 500) * 0.3;
+
+      return scoreA - scoreB;
+    });
+
+    if (sort === "nearest") {
+      updated.sort((a, b) => a.distance - b.distance);
+    }
+
+    if (sort === "low_price") {
+      updated.sort((a, b) =>
+        (a.pricePerDay || 0) - (b.pricePerDay || 0)
+      );
+    }
+
+    if (sort === "high_price") {
+      updated.sort((a, b) =>
+        (b.pricePerDay || 0) - (a.pricePerDay || 0)
+      );
+    }
+
+    console.log(`✅ Services fetched: ${updated.length}`);
+
+    res.status(200).json(updated);
+
+  } catch (err) {
+    console.error("❌ Get Services Error:", err.message);
+
+    res.status(500).json({
+      message: "Failed to fetch services",
+      error: err.message,
+    });
+  }
+};
+
+
+// ===========================================================
+// ✅ GET MY SERVICES
+// ===========================================================
+export const getMyServices = async (req, res) => {
+  try {
+
+    if (req.user?.role !== "provider") {
+      return res.status(403).json({
+        message: "Not allowed",
+      });
+    }
+
+    const services = await Service.find({
+      provider: req.user.id,
+    }).sort({ createdAt: -1 });
+
+    res.status(200).json(services);
+
+  } catch (err) {
+    res.status(500).json({
+      message: "Failed to fetch provider services",
+      error: err.message,
+    });
+  }
+};
+
+
+// ===========================================================
+// ✅ UPDATE SERVICE
+// ===========================================================
+export const updateService = async (req, res) => {
+  try {
+    const service = await Service.findById(req.params.id);
+
+    if (!service) {
+      return res.status(404).json({
+        message: "Service not found",
+      });
+    }
+
+    if (service.provider.toString() !== req.user.id) {
+      return res.status(403).json({
+        message: "Not allowed",
+      });
+    }
+
+    Object.assign(service, req.body);
+
+    if (req.body.categories) {
+      service.categories = req.body.categories.map((c) =>
+        c.toLowerCase().trim()
+      );
+      service.category = service.categories[0];
+    } else if (req.body.category) {
+      service.category = req.body.category.toLowerCase().trim();
+      service.categories = [service.category];
+    }
+
+    await service.save();
+
+    if (global.io) global.io.emit("refreshServices");
+
+    res.json({
+      message: "✅ Service updated",
+      service,
+    });
+
+  } catch (err) {
+    res.status(500).json({
+      message: "Update failed",
+      error: err.message,
+    });
+  }
+};
+export const getNearbyServices = async (req, res) => {
+  try {
+    const { lat, lng, radius = 30000 } = req.query;
+    const data = await Service.find({
+      isAvailable: true,
+      isActive: true,
+      locationPoint: {
+        $near: {
+          $geometry: {
+            type: "Point",
+            coordinates: [
+              Number(lng),
+              Number(lat),
+            ],
+          },
+          $maxDistance: Number(radius),
+        },
+      },
+    });
+
+    res.json(data);
+  } catch (error) {
+    console.error("Nearby Services Error:", error);
+    res.status(500).json({
+      message: error.message,
+    });
+  }
+};
+
+// ===========================================================
+// ✅ UPDATE STATUS
+// ===========================================================
+export const updateServiceStatus = async (req, res) => {
+  try {
+    const { isActive } = req.body;
+
+    const service = await Service.findByIdAndUpdate(
+      req.params.id,
+      { isActive },
+      { new: true }
+    );
+
+    if (!service) {
+      return res.status(404).json({
+        message: "Service not found",
+      });
+    }
+
+    if (global.io) {
+      global.io.emit("refreshServices");
+    }
+
+    res.json(service);
+
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+
+// ===========================================================
+// ✅ DELETE SERVICE
+// ===========================================================
+export const deleteService = async (req, res) => {
+  try {
+    const service = await Service.findById(req.params.id);
+
+    if (!service) {
+      return res.status(404).json({
+        message: "Service not found",
+      });
+    }
+
+    if (service.provider.toString() !== req.user.id) {
+      return res.status(403).json({
+        message: "Not allowed",
+      });
+    }
+
+    await service.deleteOne();
+
+    if (global.io) global.io.emit("refreshServices");
+
+    res.json({
+      message: "✅ Service deleted",
+    });
+
+  } catch (err) {
+    res.status(500).json({
+      message: "Delete failed",
+      error: err.message,
+    });
+  }
+};
