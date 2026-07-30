@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import 'screens/auth/reset_password_screen.dart';
 import '../../config/route_config.dart';
 
 class ResetPasswordScreen extends StatefulWidget {
@@ -114,7 +114,7 @@ class _ResetPasswordScreenState
                   width: 120,
                   decoration: BoxDecoration(
                     color: Colors.blue
-                        .withOpacity(0.1),
+                        .withValues(alpha: 0.1),
                     borderRadius:
                         BorderRadius.circular(
                       24,

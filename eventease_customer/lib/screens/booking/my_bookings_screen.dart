@@ -2,41 +2,42 @@ import 'package:flutter/material.dart';
 
 import '../../config/route_config.dart';
 
-class MyBookingsScreen extends StatefulWidget {
-  const MyBookingsScreen({super.key});
+class MyOrdersScreen extends StatefulWidget {
+  const MyOrdersScreen({super.key});
 
   @override
-  State<MyBookingsScreen> createState() =>
-      _MyBookingsScreenState();
+  State<MyOrdersScreen> createState() =>
+      _MyOrdersScreenState();
 }
 
-class _MyBookingsScreenState
-    extends State<MyBookingsScreen>
+class _MyOrdersScreenState
+    extends State<MyOrdersScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
-  final List<Map<String, dynamic>> bookings = [
+  final List<Map<String, dynamic>>
+      orders = [
     {
-      'id': 'BK1001',
+      'id': 'OD1001',
       'service':
           'Wedding Photography',
       'provider':
           'RK Photography',
       'date': '20 Jul 2026',
       'amount': '₹15,500',
-      'status': 'Confirmed',
+      'status': 'Processing',
     },
     {
-      'id': 'BK1002',
+      'id': 'OD1002',
       'service': 'Catering',
       'provider':
           'Tasty Catering',
       'date': '05 Jul 2026',
       'amount': '₹25,500',
-      'status': 'Completed',
+      'status': 'Delivered',
     },
     {
-      'id': 'BK1003',
+      'id': 'OD1003',
       'service': 'DJ Service',
       'provider': 'DJ Beats',
       'date': '12 Jun 2026',
@@ -46,7 +47,7 @@ class _MyBookingsScreenState
   ];
 
   List<Map<String, dynamic>>
-      filteredBookings = [];
+      filteredOrders = [];
 
   @override
   void initState() {
@@ -58,11 +59,11 @@ class _MyBookingsScreenState
       vsync: this,
     );
 
-    filteredBookings = bookings;
+    filteredOrders = orders;
 
-    _tabController.addListener(() {
-      filterBookings();
-    });
+    _tabController.addListener(
+      filterOrders,
+    );
   }
 
   @override
@@ -71,22 +72,22 @@ class _MyBookingsScreenState
     super.dispose();
   }
 
-  Future<void> refreshBookings() async {
+  Future<void> refreshOrders() async {
     await Future.delayed(
       const Duration(seconds: 1),
     );
   }
 
-  void filterBookings() {
+  void filterOrders() {
     String status = '';
 
     switch (_tabController.index) {
       case 0:
-        status = 'Confirmed';
+        status = 'Processing';
         break;
 
       case 1:
-        status = 'Completed';
+        status = 'Delivered';
         break;
 
       case 2:
@@ -95,22 +96,23 @@ class _MyBookingsScreenState
     }
 
     setState(() {
-      filteredBookings =
-          bookings.where((booking) {
-        return booking['status'] ==
+      filteredOrders =
+          orders.where((order) {
+        return order['status'] ==
             status;
       }).toList();
     });
   }
 
   Color getStatusColor(
-      String status) {
+    String status,
+  ) {
     switch (status) {
-      case 'Confirmed':
-        return Colors.green;
+      case 'Processing':
+        return Colors.orange;
 
-      case 'Completed':
-        return Colors.blue;
+      case 'Delivered':
+        return Colors.green;
 
       case 'Cancelled':
         return Colors.red;
@@ -125,19 +127,18 @@ class _MyBookingsScreenState
     return Scaffold(
       backgroundColor:
           const Color(0xFFF8F9FC),
-
       appBar: AppBar(
         title: const Text(
-          'My Bookings',
+          'My Orders',
         ),
         bottom: TabBar(
           controller: _tabController,
           tabs: const [
             Tab(
-              text: 'Upcoming',
+              text: 'Processing',
             ),
             Tab(
-              text: 'Completed',
+              text: 'Delivered',
             ),
             Tab(
               text: 'Cancelled',
@@ -145,10 +146,9 @@ class _MyBookingsScreenState
           ],
         ),
       ),
-
       body: RefreshIndicator(
-        onRefresh: refreshBookings,
-        child: filteredBookings.isEmpty
+        onRefresh: refreshOrders,
+        child: filteredOrders.isEmpty
             ? _buildEmptyState()
             : ListView.builder(
                 padding:
@@ -156,11 +156,11 @@ class _MyBookingsScreenState
                   16,
                 ),
                 itemCount:
-                    filteredBookings.length,
+                    filteredOrders.length,
                 itemBuilder:
                     (context, index) {
-                  final booking =
-                      filteredBookings[
+                  final order =
+                      filteredOrders[
                           index];
 
                   return Card(
@@ -185,9 +185,9 @@ class _MyBookingsScreenState
                         Navigator.pushNamed(
                           context,
                           RouteConfig
-                              .bookingDetails,
+                              .orderDetails,
                           arguments:
-                              booking,
+                              order,
                         );
                       },
                       child: Padding(
@@ -204,9 +204,9 @@ class _MyBookingsScreenState
                                   decoration:
                                       BoxDecoration(
                                     color: Colors
-                                        .blue
-                                        .withOpacity(
-                                      0.1,
+                                        .orange
+                                        .withValues(
+                                      alpha: 0.1,
                                     ),
                                     borderRadius:
                                         BorderRadius.circular(
@@ -216,15 +216,15 @@ class _MyBookingsScreenState
                                   child:
                                       const Icon(
                                     Icons
-                                        .event_available,
+                                        .shopping_bag,
                                     color: Colors
-                                        .blue,
+                                        .orange,
                                   ),
                                 ),
 
                                 const SizedBox(
-                                    width:
-                                        12),
+                                  width: 12,
+                                ),
 
                                 Expanded(
                                   child:
@@ -234,7 +234,7 @@ class _MyBookingsScreenState
                                             .start,
                                     children: [
                                       Text(
-                                        booking[
+                                        order[
                                             'service'],
                                         style:
                                             const TextStyle(
@@ -245,10 +245,11 @@ class _MyBookingsScreenState
                                         ),
                                       ),
                                       const SizedBox(
-                                          height:
-                                              4),
+                                        height:
+                                            4,
+                                      ),
                                       Text(
-                                        booking[
+                                        order[
                                             'provider'],
                                       ),
                                     ],
@@ -258,31 +259,34 @@ class _MyBookingsScreenState
                             ),
 
                             const SizedBox(
-                                height: 14),
+                              height: 14,
+                            ),
 
                             const Divider(),
 
                             const SizedBox(
-                                height: 5),
+                              height: 5,
+                            ),
 
                             _infoRow(
-                              'Booking ID',
-                              booking['id'],
+                              'Order ID',
+                              order['id'],
                             ),
 
                             _infoRow(
                               'Date',
-                              booking['date'],
+                              order['date'],
                             ),
 
                             _infoRow(
                               'Amount',
-                              booking[
+                              order[
                                   'amount'],
                             ),
 
                             const SizedBox(
-                                height: 10),
+                              height: 10,
+                            ),
 
                             Row(
                               children: [
@@ -297,10 +301,10 @@ class _MyBookingsScreenState
                                   decoration:
                                       BoxDecoration(
                                     color: getStatusColor(
-                                            booking[
+                                            order[
                                                 'status'])
-                                        .withOpacity(
-                                      0.12,
+                                        .withValues(
+                                      alpha: 0.12,
                                     ),
                                     borderRadius:
                                         BorderRadius.circular(
@@ -308,13 +312,14 @@ class _MyBookingsScreenState
                                     ),
                                   ),
                                   child: Text(
-                                    booking[
+                                    order[
                                         'status'],
                                     style:
                                         TextStyle(
                                       color: getStatusColor(
-                                          booking[
-                                              'status']),
+                                        order[
+                                            'status'],
+                                      ),
                                       fontWeight:
                                           FontWeight.bold,
                                     ),
@@ -370,14 +375,14 @@ class _MyBookingsScreenState
       children: const [
         SizedBox(height: 150),
         Icon(
-          Icons.event_busy,
+          Icons.shopping_bag_outlined,
           size: 100,
           color: Colors.grey,
         ),
         SizedBox(height: 20),
         Center(
           child: Text(
-            'No Bookings Found',
+            'No Orders Found',
             style: TextStyle(
               fontSize: 20,
               fontWeight:

@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-
+import 'screens/auth/otp_screen.dart';
 import '../../config/route_config.dart';
 import '../../config/theme_config.dart';
 
@@ -172,7 +172,7 @@ class _OtpScreenState extends State<OtpScreen> {
                 decoration: BoxDecoration(
                   color: ThemeConfig
                       .primaryColor
-                      .withOpacity(0.1),
+                      .withValues(alpha: 0.1),
                   borderRadius:
                       BorderRadius.circular(
                     24,
@@ -217,10 +217,7 @@ class _OtpScreenState extends State<OtpScreen> {
                         .spaceEvenly,
                 children: List.generate(
                   6,
-                  (index) =>
-                      buildOtpField(
-                    index,
-                  ),
+                  buildOtpField,
                 ),
               ),
 

@@ -123,6 +123,14 @@ class RouteConfig {
 
   static const String chatList =
       '/chat-list';
+      
+  //static const String chat =
+   // '/chat';
+  static const String privacyPolicy =
+    '/privacy-policy';
+    
+  static const String termsConditions =
+    '/terms-conditions';
 
   // ==========================================
   // REVIEW
@@ -161,6 +169,12 @@ class RouteConfig {
       
   static const String helpSupport =
       '/help-support';
+      
+  static const String privacyPolicy =
+      '/privacy-policy';
+      
+  static const String termsConditions =
+      '/terms-conditions';
 
   // ==========================================
   // SUPPORT
