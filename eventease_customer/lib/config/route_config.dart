@@ -5,15 +5,13 @@ class RouteConfig {
   // SPLASH
   // ==========================================
 
-  static const String splash =
-      '/';
+  static const String splash = '/';
 
   // ==========================================
   // ONBOARDING
   // ==========================================
 
-  static const String onboarding =
-      '/onboarding';
+  static const String onboarding = '/onboarding';
 
   static const String languageSelection =
       '/language-selection';
@@ -22,17 +20,14 @@ class RouteConfig {
   // AUTH
   // ==========================================
 
-  static const String login =
-      '/login';
+  static const String login = '/login';
 
-  static const String signup =
-      '/signup';
+  static const String signup = '/signup';
 
   static const String forgotPassword =
       '/forgot-password';
 
-  static const String otp =
-      '/otp';
+  static const String otp = '/otp';
 
   static const String resetPassword =
       '/reset-password';
@@ -41,14 +36,11 @@ class RouteConfig {
   // HOME
   // ==========================================
 
-  static const String home =
-      '/home';
+  static const String home = '/home';
 
-  static const String search =
-      '/search';
+  static const String search = '/search';
 
-  static const String category =
-      '/category';
+  static const String category = '/category';
 
   static const String notifications =
       '/notifications';
@@ -123,17 +115,9 @@ class RouteConfig {
 
   static const String chatList =
       '/chat-list';
-      
-  //static const String chat =
-   // '/chat';
-  static const String privacyPolicy =
-    '/privacy-policy';
-    
-  static const String termsConditions =
-    '/terms-conditions';
 
   // ==========================================
-  // REVIEW
+  // REVIEWS
   // ==========================================
 
   static const String reviews =
@@ -163,16 +147,16 @@ class RouteConfig {
 
   static const String language =
       '/language';
-      
+
   static const String changePassword =
       '/change-password';
-      
+
   static const String helpSupport =
       '/help-support';
-      
+
   static const String privacyPolicy =
       '/privacy-policy';
-      
+
   static const String termsConditions =
       '/terms-conditions';
 
@@ -185,4 +169,75 @@ class RouteConfig {
 
   static const String about =
       '/about';
+
+  // ==========================================
+  // CMS
+  // ==========================================
+
+  static const String faq =
+      '/faq';
+
+  static const String contactUs =
+      '/contact-us';
+
+  static const String blogs =
+      '/blogs';
+
+  // ==========================================
+  // WALLET
+  // ==========================================
+
+  static const String wallet =
+      '/wallet';
+
+  static const String transactions =
+      '/transactions';
+
+  // ==========================================
+  // COUPONS
+  // ==========================================
+
+  static const String coupons =
+      '/coupons';
+
+  // ==========================================
+  // FAVORITES
+  // ==========================================
+
+  static const String favorites =
+      '/favorites';
+
+  // ==========================================
+  // NOTIFICATION SETTINGS
+  // ==========================================
+
+  static const String notificationSettings =
+      '/notification-settings';
+
+  // ==========================================
+  // SECURITY
+  // ==========================================
+
+  static const String security =
+      '/security';
+
+  // ==========================================
+  // LEGAL
+  // ==========================================
+
+  static const String licenses =
+      '/licenses';
+
+  static const String refunds =
+      '/refund-policy';
+
+  // ==========================================
+  // ERROR PAGES
+  // ==========================================
+
+  static const String notFound =
+      '/not-found';
+
+  static const String noInternet =
+      '/no-internet';
 }

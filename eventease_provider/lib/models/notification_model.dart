@@ -9,167 +9,37 @@ enum NotificationType {
   support,
 }
 
-class NotificationModel {
-  final String id;
+extension NotificationTypeExtension on NotificationType {
+  String get value {
+    switch (this) {
+      case NotificationType.booking:
+        return 'booking';
 
-  final String userId;
+      case NotificationType.order:
+        return 'order';
 
-  final String title;
-  final String message;
+      case NotificationType.payment:
+        return 'payment';
 
-  final NotificationType type;
+      case NotificationType.review:
+        return 'review';
 
-  final String imageUrl;
+      case NotificationType.chat:
+        return 'chat';
 
-  final String referenceId;
+      case NotificationType.system:
+        return 'system';
 
-  final String route;
+      case NotificationType.promotion:
+        return 'promotion';
 
-  final bool isRead;
-
-  final bool isDeleted;
-
-  final Map<String, dynamic>? data;
-
-  final DateTime createdAt;
-  final DateTime? readAt;
-
-  const NotificationModel({
-    required this.id,
-    required this.userId,
-    required this.title,
-    required this.message,
-    required this.type,
-    required this.imageUrl,
-    required this.referenceId,
-    required this.route,
-    required this.isRead,
-    required this.isDeleted,
-    this.data,
-    required this.createdAt,
-    this.readAt,
-  });
-
-  factory NotificationModel.empty() {
-    return NotificationModel(
-      id: '',
-      userId: '',
-      title: '',
-      message: '',
-      type: NotificationType.system,
-      imageUrl: '',
-      referenceId: '',
-      route: '',
-      isRead: false,
-      isDeleted: false,
-      data: const {},
-      createdAt: DateTime.now(),
-    );
-  }
-
-  factory NotificationModel.fromJson(
-    Map<String, dynamic> json,
-  ) {
-    return NotificationModel(
-      id: json['_id']?.toString() ??
-          json['id']?.toString() ??
-          '',
-      userId:
-          json['userId']?.toString() ?? '',
-      title:
-          json['title']?.toString() ?? '',
-      message:
-          json['message']?.toString() ?? '',
-      type: _parseType(
-        json['type'],
-      ),
-      imageUrl:
-          json['imageUrl']?.toString() ?? '',
-      referenceId:
-          json['referenceId']?.toString() ??
-              '',
-      route:
-          json['route']?.toString() ?? '',
-      isRead:
-          json['isRead'] ?? false,
-      isDeleted:
-          json['isDeleted'] ?? false,
-      data:
-          json['data'] != null
-              ? Map<String, dynamic>.from(
-                  json['data'],
-                )
-              : {},
-      createdAt:
-          json['createdAt'] != null
-              ? DateTime.parse(
-                  json['createdAt']
-                      .toString(),
-                )
-              : DateTime.now(),
-      readAt:
-          json['readAt'] != null
-              ? DateTime.tryParse(
-                  json['readAt']
-                      .toString(),
-                )
-              : null,
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      '_id': id,
-      'userId': userId,
-      'title': title,
-      'message': message,
-      'type': type.name,
-      'imageUrl': imageUrl,
-      'referenceId': referenceId,
-      'route': route,
-      'isRead': isRead,
-      'isDeleted': isDeleted,
-      'data': data,
-      'createdAt':
-          createdAt.toIso8601String(),
-      'readAt':
-          readAt?.toIso8601String(),
-    };
-  }
-
-  static NotificationType _parseType(
-    dynamic value,
-  ) {
-    switch (
-        value.toString().toLowerCase()) {
-      case 'booking':
-        return NotificationType.booking;
-
-      case 'order':
-        return NotificationType.order;
-
-      case 'payment':
-        return NotificationType.payment;
-
-      case 'review':
-        return NotificationType.review;
-
-      case 'chat':
-        return NotificationType.chat;
-
-      case 'promotion':
-        return NotificationType.promotion;
-
-      case 'support':
-        return NotificationType.support;
-
-      default:
-        return NotificationType.system;
+      case NotificationType.support:
+        return 'support';
     }
   }
 
-  String get typeText {
-    switch (type) {
+  String get label {
+    switch (this) {
       case NotificationType.booking:
         return 'Booking';
 
@@ -196,41 +66,266 @@ class NotificationModel {
     }
   }
 
-  bool get isBookingNotification =>
-      type == NotificationType.booking;
+  static NotificationType fromString(dynamic value) {
+    final type = value?.toString().toLowerCase().trim() ?? '';
 
-  bool get isOrderNotification =>
-      type == NotificationType.order;
+    switch (type) {
+      case 'booking':
+        return NotificationType.booking;
 
-  bool get isPaymentNotification =>
-      type == NotificationType.payment;
+      case 'order':
+        return NotificationType.order;
 
-  bool get isReviewNotification =>
-      type == NotificationType.review;
+      case 'payment':
+        return NotificationType.payment;
 
-  bool get isChatNotification =>
-      type == NotificationType.chat;
+      case 'review':
+        return NotificationType.review;
 
-  bool get isPromotionNotification =>
-      type == NotificationType.promotion;
+      case 'chat':
+      case 'message':
+        return NotificationType.chat;
 
-  bool get isSupportNotification =>
-      type == NotificationType.support;
+      case 'promotion':
+      case 'promo':
+        return NotificationType.promotion;
+
+      case 'support':
+      case 'help':
+        return NotificationType.support;
+
+      case 'system':
+      default:
+        return NotificationType.system;
+    }
+  }
+}
+
+class NotificationModel {
+  final String id;
+
+  final String userId;
+
+  final String title;
+  final String message;
+
+  /// ✅ Kept as String because your screens use:
+  /// notification.type
+  /// _typeColor(notification.type)
+  /// _typeIcon(notification.type)
+  final String type;
+
+  final String imageUrl;
+
+  final String referenceId;
+
+  final String route;
+
+  final bool isRead;
+
+  final bool isDeleted;
+
+  final Map<String, dynamic>? data;
+
+  /// ✅ Kept as String because your screens use:
+  /// notification.createdAt ?? ''
+  final String createdAt;
+
+  final String readAt;
+
+  const NotificationModel({
+    required this.id,
+    required this.userId,
+    required this.title,
+    required this.message,
+    required this.type,
+    required this.imageUrl,
+    required this.referenceId,
+    required this.route,
+    required this.isRead,
+    required this.isDeleted,
+    this.data,
+    required this.createdAt,
+    required this.readAt,
+  });
+
+  factory NotificationModel.empty() {
+    return const NotificationModel(
+      id: '',
+      userId: '',
+      title: '',
+      message: '',
+      type: 'system',
+      imageUrl: '',
+      referenceId: '',
+      route: '',
+      isRead: false,
+      isDeleted: false,
+      data: {},
+      createdAt: '',
+      readAt: '',
+    );
+  }
+
+  factory NotificationModel.fromJson(
+    Map<String, dynamic> json,
+  ) {
+    final parsedData = _asMap(json['data']);
+
+    return NotificationModel(
+      id: json['_id']?.toString() ??
+          json['id']?.toString() ??
+          '',
+
+      userId: json['userId']?.toString() ??
+          json['user']?.toString() ??
+          json['receiverId']?.toString() ??
+          '',
+
+      title: json['title']?.toString() ?? '',
+
+      message: json['message']?.toString() ??
+          json['body']?.toString() ??
+          json['description']?.toString() ??
+          '',
+
+      type: json['type']?.toString().toLowerCase().trim() ??
+          'system',
+
+      imageUrl: json['imageUrl']?.toString() ??
+          json['image']?.toString() ??
+          '',
+
+      referenceId: json['referenceId']?.toString() ??
+          json['refId']?.toString() ??
+          json['bookingId']?.toString() ??
+          json['orderId']?.toString() ??
+          '',
+
+      route: json['route']?.toString() ??
+          json['screen']?.toString() ??
+          '',
+
+      isRead: _toBool(
+        json['isRead'] ??
+            json['read'],
+      ),
+
+      isDeleted: _toBool(
+        json['isDeleted'] ??
+            json['deleted'],
+      ),
+
+      data: parsedData ?? {},
+
+      createdAt: json['createdAt']?.toString() ??
+          json['date']?.toString() ??
+          '',
+
+      readAt: json['readAt']?.toString() ?? '',
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      '_id': id,
+      'id': id,
+
+      'userId': userId,
+
+      'title': title,
+      'message': message,
+
+      'type': type,
+
+      'imageUrl': imageUrl,
+
+      'referenceId': referenceId,
+
+      'route': route,
+
+      'isRead': isRead,
+      'isDeleted': isDeleted,
+
+      'data': data,
+
+      'createdAt': createdAt,
+      'readAt': readAt,
+    };
+  }
+
+  static NotificationType _parseType(
+    dynamic value,
+  ) {
+    return NotificationTypeExtension.fromString(value);
+  }
+
+  /// ✅ Enum support preserved
+  NotificationType get typeEnum {
+    return _parseType(type);
+  }
+
+  String get typeText {
+    return typeEnum.label;
+  }
+
+  DateTime? get createdAtDateTime {
+    return _toDateTime(createdAt);
+  }
+
+  DateTime? get readAtDateTime {
+    return _toDateTime(readAt);
+  }
+
+  bool get isBookingNotification {
+    return type.toLowerCase() == 'booking';
+  }
+
+  bool get isOrderNotification {
+    return type.toLowerCase() == 'order';
+  }
+
+  bool get isPaymentNotification {
+    return type.toLowerCase() == 'payment';
+  }
+
+  bool get isReviewNotification {
+    return type.toLowerCase() == 'review';
+  }
+
+  bool get isChatNotification {
+    return type.toLowerCase() == 'chat' ||
+        type.toLowerCase() == 'message';
+  }
+
+  bool get isPromotionNotification {
+    return type.toLowerCase() == 'promotion' ||
+        type.toLowerCase() == 'promo';
+  }
+
+  bool get isSupportNotification {
+    return type.toLowerCase() == 'support' ||
+        type.toLowerCase() == 'help';
+  }
+
+  bool get isSystemNotification {
+    return type.toLowerCase() == 'system';
+  }
 
   NotificationModel copyWith({
     String? id,
     String? userId,
     String? title,
     String? message,
-    NotificationType? type,
+    String? type,
     String? imageUrl,
     String? referenceId,
     String? route,
     bool? isRead,
     bool? isDeleted,
     Map<String, dynamic>? data,
-    DateTime? createdAt,
-    DateTime? readAt,
+    String? createdAt,
+    String? readAt,
   }) {
     return NotificationModel(
       id: id ?? this.id,
@@ -239,34 +334,70 @@ class NotificationModel {
       message: message ?? this.message,
       type: type ?? this.type,
       imageUrl: imageUrl ?? this.imageUrl,
-      referenceId:
-          referenceId ?? this.referenceId,
+      referenceId: referenceId ?? this.referenceId,
       route: route ?? this.route,
       isRead: isRead ?? this.isRead,
-      isDeleted:
-          isDeleted ?? this.isDeleted,
+      isDeleted: isDeleted ?? this.isDeleted,
       data: data ?? this.data,
-      createdAt:
-          createdAt ?? this.createdAt,
+      createdAt: createdAt ?? this.createdAt,
       readAt: readAt ?? this.readAt,
+    );
+  }
+
+  static Map<String, dynamic>? _asMap(dynamic value) {
+    if (value == null) return null;
+
+    if (value is Map<String, dynamic>) {
+      return value;
+    }
+
+    if (value is Map) {
+      return value.map(
+        (key, val) => MapEntry(
+          key.toString(),
+          val,
+        ),
+      );
+    }
+
+    return null;
+  }
+
+  static bool _toBool(dynamic value) {
+    if (value == null) return false;
+
+    if (value is bool) return value;
+
+    final text = value.toString().toLowerCase();
+
+    return text == 'true' ||
+        text == '1' ||
+        text == 'yes';
+  }
+
+  static DateTime? _toDateTime(dynamic value) {
+    if (value == null) return null;
+
+    if (value is DateTime) return value;
+
+    return DateTime.tryParse(
+      value.toString(),
     );
   }
 
   @override
   String toString() {
-    return 'NotificationModel('
-        'id: $id, '
-        'title: $title'
-        ')';
+    return 'NotificationModel(id: $id, title: $title, type: $type)';
   }
 
   @override
   bool operator ==(Object other) {
     return identical(this, other) ||
-        other is NotificationModel &&
-            other.id == id;
+        other is NotificationModel && other.id == id;
   }
 
   @override
-  int get hashCode => id.hashCode;
+  int get hashCode {
+    return id.hashCode;
+  }
 }

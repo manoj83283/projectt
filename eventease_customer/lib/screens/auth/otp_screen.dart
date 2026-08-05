@@ -1,9 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'screens/auth/otp_screen.dart';
+
 import '../../config/route_config.dart';
 import '../../config/theme_config.dart';
+//import 'screens/auth/otp_screen.dart';
 
 class OtpScreen extends StatefulWidget {
   const OtpScreen({super.key});

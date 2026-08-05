@@ -6,6 +6,99 @@ enum OrderStatus {
   completed,
   cancelled,
   refunded,
+  rejected,
+}
+
+extension OrderStatusExtension on OrderStatus {
+  String get value {
+    switch (this) {
+      case OrderStatus.pending:
+        return 'pending';
+
+      case OrderStatus.confirmed:
+        return 'confirmed';
+
+      case OrderStatus.processing:
+        return 'processing';
+
+      case OrderStatus.inProgress:
+        return 'in_progress';
+
+      case OrderStatus.completed:
+        return 'completed';
+
+      case OrderStatus.cancelled:
+        return 'cancelled';
+
+      case OrderStatus.refunded:
+        return 'refunded';
+
+      case OrderStatus.rejected:
+        return 'rejected';
+    }
+  }
+
+  String get label {
+    switch (this) {
+      case OrderStatus.pending:
+        return 'Pending';
+
+      case OrderStatus.confirmed:
+        return 'Confirmed';
+
+      case OrderStatus.processing:
+        return 'Processing';
+
+      case OrderStatus.inProgress:
+        return 'In Progress';
+
+      case OrderStatus.completed:
+        return 'Completed';
+
+      case OrderStatus.cancelled:
+        return 'Cancelled';
+
+      case OrderStatus.refunded:
+        return 'Refunded';
+
+      case OrderStatus.rejected:
+        return 'Rejected';
+    }
+  }
+
+  static OrderStatus fromString(dynamic value) {
+    final status = value?.toString().toLowerCase().trim() ?? '';
+
+    switch (status) {
+      case 'confirmed':
+      case 'accepted':
+        return OrderStatus.confirmed;
+
+      case 'processing':
+        return OrderStatus.processing;
+
+      case 'inprogress':
+      case 'in_progress':
+        return OrderStatus.inProgress;
+
+      case 'completed':
+        return OrderStatus.completed;
+
+      case 'cancelled':
+      case 'canceled':
+        return OrderStatus.cancelled;
+
+      case 'refunded':
+        return OrderStatus.refunded;
+
+      case 'rejected':
+        return OrderStatus.rejected;
+
+      case 'pending':
+      default:
+        return OrderStatus.pending;
+    }
+  }
 }
 
 class OrderModel {
@@ -16,6 +109,7 @@ class OrderModel {
 
   final String customerId;
   final String customerName;
+  final String customerEmail;
   final String customerPhone;
 
   final String providerId;
@@ -30,7 +124,11 @@ class OrderModel {
   final double platformFee;
   final double totalAmount;
 
-  final OrderStatus status;
+  /// ✅ Kept as String because your screens use:
+  /// order.status.toLowerCase()
+  /// order.status.toUpperCase()
+  /// _statusColor(order.status)
+  final String status;
 
   final String paymentStatus;
   final String paymentMethod;
@@ -40,9 +138,17 @@ class OrderModel {
   final String city;
   final String state;
 
+  /// ✅ Added for existing screens
+  final String location;
+
   final String notes;
 
-  final DateTime orderDate;
+  /// ✅ Kept as String because your screens use:
+  /// order.orderDate ?? ''
+  final String orderDate;
+
+  /// ✅ Added for existing screens
+  final String eventDate;
 
   final DateTime? completedDate;
   final DateTime? cancelledDate;
@@ -50,12 +156,18 @@ class OrderModel {
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
+  final Map<String, dynamic>? rawUser;
+  final Map<String, dynamic>? rawService;
+  final Map<String, dynamic>? rawProvider;
+  final Map<String, dynamic>? rawBooking;
+
   const OrderModel({
     required this.id,
     required this.orderNumber,
     required this.bookingId,
     required this.customerId,
     required this.customerName,
+    required this.customerEmail,
     required this.customerPhone,
     required this.providerId,
     required this.providerName,
@@ -73,21 +185,28 @@ class OrderModel {
     required this.eventAddress,
     required this.city,
     required this.state,
+    required this.location,
     required this.notes,
     required this.orderDate,
+    required this.eventDate,
     this.completedDate,
     this.cancelledDate,
     this.createdAt,
     this.updatedAt,
+    this.rawUser,
+    this.rawService,
+    this.rawProvider,
+    this.rawBooking,
   });
 
   factory OrderModel.empty() {
-    return OrderModel(
+    return const OrderModel(
       id: '',
       orderNumber: '',
       bookingId: '',
       customerId: '',
       customerName: '',
+      customerEmail: '',
       customerPhone: '',
       providerId: '',
       providerName: '',
@@ -98,214 +217,333 @@ class OrderModel {
       discountAmount: 0,
       platformFee: 0,
       totalAmount: 0,
-      status: OrderStatus.pending,
-      paymentStatus: 'Pending',
+      status: 'pending',
+      paymentStatus: 'pending',
       paymentMethod: '',
       transactionId: '',
       eventAddress: '',
       city: '',
       state: '',
+      location: '',
       notes: '',
-      orderDate: DateTime.now(),
+      orderDate: '',
+      eventDate: '',
     );
   }
 
   factory OrderModel.fromJson(
     Map<String, dynamic> json,
   ) {
+    final user = _asMap(json['user']) ??
+        _asMap(json['customer']);
+
+    final service = _asMap(json['service']);
+
+    final provider = _asMap(json['provider']);
+
+    final booking = _asMap(json['booking']);
+
+    final userFirstName = user?['firstName']?.toString() ?? '';
+    final userLastName = user?['lastName']?.toString() ?? '';
+    final userFullName = user?['name']?.toString() ?? '';
+
+    final parsedCustomerName = userFullName.isNotEmpty
+        ? userFullName
+        : '$userFirstName $userLastName'.trim();
+
+    final parsedBookingId = booking?['_id']?.toString() ??
+        booking?['id']?.toString() ??
+        json['bookingId']?.toString() ??
+        json['booking']?.toString() ??
+        '';
+
+    final parsedCustomerId = user?['_id']?.toString() ??
+        user?['id']?.toString() ??
+        json['customerId']?.toString() ??
+        json['userId']?.toString() ??
+        json['customer']?.toString() ??
+        json['user']?.toString() ??
+        '';
+
+    final parsedProviderId = provider?['_id']?.toString() ??
+        provider?['id']?.toString() ??
+        service?['provider']?.toString() ??
+        json['providerId']?.toString() ??
+        json['provider']?.toString() ??
+        '';
+
+    final parsedServiceId = service?['_id']?.toString() ??
+        service?['id']?.toString() ??
+        json['serviceId']?.toString() ??
+        json['service']?.toString() ??
+        '';
+
+    final parsedOrderDate = json['orderDate']?.toString() ??
+        json['date']?.toString() ??
+        booking?['date']?.toString() ??
+        json['createdAt']?.toString() ??
+        '';
+
+    final parsedEventDate = json['eventDate']?.toString() ??
+        json['bookingDate']?.toString() ??
+        booking?['bookingDate']?.toString() ??
+        booking?['date']?.toString() ??
+        parsedOrderDate;
+
+    final parsedAddress = json['eventAddress']?.toString() ??
+        json['address']?.toString() ??
+        json['location']?.toString() ??
+        booking?['address']?.toString() ??
+        booking?['location']?.toString() ??
+        '';
+
+    final parsedSubtotal = _toDouble(
+      json['subtotal'] ??
+          json['amount'] ??
+          json['price'] ??
+          json['totalPrice'] ??
+          booking?['totalPrice'],
+    );
+
+    final parsedTotal = _toDouble(
+      json['totalAmount'] ??
+          json['totalPrice'] ??
+          json['amount'] ??
+          json['price'] ??
+          booking?['totalPrice'] ??
+          parsedSubtotal,
+    );
+
+    final parsedStatus =
+        json['status']?.toString().toLowerCase().trim() ?? 'pending';
+
     return OrderModel(
       id: json['_id']?.toString() ??
           json['id']?.toString() ??
           '',
-      orderNumber:
-          json['orderNumber']?.toString() ?? '',
-      bookingId:
-          json['bookingId']?.toString() ?? '',
-      customerId:
-          json['customerId']?.toString() ?? '',
-      customerName:
-          json['customerName']?.toString() ?? '',
-      customerPhone:
-          json['customerPhone']?.toString() ?? '',
-      providerId:
-          json['providerId']?.toString() ?? '',
-      providerName:
-          json['providerName']?.toString() ?? '',
-      serviceId:
-          json['serviceId']?.toString() ?? '',
-      serviceName:
-          json['serviceName']?.toString() ?? '',
-      subtotal:
-          (json['subtotal'] ?? 0).toDouble(),
-      taxAmount:
-          (json['taxAmount'] ?? 0).toDouble(),
-      discountAmount:
-          (json['discountAmount'] ?? 0)
-              .toDouble(),
-      platformFee:
-          (json['platformFee'] ?? 0)
-              .toDouble(),
-      totalAmount:
-          (json['totalAmount'] ?? 0)
-              .toDouble(),
-      status: _parseStatus(
-        json['status'],
+
+      orderNumber: json['orderNumber']?.toString() ??
+          json['orderNo']?.toString() ??
+          json['bookingNumber']?.toString() ??
+          '',
+
+      bookingId: parsedBookingId,
+
+      customerId: parsedCustomerId,
+
+      customerName: json['customerName']?.toString() ??
+          parsedCustomerName,
+
+      customerEmail: json['customerEmail']?.toString() ??
+          user?['email']?.toString() ??
+          '',
+
+      customerPhone: json['customerPhone']?.toString() ??
+          user?['phone']?.toString() ??
+          '',
+
+      providerId: parsedProviderId,
+
+      providerName: json['providerName']?.toString() ??
+          provider?['name']?.toString() ??
+          provider?['firstName']?.toString() ??
+          '',
+
+      serviceId: parsedServiceId,
+
+      serviceName: json['serviceName']?.toString() ??
+          service?['name']?.toString() ??
+          service?['title']?.toString() ??
+          'Service',
+
+      subtotal: parsedSubtotal,
+
+      taxAmount: _toDouble(
+        json['taxAmount'],
       ),
-      paymentStatus:
-          json['paymentStatus']?.toString() ??
-              'Pending',
-      paymentMethod:
-          json['paymentMethod']?.toString() ??
-              '',
-      transactionId:
-          json['transactionId']?.toString() ??
-              '',
-      eventAddress:
-          json['eventAddress']?.toString() ??
-              '',
-      city:
-          json['city']?.toString() ?? '',
-      state:
-          json['state']?.toString() ?? '',
-      notes:
-          json['notes']?.toString() ?? '',
-      orderDate:
-          json['orderDate'] != null
-              ? DateTime.parse(
-                  json['orderDate'].toString(),
-                )
-              : DateTime.now(),
-      completedDate:
-          json['completedDate'] != null
-              ? DateTime.tryParse(
-                  json['completedDate']
-                      .toString(),
-                )
-              : null,
-      cancelledDate:
-          json['cancelledDate'] != null
-              ? DateTime.tryParse(
-                  json['cancelledDate']
-                      .toString(),
-                )
-              : null,
-      createdAt:
-          json['createdAt'] != null
-              ? DateTime.tryParse(
-                  json['createdAt']
-                      .toString(),
-                )
-              : null,
-      updatedAt:
-          json['updatedAt'] != null
-              ? DateTime.tryParse(
-                  json['updatedAt']
-                      .toString(),
-                )
-              : null,
+
+      discountAmount: _toDouble(
+        json['discountAmount'],
+      ),
+
+      platformFee: _toDouble(
+        json['platformFee'],
+      ),
+
+      totalAmount: parsedTotal,
+
+      status: parsedStatus,
+
+      paymentStatus: json['paymentStatus']?.toString() ??
+          booking?['paymentStatus']?.toString() ??
+          'pending',
+
+      paymentMethod: json['paymentMethod']?.toString() ??
+          booking?['paymentMethod']?.toString() ??
+          '',
+
+      transactionId: json['transactionId']?.toString() ??
+          json['paymentId']?.toString() ??
+          '',
+
+      eventAddress: parsedAddress,
+
+      city: json['city']?.toString() ?? '',
+
+      state: json['state']?.toString() ?? '',
+
+      location: json['location']?.toString() ??
+          parsedAddress,
+
+      notes: json['notes']?.toString() ??
+          booking?['notes']?.toString() ??
+          '',
+
+      orderDate: parsedOrderDate,
+
+      eventDate: parsedEventDate,
+
+      completedDate: _toDateTime(
+        json['completedDate'] ??
+            json['completedAt'],
+      ),
+
+      cancelledDate: _toDateTime(
+        json['cancelledDate'] ??
+            json['cancelledAt'],
+      ),
+
+      createdAt: _toDateTime(
+        json['createdAt'],
+      ),
+
+      updatedAt: _toDateTime(
+        json['updatedAt'],
+      ),
+
+      rawUser: user,
+      rawService: service,
+      rawProvider: provider,
+      rawBooking: booking,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
       '_id': id,
+      'id': id,
+
       'orderNumber': orderNumber,
       'bookingId': bookingId,
+
       'customerId': customerId,
       'customerName': customerName,
+      'customerEmail': customerEmail,
       'customerPhone': customerPhone,
+
       'providerId': providerId,
       'providerName': providerName,
+
       'serviceId': serviceId,
       'serviceName': serviceName,
+
       'subtotal': subtotal,
       'taxAmount': taxAmount,
       'discountAmount': discountAmount,
       'platformFee': platformFee,
       'totalAmount': totalAmount,
-      'status': status.name,
+      'totalPrice': totalAmount,
+
+      'status': status,
+
       'paymentStatus': paymentStatus,
       'paymentMethod': paymentMethod,
       'transactionId': transactionId,
+
       'eventAddress': eventAddress,
+      'address': eventAddress,
+      'location': location,
       'city': city,
       'state': state,
+
       'notes': notes,
-      'orderDate':
-          orderDate.toIso8601String(),
-      'completedDate':
-          completedDate?.toIso8601String(),
-      'cancelledDate':
-          cancelledDate?.toIso8601String(),
-      'createdAt':
-          createdAt?.toIso8601String(),
-      'updatedAt':
-          updatedAt?.toIso8601String(),
+
+      'orderDate': orderDate,
+      'eventDate': eventDate,
+
+      'completedDate': completedDate?.toIso8601String(),
+      'cancelledDate': cancelledDate?.toIso8601String(),
+
+      'createdAt': createdAt?.toIso8601String(),
+      'updatedAt': updatedAt?.toIso8601String(),
+
+      'user': rawUser,
+      'service': rawService,
+      'provider': rawProvider,
+      'booking': rawBooking,
     };
   }
 
   static OrderStatus _parseStatus(
     dynamic value,
   ) {
-    switch (
-        value.toString().toLowerCase()) {
-      case 'confirmed':
-        return OrderStatus.confirmed;
-
-      case 'processing':
-        return OrderStatus.processing;
-
-      case 'inprogress':
-      case 'in_progress':
-        return OrderStatus.inProgress;
-
-      case 'completed':
-        return OrderStatus.completed;
-
-      case 'cancelled':
-        return OrderStatus.cancelled;
-
-      case 'refunded':
-        return OrderStatus.refunded;
-
-      default:
-        return OrderStatus.pending;
-    }
+    return OrderStatusExtension.fromString(value);
   }
 
   String get statusText {
-    switch (status) {
-      case OrderStatus.pending:
-        return 'Pending';
-      case OrderStatus.confirmed:
-        return 'Confirmed';
-      case OrderStatus.processing:
-        return 'Processing';
-      case OrderStatus.inProgress:
-        return 'In Progress';
-      case OrderStatus.completed:
-        return 'Completed';
-      case OrderStatus.cancelled:
-        return 'Cancelled';
-      case OrderStatus.refunded:
-        return 'Refunded';
-    }
+    return statusEnum.label;
   }
 
-  bool get isPending =>
-      status == OrderStatus.pending;
+  OrderStatus get statusEnum {
+    return _parseStatus(status);
+  }
 
-  bool get isCompleted =>
-      status == OrderStatus.completed;
+  DateTime? get orderDateTime {
+    return _toDateTime(orderDate);
+  }
 
-  bool get isCancelled =>
-      status == OrderStatus.cancelled;
+  DateTime? get eventDateTime {
+    return _toDateTime(eventDate);
+  }
 
-  bool get isRefunded =>
-      status == OrderStatus.refunded;
+  bool get isPending {
+    return status.toLowerCase() == 'pending';
+  }
 
-  double get netAmount =>
-      totalAmount - platformFee;
+  bool get isConfirmed {
+    return status.toLowerCase() == 'confirmed' ||
+        status.toLowerCase() == 'accepted';
+  }
+
+  bool get isProcessing {
+    return status.toLowerCase() == 'processing';
+  }
+
+  bool get isInProgress {
+    return status.toLowerCase() == 'in_progress' ||
+        status.toLowerCase() == 'inprogress';
+  }
+
+  bool get isCompleted {
+    return status.toLowerCase() == 'completed';
+  }
+
+  bool get isCancelled {
+    return status.toLowerCase() == 'cancelled' ||
+        status.toLowerCase() == 'canceled';
+  }
+
+  bool get isRefunded {
+    return status.toLowerCase() == 'refunded';
+  }
+
+  bool get isRejected {
+    return status.toLowerCase() == 'rejected';
+  }
+
+  double get netAmount {
+    return totalAmount - platformFee;
+  }
 
   OrderModel copyWith({
     String? id,
@@ -313,6 +551,7 @@ class OrderModel {
     String? bookingId,
     String? customerId,
     String? customerName,
+    String? customerEmail,
     String? customerPhone,
     String? providerId,
     String? providerName,
@@ -323,86 +562,117 @@ class OrderModel {
     double? discountAmount,
     double? platformFee,
     double? totalAmount,
-    OrderStatus? status,
+    String? status,
     String? paymentStatus,
     String? paymentMethod,
     String? transactionId,
     String? eventAddress,
     String? city,
     String? state,
+    String? location,
     String? notes,
-    DateTime? orderDate,
+    String? orderDate,
+    String? eventDate,
     DateTime? completedDate,
     DateTime? cancelledDate,
     DateTime? createdAt,
     DateTime? updatedAt,
+    Map<String, dynamic>? rawUser,
+    Map<String, dynamic>? rawService,
+    Map<String, dynamic>? rawProvider,
+    Map<String, dynamic>? rawBooking,
   }) {
     return OrderModel(
       id: id ?? this.id,
-      orderNumber:
-          orderNumber ?? this.orderNumber,
-      bookingId:
-          bookingId ?? this.bookingId,
-      customerId:
-          customerId ?? this.customerId,
-      customerName:
-          customerName ?? this.customerName,
-      customerPhone:
-          customerPhone ?? this.customerPhone,
-      providerId:
-          providerId ?? this.providerId,
-      providerName:
-          providerName ?? this.providerName,
-      serviceId:
-          serviceId ?? this.serviceId,
-      serviceName:
-          serviceName ?? this.serviceName,
-      subtotal:
-          subtotal ?? this.subtotal,
-      taxAmount:
-          taxAmount ?? this.taxAmount,
-      discountAmount:
-          discountAmount ??
-              this.discountAmount,
-      platformFee:
-          platformFee ?? this.platformFee,
-      totalAmount:
-          totalAmount ?? this.totalAmount,
+      orderNumber: orderNumber ?? this.orderNumber,
+      bookingId: bookingId ?? this.bookingId,
+      customerId: customerId ?? this.customerId,
+      customerName: customerName ?? this.customerName,
+      customerEmail: customerEmail ?? this.customerEmail,
+      customerPhone: customerPhone ?? this.customerPhone,
+      providerId: providerId ?? this.providerId,
+      providerName: providerName ?? this.providerName,
+      serviceId: serviceId ?? this.serviceId,
+      serviceName: serviceName ?? this.serviceName,
+      subtotal: subtotal ?? this.subtotal,
+      taxAmount: taxAmount ?? this.taxAmount,
+      discountAmount: discountAmount ?? this.discountAmount,
+      platformFee: platformFee ?? this.platformFee,
+      totalAmount: totalAmount ?? this.totalAmount,
       status: status ?? this.status,
-      paymentStatus:
-          paymentStatus ?? this.paymentStatus,
-      paymentMethod:
-          paymentMethod ?? this.paymentMethod,
-      transactionId:
-          transactionId ?? this.transactionId,
-      eventAddress:
-          eventAddress ?? this.eventAddress,
+      paymentStatus: paymentStatus ?? this.paymentStatus,
+      paymentMethod: paymentMethod ?? this.paymentMethod,
+      transactionId: transactionId ?? this.transactionId,
+      eventAddress: eventAddress ?? this.eventAddress,
       city: city ?? this.city,
       state: state ?? this.state,
+      location: location ?? this.location,
       notes: notes ?? this.notes,
-      orderDate:
-          orderDate ?? this.orderDate,
-      completedDate:
-          completedDate ?? this.completedDate,
-      cancelledDate:
-          cancelledDate ?? this.cancelledDate,
-      createdAt:
-          createdAt ?? this.createdAt,
-      updatedAt:
-          updatedAt ?? this.updatedAt,
+      orderDate: orderDate ?? this.orderDate,
+      eventDate: eventDate ?? this.eventDate,
+      completedDate: completedDate ?? this.completedDate,
+      cancelledDate: cancelledDate ?? this.cancelledDate,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rawUser: rawUser ?? this.rawUser,
+      rawService: rawService ?? this.rawService,
+      rawProvider: rawProvider ?? this.rawProvider,
+      rawBooking: rawBooking ?? this.rawBooking,
+    );
+  }
+
+  static Map<String, dynamic>? _asMap(dynamic value) {
+    if (value == null) return null;
+
+    if (value is Map<String, dynamic>) {
+      return value;
+    }
+
+    if (value is Map) {
+      return value.map(
+        (key, val) => MapEntry(
+          key.toString(),
+          val,
+        ),
+      );
+    }
+
+    return null;
+  }
+
+  static double _toDouble(dynamic value) {
+    if (value == null) return 0;
+
+    if (value is double) return value;
+
+    if (value is int) return value.toDouble();
+
+    if (value is num) return value.toDouble();
+
+    return double.tryParse(value.toString()) ?? 0;
+  }
+
+  static DateTime? _toDateTime(dynamic value) {
+    if (value == null) return null;
+
+    if (value is DateTime) return value;
+
+    return DateTime.tryParse(
+      value.toString(),
     );
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is OrderModel && id == other.id;
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        other is OrderModel && id == other.id;
+  }
 
   @override
   int get hashCode => id.hashCode;
 
   @override
   String toString() {
-    return 'OrderModel(id: $id, orderNumber: $orderNumber)';
+    return 'OrderModel(id: $id, orderNumber: $orderNumber, status: $status)';
   }
 }

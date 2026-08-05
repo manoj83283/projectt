@@ -16,20 +16,15 @@ import '../screens/dashboard/dashboard_screen.dart';
 // Services
 import '../screens/services/my_services_screen.dart';
 import '../screens/services/add_service_screen.dart';
-import '../screens/services/edit_service_screen.dart';
-import '../screens/services/service_details_screen.dart';
 
 // Bookings
 import '../screens/bookings/bookings_screen.dart';
-import '../screens/bookings/booking_details_screen.dart';
 
 // Orders
 import '../screens/orders/orders_screen.dart';
-import '../screens/orders/order_details_screen.dart';
 
 // Customers
 import '../screens/customers/customers_screen.dart';
-import '../screens/customers/customer_details_screen.dart';
 
 // Earnings
 import '../screens/earnings/earnings_screen.dart';
@@ -40,7 +35,6 @@ import '../screens/reviews/reviews_screen.dart';
 
 // Chat
 import '../screens/chat/chat_list_screen.dart';
-import '../screens/chat/chat_screen.dart';
 
 // Notifications
 import '../screens/notifications/notifications_screen.dart';
@@ -55,222 +49,182 @@ import '../screens/profile/settings_screen.dart';
 import '../screens/profile/help_support_screen.dart';
 
 class AppRoutes {
+  AppRoutes._();
+
+  // =========================
+  // ROOT
+  // =========================
+
+  static const String root = '/';
+
   // =========================
   // AUTH
   // =========================
 
-  static const String splash =
-      '/splash';
+  static const String splash = '/splash';
 
-  static const String login =
-      '/login';
+  static const String login = '/login';
 
-  static const String register =
-      '/register';
+  static const String register = '/register';
 
-  static const String otp =
-      '/otp';
+  static const String otp = '/otp';
 
-  static const String forgotPassword =
-      '/forgot-password';
+  static const String forgotPassword = '/forgot-password';
 
-  static const String resetPassword =
-      '/reset-password';
+  static const String resetPassword = '/reset-password';
 
   // =========================
   // DASHBOARD
   // =========================
 
-  static const String dashboard =
-      '/dashboard';
+  static const String dashboard = '/dashboard';
 
   // =========================
   // SERVICES
   // =========================
 
-  static const String myServices =
-      '/my-services';
+  static const String myServices = '/my-services';
 
-  static const String addService =
-      '/add-service';
+  static const String addService = '/add-service';
 
-  static const String editService =
-      '/edit-service';
+  static const String editService = '/edit-service';
 
-  static const String serviceDetails =
-      '/service-details';
+  static const String serviceDetails = '/service-details';
 
   // =========================
   // BOOKINGS
   // =========================
 
-  static const String bookings =
-      '/bookings';
+  static const String bookings = '/bookings';
 
-  static const String bookingDetails =
-      '/booking-details';
+  static const String bookingDetails = '/booking-details';
 
   // =========================
   // ORDERS
   // =========================
 
-  static const String orders =
-      '/orders';
+  static const String orders = '/orders';
 
-  static const String orderDetails =
-      '/order-details';
+  static const String orderDetails = '/order-details';
 
   // =========================
   // CUSTOMERS
   // =========================
 
-  static const String customers =
-      '/customers';
+  static const String customers = '/customers';
 
-  static const String customerDetails =
-      '/customer-details';
+  static const String customerDetails = '/customer-details';
 
   // =========================
   // EARNINGS
   // =========================
 
-  static const String earnings =
-      '/earnings';
+  static const String earnings = '/earnings';
 
-  static const String transactions =
-      '/transactions';
+  static const String transactions = '/transactions';
 
   // =========================
   // REVIEWS
   // =========================
 
-  static const String reviews =
-      '/reviews';
+  static const String reviews = '/reviews';
 
   // =========================
   // CHAT
   // =========================
 
-  static const String chats =
-      '/chats';
+  static const String chats = '/chats';
 
-  static const String chatScreen =
-      '/chat-screen';
+  static const String chatScreen = '/chat-screen';
 
   // =========================
   // NOTIFICATIONS
   // =========================
 
-  static const String notifications =
-      '/notifications';
+  static const String notifications = '/notifications';
 
   // =========================
   // AVAILABILITY
   // =========================
 
-  static const String availability =
-      '/availability';
+  static const String availability = '/availability';
 
   // =========================
   // PROFILE
   // =========================
 
-  static const String profile =
-      '/profile';
+  static const String profile = '/profile';
 
-  static const String editProfile =
-      '/edit-profile';
+  static const String editProfile = '/edit-profile';
 
-  static const String settings =
-      '/settings';
+  static const String settings = '/settings';
 
-  static const String helpSupport =
-      '/help-support';
+  static const String helpSupport = '/help-support';
 
   // =========================
-  // ROUTES
+  // ROUTES MAP
   // =========================
 
-  static Map<String, WidgetBuilder>
-      routes = {
+  static final Map<String, WidgetBuilder> routes = {
+    // Root
+    root: (context) => const SplashScreen(),
+
     // Splash
-    splash: (context) =>
-        const SplashScreen(),
+    splash: (context) => const SplashScreen(),
 
     // Auth
-    login: (context) =>
-        const LoginScreen(),
+    login: (context) => const LoginScreen(),
 
-    register: (context) =>
-        const RegisterScreen(),
+    register: (context) => const RegisterScreen(),
 
-    otp: (context) =>
-        const OtpScreen(),
+    otp: (context) => const OtpScreen(),
 
-    forgotPassword: (context) =>
-        const ForgotPasswordScreen(),
+    forgotPassword: (context) => const ForgotPasswordScreen(),
 
-    resetPassword: (context) =>
-        const ResetPasswordScreen(),
+    resetPassword: (context) => const ResetPasswordScreen(),
 
     // Dashboard
-    dashboard: (context) =>
-        const DashboardScreen(),
+    dashboard: (context) => const DashboardScreen(),
 
     // Services
-    myServices: (context) =>
-        const MyServicesScreen(),
+    myServices: (context) => const MyServicesScreen(),
 
-    addService: (context) =>
-        const AddServiceScreen(),
+    addService: (context) => const AddServiceScreen(),
 
     // Bookings
-    bookings: (context) =>
-        const BookingsScreen(),
+    bookings: (context) => const BookingsScreen(),
 
     // Orders
-    orders: (context) =>
-        const OrdersScreen(),
+    orders: (context) => const OrdersScreen(),
 
     // Customers
-    customers: (context) =>
-        const CustomersScreen(),
+    customers: (context) => const CustomersScreen(),
 
     // Earnings
-    earnings: (context) =>
-        const EarningsScreen(),
+    earnings: (context) => const EarningsScreen(),
 
-    transactions: (context) =>
-        const TransactionsScreen(),
+    transactions: (context) => const TransactionsScreen(),
 
     // Reviews
-    reviews: (context) =>
-        const ReviewsScreen(),
+    reviews: (context) => const ReviewsScreen(),
 
     // Chat
-    chats: (context) =>
-        const ChatListScreen(),
+    chats: (context) => const ChatListScreen(),
 
     // Notifications
-    notifications: (context) =>
-        const NotificationsScreen(),
+    notifications: (context) => const NotificationsScreen(),
 
     // Availability
-    availability: (context) =>
-        const AvailabilityScreen(),
+    availability: (context) => const AvailabilityScreen(),
 
     // Profile
-    profile: (context) =>
-        const ProfileScreen(),
+    profile: (context) => const ProfileScreen(),
 
-    editProfile: (context) =>
-        const EditProfileScreen(),
+    editProfile: (context) => const EditProfileScreen(),
 
-    settings: (context) =>
-        const SettingsScreen(),
+    settings: (context) => const SettingsScreen(),
 
-    helpSupport: (context) =>
-        const HelpSupportScreen(),
+    helpSupport: (context) => const HelpSupportScreen(),
   };
 
   // =========================
@@ -278,20 +232,116 @@ class AppRoutes {
   // =========================
 
   static Route<dynamic> onGenerateRoute(
+    RouteSettings routeSettings,
+  ) {
+    final routeName = routeSettings.name;
+
+    final builder = routes[routeName];
+
+    if (builder != null) {
+      return MaterialPageRoute(
+        builder: builder,
+        settings: routeSettings,
+      );
+    }
+
+    switch (routeName) {
+      // =========================
+      // FUTURE PARAMETER ROUTES
+      // =========================
+
+      case editService:
+        return _routeNotImplemented(
+          routeSettings,
+          'Edit Service route requires arguments.',
+        );
+
+      case serviceDetails:
+        return _routeNotImplemented(
+          routeSettings,
+          'Service Details route requires arguments.',
+        );
+
+      case bookingDetails:
+        return _routeNotImplemented(
+          routeSettings,
+          'Booking Details route requires arguments.',
+        );
+
+      case orderDetails:
+        return _routeNotImplemented(
+          routeSettings,
+          'Order Details route requires arguments.',
+        );
+
+      case customerDetails:
+        return _routeNotImplemented(
+          routeSettings,
+          'Customer Details route requires arguments.',
+        );
+
+      case chatScreen:
+        return _routeNotImplemented(
+          routeSettings,
+          'Chat Screen route requires arguments.',
+        );
+
+      default:
+        return _unknownRoute(routeSettings);
+    }
+  }
+
+  // =========================
+  // UNKNOWN ROUTE
+  // =========================
+
+  static Route<dynamic> _unknownRoute(
     RouteSettings settings,
   ) {
-    switch (settings.name) {
-      default:
-        return MaterialPageRoute(
-          builder: (_) =>
-              const Scaffold(
-            body: Center(
-              child: Text(
-                'Route Not Found',
+    return MaterialPageRoute(
+      settings: settings,
+      builder: (_) => Scaffold(
+        appBar: AppBar(
+          title: const Text('Route Not Found'),
+        ),
+        body: Center(
+          child: Text(
+            'No route defined for: ${settings.name}',
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ),
+    );
+  }
+
+  // =========================
+  // NOT IMPLEMENTED ROUTE
+  // =========================
+
+  static Route<dynamic> _routeNotImplemented(
+    RouteSettings settings,
+    String message,
+  ) {
+    return MaterialPageRoute(
+      settings: settings,
+      builder: (_) => Scaffold(
+        appBar: AppBar(
+          title: const Text('Route Configuration Required'),
+        ),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
               ),
             ),
           ),
-        );
-    }
+        ),
+      ),
+    );
   }
 }

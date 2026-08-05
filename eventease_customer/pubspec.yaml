@@ -24,13 +24,13 @@ dependencies:
   # ==================================
   # API
   # ==================================
-  dio: ^5.9.0
+  dio: ^5.11.0
 
   # ==================================
   # STORAGE
   # ==================================
-  shared_preferences: ^2.5.3
-  flutter_secure_storage: ^9.2.4
+  shared_preferences: ^2.5.5
+  flutter_secure_storage: ^10.3.1
 
   # ==================================
   # IMAGES
@@ -139,6 +139,8 @@ dependencies:
   # TOASTS
   # ==================================
   fluttertoast: ^8.2.14
+  flutter_localizations:
+    sdk: flutter
 
 dev_dependencies:
   flutter_test:

@@ -1,293 +1,318 @@
-import 'dart:io';
-
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
-import '../constants/app_constants.dart';
-import '../storage/storage_service.dart';
+import '../storage/storage_helper.dart';
 
 class ApiService {
   ApiService._internal();
 
-  static final ApiService _instance =
-      ApiService._internal();
+  static final ApiService instance = ApiService._internal();
 
-  factory ApiService() => _instance;
+  static String get baseUrl {
+    if (kIsWeb) {
+      return 'http://localhost:5000/api';
+    }
+
+    switch (defaultTargetPlatform) {
+      case TargetPlatform.android:
+        return 'http://10.0.2.2:5000/api';
+
+      case TargetPlatform.iOS:
+        return 'http://127.0.0.1:5000/api';
+
+      case TargetPlatform.windows:
+      case TargetPlatform.macOS:
+      case TargetPlatform.linux:
+      case TargetPlatform.fuchsia:
+        return 'http://192.168.1.40:5000/api';
+    }
+  }
 
   late final Dio _dio = Dio(
     BaseOptions(
-      baseUrl: AppConstants.baseUrl,
-      connectTimeout: const Duration(
-        seconds: 30,
-      ),
-      receiveTimeout: const Duration(
-        seconds: 30,
-      ),
-      sendTimeout: const Duration(
-        seconds: 30,
-      ),
-      headers: const {
-        'Content-Type':
-            'application/json',
-        'Accept':
-            'application/json',
+      baseUrl: baseUrl,
+      connectTimeout: const Duration(seconds: 30),
+      receiveTimeout: const Duration(seconds: 30),
+      sendTimeout: const Duration(seconds: 30),
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
       },
     ),
   )..interceptors.add(
       InterceptorsWrapper(
-        onRequest:
-            (options, handler) async {
-          final token =
-              await StorageService
-                  .getAccessToken();
+        onRequest: (options, handler) async {
+          final token = await StorageHelper.getToken();
 
-          if (token != null &&
-              token.isNotEmpty) {
-            options.headers[
-                'Authorization'] =
-                'Bearer $token';
+          if (token != null && token.isNotEmpty) {
+            options.headers['Authorization'] = 'Bearer $token';
           }
 
-          handler.next(options);
+          return handler.next(options);
         },
-        onError: (
-          DioException error,
-          handler,
-        ) {
-          handler.next(error);
+        onError: (error, handler) {
+          return handler.next(error);
         },
       ),
     );
 
   Dio get dio => _dio;
 
-  //===========================
-  // GET
-  //===========================
+  // =============================================================
+  // ✅ NORMALIZE RESPONSE
+  // =============================================================
+  dynamic _normalizeResponse(Response response) {
+    final data = response.data;
 
-  Future<Response> get(
-    String endpoint, {
-    Map<String, dynamic>? query,
+    if (data == null) {
+      return {};
+    }
+
+    return data;
+  }
+
+  // =============================================================
+  // ✅ GET
+  // =============================================================
+  Future<dynamic> get(
+    String path, {
+    Map<String, dynamic>? queryParameters,
+    Options? options,
   }) async {
     try {
-      return await _dio.get(
-        endpoint,
-        queryParameters: query,
+      final response = await _dio.get(
+        path,
+        queryParameters: queryParameters,
+        options: options,
       );
+
+      return _normalizeResponse(response);
     } on DioException catch (e) {
-      throw _handleError(e);
+      throw Exception(_handleDioError(e));
     }
   }
 
-  //===========================
-  // POST
-  //===========================
-
-  Future<Response> post(
-    String endpoint, {
+  // =============================================================
+  // ✅ POST
+  // =============================================================
+  Future<dynamic> post(
+    String path, {
+    dynamic body,
     dynamic data,
-    Map<String, dynamic>? query,
+    Map<String, dynamic>? queryParameters,
+    Options? options,
   }) async {
     try {
-      return await _dio.post(
-        endpoint,
-        data: data,
-        queryParameters: query,
+      final response = await _dio.post(
+        path,
+        data: body ?? data,
+        queryParameters: queryParameters,
+        options: options,
       );
+
+      return _normalizeResponse(response);
     } on DioException catch (e) {
-      throw _handleError(e);
+      throw Exception(_handleDioError(e));
     }
   }
 
-  //===========================
-  // PUT
-  //===========================
-
-  Future<Response> put(
-    String endpoint, {
+  // =============================================================
+  // ✅ PUT
+  // =============================================================
+  Future<dynamic> put(
+    String path, {
+    dynamic body,
     dynamic data,
-    Map<String, dynamic>? query,
+    Map<String, dynamic>? queryParameters,
+    Options? options,
   }) async {
     try {
-      return await _dio.put(
-        endpoint,
-        data: data,
-        queryParameters: query,
+      final response = await _dio.put(
+        path,
+        data: body ?? data,
+        queryParameters: queryParameters,
+        options: options,
       );
+
+      return _normalizeResponse(response);
     } on DioException catch (e) {
-      throw _handleError(e);
+      throw Exception(_handleDioError(e));
     }
   }
 
-  //===========================
-  // PATCH
-  //===========================
-
-  Future<Response> patch(
-    String endpoint, {
+  // =============================================================
+  // ✅ PATCH
+  // =============================================================
+  Future<dynamic> patch(
+    String path, {
+    dynamic body,
     dynamic data,
+    Map<String, dynamic>? queryParameters,
+    Options? options,
   }) async {
     try {
-      return await _dio.patch(
-        endpoint,
-        data: data,
+      final response = await _dio.patch(
+        path,
+        data: body ?? data,
+        queryParameters: queryParameters,
+        options: options,
       );
+
+      return _normalizeResponse(response);
     } on DioException catch (e) {
-      throw _handleError(e);
+      throw Exception(_handleDioError(e));
     }
   }
 
-  //===========================
-  // DELETE
-  //===========================
-
-  Future<Response> delete(
-    String endpoint, {
+  // =============================================================
+  // ✅ DELETE
+  // =============================================================
+  Future<dynamic> delete(
+    String path, {
+    dynamic body,
     dynamic data,
+    Map<String, dynamic>? queryParameters,
+    Options? options,
   }) async {
     try {
-      return await _dio.delete(
-        endpoint,
-        data: data,
+      final response = await _dio.delete(
+        path,
+        data: body ?? data,
+        queryParameters: queryParameters,
+        options: options,
       );
+
+      return _normalizeResponse(response);
     } on DioException catch (e) {
-      throw _handleError(e);
+      throw Exception(_handleDioError(e));
     }
   }
 
-  //===========================
-  // FILE UPLOAD
-  //===========================
-
-  Future<Response> uploadFile({
-    required String endpoint,
-    required File file,
-    String fileField = 'file',
-    Map<String, dynamic>? fields,
+  // =============================================================
+  // ✅ UPLOAD SINGLE FILE
+  // =============================================================
+  Future<dynamic> uploadFile({
+    required String path,
+    required String filePath,
+    String fileKey = 'file',
+    Map<String, dynamic>? body,
+    Map<String, dynamic>? extraFields,
   }) async {
     try {
       final formData = FormData();
 
       formData.files.add(
         MapEntry(
-          fileField,
-          await MultipartFile.fromFile(
-            file.path,
-          ),
+          fileKey,
+          await MultipartFile.fromFile(filePath),
         ),
       );
 
-      if (fields != null) {
-        formData.fields.addAll(
-          fields.entries.map(
-            (e) => MapEntry(
-              e.key,
-              e.value.toString(),
-            ),
-          ),
+      final fields = body ?? extraFields ?? {};
+
+      for (final entry in fields.entries) {
+        formData.fields.add(
+          MapEntry(entry.key, entry.value.toString()),
         );
       }
 
-      return await _dio.post(
-        endpoint,
+      final response = await _dio.post(
+        path,
         data: formData,
+        options: Options(
+          contentType: 'multipart/form-data',
+        ),
       );
+
+      return _normalizeResponse(response);
     } on DioException catch (e) {
-      throw _handleError(e);
+      throw Exception(_handleDioError(e));
     }
   }
 
-  //===========================
-  // MULTIPLE FILES UPLOAD
-  //===========================
-
-  Future<Response> uploadFiles({
-    required String endpoint,
-    required List<File> files,
-    String fileField = 'files',
-    Map<String, dynamic>? fields,
+  // =============================================================
+  // ✅ UPLOAD MULTIPLE FILES
+  // =============================================================
+  Future<dynamic> uploadFiles({
+    required String path,
+    required List<String> filePaths,
+    String fileKey = 'files',
+    Map<String, dynamic>? body,
+    Map<String, dynamic>? extraFields,
   }) async {
     try {
       final formData = FormData();
 
-      for (final file in files) {
+      for (final filePath in filePaths) {
         formData.files.add(
           MapEntry(
-            fileField,
-            await MultipartFile.fromFile(
-              file.path,
-            ),
+            fileKey,
+            await MultipartFile.fromFile(filePath),
           ),
         );
       }
 
-      if (fields != null) {
-        formData.fields.addAll(
-          fields.entries.map(
-            (e) => MapEntry(
-              e.key,
-              e.value.toString(),
-            ),
-          ),
+      final fields = body ?? extraFields ?? {};
+
+      for (final entry in fields.entries) {
+        formData.fields.add(
+          MapEntry(entry.key, entry.value.toString()),
         );
       }
 
-      return await _dio.post(
-        endpoint,
+      final response = await _dio.post(
+        path,
         data: formData,
+        options: Options(
+          contentType: 'multipart/form-data',
+        ),
       );
+
+      return _normalizeResponse(response);
     } on DioException catch (e) {
-      throw _handleError(e);
+      throw Exception(_handleDioError(e));
     }
   }
 
-  //===========================
-  // DOWNLOAD FILE
-  //===========================
+  // =============================================================
+  // ✅ ERROR HANDLER
+  // =============================================================
+  String _handleDioError(DioException error) {
+    if (error.response?.data is Map) {
+      final data = error.response?.data as Map;
 
-  Future<void> downloadFile({
-    required String url,
-    required String savePath,
-  }) async {
-    try {
-      await _dio.download(
-        url,
-        savePath,
-      );
-    } on DioException catch (e) {
-      throw _handleError(e);
+      return data['message']?.toString() ??
+          data['error']?.toString() ??
+          'Something went wrong';
     }
-  }
 
-  //===========================
-  // ERROR HANDLER
-  //===========================
-
-  String _handleError(
-    DioException error,
-  ) {
     switch (error.type) {
       case DioExceptionType.connectionTimeout:
         return 'Connection timeout';
 
       case DioExceptionType.sendTimeout:
-        return 'Request timeout';
+        return 'Send timeout';
 
       case DioExceptionType.receiveTimeout:
-        return 'Server timeout';
+        return 'Receive timeout';
 
       case DioExceptionType.connectionError:
-        return 'No internet connection';
+        return 'Connection error. Please check internet or backend server.';
 
       case DioExceptionType.cancel:
         return 'Request cancelled';
 
       case DioExceptionType.badResponse:
-        return error.response?.data?[
-                'message'] ??
-            'Something went wrong';
+        return 'Server error: ${error.response?.statusCode}';
+
+      case DioExceptionType.badCertificate:
+        return 'Bad SSL certificate';
+
+      case DioExceptionType.unknown:
+        return error.message ?? 'Unknown network error';
 
       default:
-        return 'Unexpected error occurred';
+        return error.message ?? 'Network error';
     }
   }
 }

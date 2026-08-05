@@ -17,8 +17,6 @@ import 'providers/theme_provider.dart';
 
 import 'core/storage/storage_helper.dart';
 
-import 'screens/splash/splash_screen.dart';
-
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -29,8 +27,7 @@ Future<void> main() async {
   );
 }
 
-class EventEaseProviderApp
-    extends StatelessWidget {
+class EventEaseProviderApp extends StatelessWidget {
   const EventEaseProviderApp({
     super.key,
   });
@@ -39,53 +36,47 @@ class EventEaseProviderApp
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(
+        ChangeNotifierProvider<AuthProvider>(
           create: (_) => AuthProvider(),
         ),
 
-        ChangeNotifierProvider(
+        ChangeNotifierProvider<ServiceProvider>(
           create: (_) => ServiceProvider(),
         ),
 
-        ChangeNotifierProvider(
+        ChangeNotifierProvider<BookingProvider>(
           create: (_) => BookingProvider(),
         ),
 
-        ChangeNotifierProvider(
+        ChangeNotifierProvider<OrderProvider>(
           create: (_) => OrderProvider(),
         ),
 
-        ChangeNotifierProvider(
+        ChangeNotifierProvider<PaymentProvider>(
           create: (_) => PaymentProvider(),
         ),
 
-        ChangeNotifierProvider(
+        ChangeNotifierProvider<ReviewProvider>(
           create: (_) => ReviewProvider(),
         ),
 
-        ChangeNotifierProvider(
-          create: (_) =>
-              NotificationProvider(),
+        ChangeNotifierProvider<NotificationProvider>(
+          create: (_) => NotificationProvider(),
         ),
 
-        ChangeNotifierProvider(
+        ChangeNotifierProvider<ChatProvider>(
           create: (_) => ChatProvider(),
         ),
 
-        ChangeNotifierProvider(
+        ChangeNotifierProvider<ThemeProvider>(
           create: (_) => ThemeProvider(),
         ),
 
-        ChangeNotifierProvider(
-          create: (_) =>
-              LanguageProvider(),
+        ChangeNotifierProvider<LanguageProvider>(
+          create: (_) => LanguageProvider(),
         ),
       ],
-      child:
-          Consumer2<
-            ThemeProvider,
-            LanguageProvider
-          >(
+      child: Consumer2<ThemeProvider, LanguageProvider>(
         builder: (
           context,
           themeProvider,
@@ -93,56 +84,48 @@ class EventEaseProviderApp
           child,
         ) {
           return MaterialApp(
-            debugShowCheckedModeBanner:
-                false,
+            debugShowCheckedModeBanner: false,
 
-            title:
-                'EventEase Provider',
+            title: 'EventEase Provider',
 
-            themeMode:
-                themeProvider.themeMode,
+            themeMode: themeProvider.themeMode,
 
             theme: ThemeData(
               useMaterial3: true,
-              colorSchemeSeed:
-                  Colors.blue,
-              brightness:
-                  Brightness.light,
+              colorSchemeSeed: Colors.blue,
+              brightness: Brightness.light,
             ),
 
             darkTheme: ThemeData(
               useMaterial3: true,
-              colorSchemeSeed:
-                  Colors.blue,
-              brightness:
-                  Brightness.dark,
+              colorSchemeSeed: Colors.blue,
+              brightness: Brightness.dark,
             ),
 
-            locale:
-                languageProvider.locale,
+            locale: languageProvider.locale,
 
-            supportedLocales:
-                LanguageProvider
-                    .supportedLocales,
-
-            localizationsDelegates: const [
-              GlobalMaterialLocalizations
-                  .delegate,
-              GlobalWidgetsLocalizations
-                  .delegate,
-              GlobalCupertinoLocalizations
-                  .delegate,
+            /// ✅ FIXED: no dependency on LanguageProvider.supportedLocales
+            supportedLocales: const [
+              Locale('en'),
+              Locale('hi'),
+              Locale('te'),
+              Locale('ta'),
+              Locale('kn'),
+              Locale('ml'),
+              Locale('mr'),
+              Locale('bn'),
             ],
 
-            initialRoute:
-                RouteConfig.splash,
+            localizationsDelegates: const [
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
 
-            onGenerateRoute:
-                RouteConfig
-                    .onGenerateRoute,
+            /// ✅ RouteConfig must contain splash + onGenerateRoute
+            initialRoute: RouteConfig.splash,
 
-            home:
-                const SplashScreen(),
+            onGenerateRoute: RouteConfig.onGenerateRoute,
           );
         },
       ),

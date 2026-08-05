@@ -132,16 +132,16 @@ class _ProfileScreenState
                                     provider?.profileImage !=
                                                 null &&
                                             provider!
-                                                .profileImage!
+                                                .profileImage
                                                 .isNotEmpty
                                         ? NetworkImage(
-                                            provider.profileImage!,
+                                            provider.profileImage,
                                           )
                                         : null,
                                 child: provider?.profileImage ==
                                             null ||
                                         provider!
-                                            .profileImage!
+                                            .profileImage
                                             .isEmpty
                                     ? Text(
                                         (provider?.fullName ??

@@ -6,20 +6,15 @@ class CustomersScreen extends StatefulWidget {
   const CustomersScreen({super.key});
 
   @override
-  State<CustomersScreen> createState() =>
-      _CustomersScreenState();
+  State<CustomersScreen> createState() => _CustomersScreenState();
 }
 
-class _CustomersScreenState
-    extends State<CustomersScreen> {
-  final TextEditingController
-      _searchController =
-      TextEditingController();
+class _CustomersScreenState extends State<CustomersScreen> {
+  final TextEditingController _searchController = TextEditingController();
 
   List<CustomerModel> _customers = [];
 
-  List<CustomerModel> _filteredCustomers =
-      [];
+  List<CustomerModel> _filteredCustomers = [];
 
   bool _isLoading = true;
 
@@ -52,26 +47,28 @@ class _CustomersScreenState
 
   void _searchCustomer(String value) {
     setState(() {
-      _filteredCustomers =
-          _customers.where((customer) {
-        final query =
-            value.toLowerCase();
+      final query = value.toLowerCase().trim();
 
-        return customer.fullName
-                .toLowerCase()
-                .contains(query) ||
-            customer.email
-                .toLowerCase()
-                .contains(query) ||
-            customer.phone
-                .toLowerCase()
-                .contains(query);
+      _filteredCustomers = _customers.where((customer) {
+        return customer.fullName.toLowerCase().contains(query) ||
+            customer.email.toLowerCase().contains(query) ||
+            customer.phone.toLowerCase().contains(query);
       }).toList();
     });
   }
 
   Future<void> _refresh() async {
     await _loadCustomers();
+  }
+
+  String _getInitial(String name) {
+    final trimmedName = name.trim();
+
+    if (trimmedName.isEmpty) {
+      return "?";
+    }
+
+    return trimmedName.substring(0, 1).toUpperCase();
   }
 
   @override
@@ -91,28 +88,19 @@ class _CustomersScreenState
       body: Column(
         children: [
           Padding(
-            padding:
-                const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(16),
             child: TextField(
-              controller:
-                  _searchController,
-              onChanged:
-                  _searchCustomer,
-              decoration:
-                  InputDecoration(
-                hintText:
-                    'Search customer...',
-                prefixIcon:
-                    const Icon(
+              controller: _searchController,
+              onChanged: _searchCustomer,
+              decoration: InputDecoration(
+                hintText: 'Search customer...',
+                prefixIcon: const Icon(
                   Icons.search,
                 ),
-                border:
-                    OutlineInputBorder(
-                  borderRadius:
-                      BorderRadius
-                          ..circular(
-                    12,
-                  ),
+
+                /// ✅ FIXED ERROR HERE
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
               ),
             ),
@@ -121,33 +109,22 @@ class _CustomersScreenState
           Expanded(
             child: _isLoading
                 ? const Center(
-                    child:
-                        CircularProgressIndicator(),
+                    child: CircularProgressIndicator(),
                   )
-                : _filteredCustomers
-                        .isEmpty
+                : _filteredCustomers.isEmpty
                     ? _buildEmptyState()
                     : RefreshIndicator(
-                        onRefresh:
-                            _refresh,
-                        child:
-                            ListView.builder(
-                          padding:
-                              const EdgeInsets
-                                  .all(
+                        onRefresh: _refresh,
+                        child: ListView.builder(
+                          padding: const EdgeInsets.all(
                             16,
                           ),
-                          itemCount:
-                              _filteredCustomers
-                                  .length,
-                          itemBuilder:
-                              (
+                          itemCount: _filteredCustomers.length,
+                          itemBuilder: (
                             context,
                             index,
                           ) {
-                            final customer =
-                                _filteredCustomers[
-                                    index];
+                            final customer = _filteredCustomers[index];
 
                             return _customerCard(
                               customer,
@@ -164,8 +141,7 @@ class _CustomersScreenState
   Widget _buildEmptyState() {
     return Center(
       child: Column(
-        mainAxisAlignment:
-            MainAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: const [
           Icon(
             Icons.people_outline,
@@ -188,35 +164,23 @@ class _CustomersScreenState
     CustomerModel customer,
   ) {
     return Card(
-      margin:
-          const EdgeInsets.only(
+      margin: const EdgeInsets.only(
         bottom: 12,
       ),
       child: Padding(
-        padding:
-            const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
         child: Column(
           children: [
             Row(
               children: [
                 CircleAvatar(
                   radius: 28,
-                  backgroundColor:
-                      Theme.of(context)
-                          .primaryColor,
+                  backgroundColor: Theme.of(context).primaryColor,
                   child: Text(
-                    customer.fullName
-                        .substring(
-                          0,
-                          1,
-                        )
-                        .toUpperCase(),
-                    style:
-                        const TextStyle(
-                      color:
-                          Colors.white,
-                      fontWeight:
-                          FontWeight.bold,
+                    _getInitial(customer.fullName),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
@@ -227,17 +191,13 @@ class _CustomersScreenState
 
                 Expanded(
                   child: Column(
-                    crossAxisAlignment:
-                        CrossAxisAlignment
-                            .start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         customer.fullName,
-                        style:
-                            const TextStyle(
+                        style: const TextStyle(
                           fontSize: 16,
-                          fontWeight:
-                              FontWeight.bold,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                       const SizedBox(
@@ -265,8 +225,7 @@ class _CustomersScreenState
 
             _infoRow(
               Icons.location_on,
-              customer.address ??
-                  'No Address',
+              customer.address ?? 'No Address',
             ),
 
             const SizedBox(height: 8),
@@ -283,8 +242,7 @@ class _CustomersScreenState
             Row(
               children: [
                 Expanded(
-                  child:
-                      OutlinedButton.icon(
+                  child: OutlinedButton.icon(
                     onPressed: () {
                       // Navigate Chat
                     },
@@ -302,8 +260,7 @@ class _CustomersScreenState
                 ),
 
                 Expanded(
-                  child:
-                      ElevatedButton.icon(
+                  child: ElevatedButton.icon(
                     onPressed: () {
                       // Customer Details
                     },

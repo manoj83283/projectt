@@ -70,115 +70,138 @@ class OrderModel {
   factory OrderModel.fromMap(
     Map<String, dynamic> map,
   ) {
+    final Map<String, dynamic> normalizedMap =
+        Map<String, dynamic>.from(map);
+
+    final dynamic customer = normalizedMap['customer'];
+    final dynamic user = normalizedMap['user'];
+
+    final String resolvedCustomerId =
+        normalizedMap['customerId']?.toString() ??
+            normalizedMap['userId']?.toString() ??
+            (customer is Map ? customer['_id']?.toString() : null) ??
+            (customer is Map ? customer['id']?.toString() : null) ??
+            (user is Map ? user['_id']?.toString() : null) ??
+            (user is Map ? user['id']?.toString() : null) ??
+            '';
+
+    final String resolvedCustomerName =
+        normalizedMap['customerName']?.toString() ??
+            (customer is Map ? customer['name']?.toString() : null) ??
+            (customer is Map ? customer['fullName']?.toString() : null) ??
+            (user is Map ? user['name']?.toString() : null) ??
+            (user is Map ? user['fullName']?.toString() : null) ??
+            '';
+
+    final String resolvedCustomerPhone =
+        normalizedMap['customerPhone']?.toString() ??
+            normalizedMap['phone']?.toString() ??
+            normalizedMap['mobile']?.toString() ??
+            (customer is Map ? customer['phone']?.toString() : null) ??
+            (customer is Map ? customer['mobile']?.toString() : null) ??
+            (user is Map ? user['phone']?.toString() : null) ??
+            (user is Map ? user['mobile']?.toString() : null) ??
+            '';
+
+    final dynamic rawItems =
+        normalizedMap['items'] ??
+            normalizedMap['orderItems'] ??
+            normalizedMap['products'] ??
+            [];
+
     return OrderModel(
-      id: map['_id']?.toString() ??
-          map['id']?.toString() ??
+      id: normalizedMap['_id']?.toString() ??
+          normalizedMap['id']?.toString() ??
           '',
-
-      orderNumber:
-          map['orderNumber'] ?? '',
-
-      customerId:
-          map['customerId']?.toString() ?? '',
-
-      customerName:
-          map['customerName'] ?? '',
-
-      customerPhone:
-          map['customerPhone'] ?? '',
-
-      items: map['items'] != null
-          ? List<OrderItem>.from(
-              (map['items'] as List).map(
-                (e) => OrderItem.fromMap(e),
-              ),
-            )
+      orderNumber: normalizedMap['orderNumber']?.toString() ??
+          normalizedMap['orderNo']?.toString() ??
+          normalizedMap['invoiceNumber']?.toString() ??
+          '',
+      customerId: resolvedCustomerId,
+      customerName: resolvedCustomerName,
+      customerPhone: resolvedCustomerPhone,
+      items: rawItems is List
+          ? rawItems
+              .map(
+                (e) => OrderItem.fromMap(
+                  Map<String, dynamic>.from(e as Map),
+                ),
+              )
+              .toList()
           : [],
-
-      subtotal:
-          (map['subtotal'] as num?)
-                  ?.toDouble() ??
-              0,
-
-      gst:
-          (map['gst'] as num?)
-                  ?.toDouble() ??
-              0,
-
-      deliveryFee:
-          (map['deliveryFee'] as num?)
-                  ?.toDouble() ??
-              0,
-
-      discount:
-          (map['discount'] as num?)
-                  ?.toDouble() ??
-              0,
-
-      totalAmount:
-          (map['totalAmount'] as num?)
-                  ?.toDouble() ??
-              0,
-
-      orderStatus:
-          map['orderStatus'] ??
-              'pending',
-
-      paymentStatus:
-          map['paymentStatus'] ??
-              'pending',
-
+      subtotal: _toDouble(
+        normalizedMap['subtotal'] ??
+            normalizedMap['subTotal'] ??
+            normalizedMap['itemsTotal'],
+      ),
+      gst: _toDouble(
+        normalizedMap['gst'] ??
+            normalizedMap['tax'] ??
+            normalizedMap['taxAmount'],
+      ),
+      deliveryFee: _toDouble(
+        normalizedMap['deliveryFee'] ??
+            normalizedMap['deliveryCharge'] ??
+            normalizedMap['shippingFee'],
+      ),
+      discount: _toDouble(
+        normalizedMap['discount'] ??
+            normalizedMap['discountAmount'],
+      ),
+      totalAmount: _toDouble(
+        normalizedMap['totalAmount'] ??
+            normalizedMap['amount'] ??
+            normalizedMap['grandTotal'] ??
+            normalizedMap['total'],
+      ),
+      orderStatus: normalizedMap['orderStatus']?.toString() ??
+          normalizedMap['status']?.toString() ??
+          'pending',
+      paymentStatus: normalizedMap['paymentStatus']?.toString() ??
+          normalizedMap['payment']?.toString() ??
+          'pending',
       paymentMethod:
-          map['paymentMethod'] ?? '',
-
-      paymentId:
-          map['paymentId'],
-
-      address:
-          map['address'],
-
-      latitude:
-          (map['latitude'] as num?)
-              ?.toDouble(),
-
-      longitude:
-          (map['longitude'] as num?)
-              ?.toDouble(),
-
-      notes:
-          map['notes'],
-
-      createdAt:
-          map['createdAt'] != null
-              ? DateTime.tryParse(
-                  map['createdAt'],
-                )
-              : null,
-
-      updatedAt:
-          map['updatedAt'] != null
-              ? DateTime.tryParse(
-                  map['updatedAt'],
-                )
-              : null,
+          normalizedMap['paymentMethod']?.toString() ?? '',
+      paymentId: normalizedMap['paymentId']?.toString() ??
+          normalizedMap['transactionId']?.toString(),
+      address: normalizedMap['address']?.toString() ??
+          normalizedMap['deliveryAddress']?.toString(),
+      latitude: _toNullableDouble(
+        normalizedMap['latitude'] ??
+            normalizedMap['lat'],
+      ),
+      longitude: _toNullableDouble(
+        normalizedMap['longitude'] ??
+            normalizedMap['lng'] ??
+            normalizedMap['long'],
+      ),
+      notes: normalizedMap['notes']?.toString() ??
+          normalizedMap['remarks']?.toString(),
+      createdAt: _toDateTime(
+        normalizedMap['createdAt'],
+      ),
+      updatedAt: _toDateTime(
+        normalizedMap['updatedAt'],
+      ),
     );
   }
 
   Map<String, dynamic> toMap() {
     return {
       '_id': id,
+      'id': id,
       'orderNumber': orderNumber,
       'customerId': customerId,
       'customerName': customerName,
       'customerPhone': customerPhone,
-      'items':
-          items.map((e) => e.toMap()).toList(),
+      'items': items.map((e) => e.toMap()).toList(),
       'subtotal': subtotal,
       'gst': gst,
       'deliveryFee': deliveryFee,
       'discount': discount,
       'totalAmount': totalAmount,
       'orderStatus': orderStatus,
+      'status': orderStatus,
       'paymentStatus': paymentStatus,
       'paymentMethod': paymentMethod,
       'paymentId': paymentId,
@@ -186,22 +209,24 @@ class OrderModel {
       'latitude': latitude,
       'longitude': longitude,
       'notes': notes,
-      'createdAt':
-          createdAt?.toIso8601String(),
-      'updatedAt':
-          updatedAt?.toIso8601String(),
+      'createdAt': createdAt?.toIso8601String(),
+      'updatedAt': updatedAt?.toIso8601String(),
     };
   }
 
   factory OrderModel.fromJson(
     String source,
-  ) =>
-      OrderModel.fromMap(
-        jsonDecode(source),
-      );
+  ) {
+    return OrderModel.fromMap(
+      jsonDecode(source) as Map<String, dynamic>,
+    );
+  }
 
-  String toJson() =>
-      jsonEncode(toMap());
+  String toJson() {
+    return jsonEncode(
+      toMap(),
+    );
+  }
 
   OrderModel copyWith({
     String? id,
@@ -216,6 +241,7 @@ class OrderModel {
     double? discount,
     double? totalAmount,
     String? orderStatus,
+    String? status,
     String? paymentStatus,
     String? paymentMethod,
     String? paymentId,
@@ -228,85 +254,160 @@ class OrderModel {
   }) {
     return OrderModel(
       id: id ?? this.id,
-      orderNumber:
-          orderNumber ?? this.orderNumber,
-      customerId:
-          customerId ?? this.customerId,
-      customerName:
-          customerName ?? this.customerName,
-      customerPhone:
-          customerPhone ?? this.customerPhone,
+      orderNumber: orderNumber ?? this.orderNumber,
+      customerId: customerId ?? this.customerId,
+      customerName: customerName ?? this.customerName,
+      customerPhone: customerPhone ?? this.customerPhone,
       items: items ?? this.items,
       subtotal: subtotal ?? this.subtotal,
       gst: gst ?? this.gst,
-      deliveryFee:
-          deliveryFee ?? this.deliveryFee,
+      deliveryFee: deliveryFee ?? this.deliveryFee,
       discount: discount ?? this.discount,
-      totalAmount:
-          totalAmount ?? this.totalAmount,
-      orderStatus:
-          orderStatus ?? this.orderStatus,
-      paymentStatus:
-          paymentStatus ??
-              this.paymentStatus,
-      paymentMethod:
-          paymentMethod ??
-              this.paymentMethod,
-      paymentId:
-          paymentId ?? this.paymentId,
+      totalAmount: totalAmount ?? this.totalAmount,
+      orderStatus: orderStatus ?? status ?? this.orderStatus,
+      paymentStatus: paymentStatus ?? this.paymentStatus,
+      paymentMethod: paymentMethod ?? this.paymentMethod,
+      paymentId: paymentId ?? this.paymentId,
       address: address ?? this.address,
-      latitude:
-          latitude ?? this.latitude,
-      longitude:
-          longitude ?? this.longitude,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
       notes: notes ?? this.notes,
-      createdAt:
-          createdAt ?? this.createdAt,
-      updatedAt:
-          updatedAt ?? this.updatedAt,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
     );
   }
 
-  bool get isPending =>
-      orderStatus == 'pending';
+  // ==========================================
+  // COMPATIBILITY GETTERS
+  // ==========================================
+
+  String get status => orderStatus;
+
+  String get displayStatus => orderStatus;
+
+  String get displayPaymentStatus => paymentStatus;
+
+  bool get isPending => orderStatus == 'pending';
 
   bool get isAccepted =>
-      orderStatus == 'accepted';
+      orderStatus == 'accepted' ||
+      orderStatus == 'confirmed';
 
   bool get isPreparing =>
+      orderStatus == 'preparing' ||
+      orderStatus == 'processing';
+
+  bool get isProcessing =>
+      orderStatus == 'processing' ||
       orderStatus == 'preparing';
 
   bool get isOutForDelivery =>
+      orderStatus == 'out_for_delivery' ||
+      orderStatus == 'shipped';
+
+  bool get isShipped =>
+      orderStatus == 'shipped' ||
       orderStatus == 'out_for_delivery';
 
   bool get isDelivered =>
+      orderStatus == 'delivered' ||
+      orderStatus == 'completed';
+
+  bool get isCompleted =>
+      orderStatus == 'completed' ||
       orderStatus == 'delivered';
 
-  bool get isCancelled =>
-      orderStatus == 'cancelled';
+  bool get isCancelled => orderStatus == 'cancelled';
+
+  bool get isRejected => orderStatus == 'rejected';
 
   bool get isPaid =>
-      paymentStatus == 'paid';
+      paymentStatus == 'paid' ||
+      paymentStatus == 'success' ||
+      paymentStatus == 'completed';
 
-  int get totalItems =>
-      items.fold(
-        0,
-        (sum, item) =>
-            sum + item.quantity,
-      );
+  bool get isPaymentPending =>
+      paymentStatus == 'pending';
+
+  bool get isPaymentFailed =>
+      paymentStatus == 'failed';
+
+  bool get isRefunded =>
+      paymentStatus == 'refunded';
+
+  int get totalItems {
+    return items.fold(
+      0,
+      (sum, item) => sum + item.quantity,
+    );
+  }
+
+  bool get hasItems => items.isNotEmpty;
+
+  bool get hasAddress =>
+      address != null && address!.trim().isNotEmpty;
+
+  bool get hasLocation =>
+      latitude != null && longitude != null;
+
+  static double _toDouble(
+    dynamic value,
+  ) {
+    if (value == null) {
+      return 0;
+    }
+
+    if (value is num) {
+      return value.toDouble();
+    }
+
+    return double.tryParse(value.toString()) ?? 0;
+  }
+
+  static double? _toNullableDouble(
+    dynamic value,
+  ) {
+    if (value == null) {
+      return null;
+    }
+
+    if (value is num) {
+      return value.toDouble();
+    }
+
+    return double.tryParse(value.toString());
+  }
+
+  static DateTime? _toDateTime(
+    dynamic value,
+  ) {
+    if (value == null) {
+      return null;
+    }
+
+    if (value is DateTime) {
+      return value;
+    }
+
+    return DateTime.tryParse(
+      value.toString(),
+    );
+  }
 
   @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is OrderModel &&
-          other.id == id;
+  bool operator ==(
+    Object other,
+  ) {
+    return identical(this, other) ||
+        other is OrderModel && other.id == id;
+  }
 
   @override
   int get hashCode => id.hashCode;
 
   @override
   String toString() {
-    return 'OrderModel(id: $id, orderNumber: $orderNumber)';
+    return 'OrderModel(id: $id, orderNumber: $orderNumber, status: $orderStatus)';
   }
 }
 
@@ -328,27 +429,52 @@ class OrderItem {
     this.image,
   });
 
+  factory OrderItem.empty() {
+    return const OrderItem(
+      id: '',
+      name: '',
+      quantity: 0,
+      price: 0,
+      totalPrice: 0,
+    );
+  }
+
   factory OrderItem.fromMap(
     Map<String, dynamic> map,
   ) {
     return OrderItem(
-      id: map['id']?.toString() ?? '',
-      name: map['name'] ?? '',
-      image: map['image'],
-      quantity: map['quantity'] ?? 0,
-      price:
-          (map['price'] as num?)
-                  ?.toDouble() ??
-              0,
-      totalPrice:
-          (map['totalPrice'] as num?)
-                  ?.toDouble() ??
-              0,
+      id: map['_id']?.toString() ??
+          map['id']?.toString() ??
+          map['productId']?.toString() ??
+          map['serviceId']?.toString() ??
+          '',
+      name: map['name']?.toString() ??
+          map['title']?.toString() ??
+          map['productName']?.toString() ??
+          map['serviceName']?.toString() ??
+          '',
+      image: map['image']?.toString() ??
+          map['imageUrl']?.toString() ??
+          map['thumbnail']?.toString(),
+      quantity: _toInt(
+        map['quantity'],
+      ),
+      price: _toDouble(
+        map['price'] ??
+            map['unitPrice'] ??
+            map['amount'],
+      ),
+      totalPrice: _toDouble(
+        map['totalPrice'] ??
+            map['total'] ??
+            map['subtotal'],
+      ),
     );
   }
 
   Map<String, dynamic> toMap() {
     return {
+      '_id': id,
       'id': id,
       'name': name,
       'image': image,
@@ -356,5 +482,85 @@ class OrderItem {
       'price': price,
       'totalPrice': totalPrice,
     };
+  }
+
+  factory OrderItem.fromJson(
+    String source,
+  ) {
+    return OrderItem.fromMap(
+      jsonDecode(source) as Map<String, dynamic>,
+    );
+  }
+
+  String toJson() {
+    return jsonEncode(
+      toMap(),
+    );
+  }
+
+  OrderItem copyWith({
+    String? id,
+    String? name,
+    String? image,
+    int? quantity,
+    double? price,
+    double? totalPrice,
+  }) {
+    return OrderItem(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      image: image ?? this.image,
+      quantity: quantity ?? this.quantity,
+      price: price ?? this.price,
+      totalPrice: totalPrice ?? this.totalPrice,
+    );
+  }
+
+  static int _toInt(
+    dynamic value,
+  ) {
+    if (value == null) {
+      return 0;
+    }
+
+    if (value is int) {
+      return value;
+    }
+
+    if (value is num) {
+      return value.toInt();
+    }
+
+    return int.tryParse(value.toString()) ?? 0;
+  }
+
+  static double _toDouble(
+    dynamic value,
+  ) {
+    if (value == null) {
+      return 0;
+    }
+
+    if (value is num) {
+      return value.toDouble();
+    }
+
+    return double.tryParse(value.toString()) ?? 0;
+  }
+
+  @override
+  bool operator ==(
+    Object other,
+  ) {
+    return identical(this, other) ||
+        other is OrderItem && other.id == id;
+  }
+
+  @override
+  int get hashCode => id.hashCode;
+
+  @override
+  String toString() {
+    return 'OrderItem(id: $id, name: $name, quantity: $quantity)';
   }
 }

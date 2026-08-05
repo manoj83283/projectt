@@ -55,6 +55,41 @@ class ServiceModel {
     this.updatedAt,
   });
 
+  // =============================================================
+  // ✅ SAFE ALIAS GETTERS FOR EXISTING SCREENS
+  // =============================================================
+
+  /// ✅ Fixes: service.name
+  String get name => title;
+
+  /// ✅ Common backend alias
+  String get serviceName => title;
+
+  /// ✅ First image fallback
+  String get imageUrl => images.isNotEmpty ? images.first : '';
+
+  /// ✅ Category alias
+  String get category => categoryName;
+
+  /// ✅ Location alias
+  String get location {
+    if (address.isNotEmpty) return address;
+
+    final parts = [
+      city,
+      state,
+    ].where((e) => e.trim().isNotEmpty).toList();
+
+    return parts.join(', ');
+  }
+
+  /// ✅ Availability alias
+  bool get isAvailable => isActive;
+
+  // =============================================================
+  // ✅ EMPTY MODEL
+  // =============================================================
+
   factory ServiceModel.empty() {
     return const ServiceModel(
       id: '',
@@ -79,106 +114,195 @@ class ServiceModel {
     );
   }
 
+  // =============================================================
+  // ✅ JSON PARSER
+  // =============================================================
+
   factory ServiceModel.fromJson(
     Map<String, dynamic> json,
   ) {
+    final provider = json['provider'];
+
+    String parsedProviderId = '';
+    String parsedProviderName = '';
+
+    if (provider is Map<String, dynamic>) {
+      parsedProviderId = provider['_id']?.toString() ??
+          provider['id']?.toString() ??
+          '';
+
+      parsedProviderName = provider['name']?.toString() ??
+          provider['firstName']?.toString() ??
+          provider['providerName']?.toString() ??
+          '';
+    } else {
+      parsedProviderId = json['providerId']?.toString() ??
+          json['provider']?.toString() ??
+          '';
+
+      parsedProviderName =
+          json['providerName']?.toString() ?? '';
+    }
+
+    final dynamic rawImages = json['images'];
+
+    List<String> parsedImages = [];
+
+    if (rawImages is List) {
+      parsedImages = rawImages
+          .map((e) => e.toString())
+          .where((e) => e.trim().isNotEmpty)
+          .toList();
+    }
+
+    final imageUrl = json['imageUrl']?.toString() ??
+        json['image']?.toString() ??
+        '';
+
+    if (parsedImages.isEmpty && imageUrl.isNotEmpty) {
+      parsedImages = [imageUrl];
+    }
+
     return ServiceModel(
       id: json['_id']?.toString() ??
           json['id']?.toString() ??
           '',
-      providerId:
-          json['providerId']?.toString() ??
-              '',
-      providerName: json['providerName']
-              ?.toString() ??
+
+      providerId: parsedProviderId,
+
+      providerName: parsedProviderName,
+
+      categoryId: json['categoryId']?.toString() ??
+          json['category']?.toString() ??
           '',
-      categoryId:
-          json['categoryId']?.toString() ??
-              '',
-      categoryName: json['categoryName']
-              ?.toString() ??
+
+      categoryName: json['categoryName']?.toString() ??
+          json['category']?.toString() ??
           '',
-      title:
-          json['title']?.toString() ?? '',
+
+      /// ✅ Supports both old title and backend name
+      title: json['title']?.toString() ??
+          json['name']?.toString() ??
+          '',
+
       description:
-          json['description']?.toString() ??
-              '',
-      price: (json['price'] ?? 0)
-          .toDouble(),
-      discountedPrice:
-          (json['discountedPrice'] ?? 0)
-              .toDouble(),
-      rating: (json['rating'] ?? 0)
-          .toDouble(),
-      reviewCount:
-          json['reviewCount'] ?? 0,
-      images:
-          json['images'] != null
-              ? List<String>.from(
-                  json['images'],
-                )
-              : [],
-      city:
-          json['city']?.toString() ?? '',
-      state:
-          json['state']?.toString() ?? '',
-      address:
-          json['address']?.toString() ??
-              '',
-      isActive:
-          json['isActive'] ?? true,
-      isFeatured:
-          json['isFeatured'] ?? false,
-      isVerified:
-          json['isVerified'] ?? false,
-      durationInHours:
-          json['durationInHours'] ?? 1,
-      createdAt:
-          json['createdAt'] != null
-              ? DateTime.tryParse(
-                  json['createdAt']
-                      .toString(),
-                )
-              : null,
-      updatedAt:
-          json['updatedAt'] != null
-              ? DateTime.tryParse(
-                  json['updatedAt']
-                      .toString(),
-                )
-              : null,
+          json['description']?.toString() ?? '',
+
+      /// ✅ Supports price, pricePerDay, pricePerHour, basePrice
+      price: _toDouble(
+        json['price'] ??
+            json['pricePerDay'] ??
+            json['pricePerHour'] ??
+            json['basePrice'],
+      ),
+
+      discountedPrice: _toDouble(
+        json['discountedPrice'],
+      ),
+
+      rating: _toDouble(
+        json['rating'],
+      ),
+
+      reviewCount: _toInt(
+        json['reviewCount'] ??
+            json['totalReviews'],
+      ),
+
+      images: parsedImages,
+
+      city: json['city']?.toString() ?? '',
+
+      state: json['state']?.toString() ?? '',
+
+      address: json['address']?.toString() ??
+          json['locationName']?.toString() ??
+          json['location']?.toString() ??
+          '',
+
+      isActive: _toBool(
+        json['isActive'] ??
+            json['isAvailable'],
+        defaultValue: true,
+      ),
+
+      isFeatured: _toBool(
+        json['isFeatured'] ??
+            json['isPopular'] ??
+            json['isRecommended'],
+      ),
+
+      isVerified: _toBool(
+        json['isVerified'],
+      ),
+
+      durationInHours: _toInt(
+        json['durationInHours'] ??
+            json['hours'] ??
+            1,
+      ),
+
+      createdAt: _toDateTime(
+        json['createdAt'],
+      ),
+
+      updatedAt: _toDateTime(
+        json['updatedAt'],
+      ),
     );
   }
+
+  // =============================================================
+  // ✅ TO JSON
+  // =============================================================
 
   Map<String, dynamic> toJson() {
     return {
       '_id': id,
+      'id': id,
+
       'providerId': providerId,
       'providerName': providerName,
+
       'categoryId': categoryId,
       'categoryName': categoryName,
+      'category': categoryName,
+
       'title': title,
+      'name': title,
+
       'description': description,
+
       'price': price,
-      'discountedPrice':
-          discountedPrice,
+      'pricePerDay': price,
+      'discountedPrice': discountedPrice,
+
       'rating': rating,
       'reviewCount': reviewCount,
+
       'images': images,
+      'imageUrl': imageUrl,
+
       'city': city,
       'state': state,
       'address': address,
+      'location': address,
+
       'isActive': isActive,
+      'isAvailable': isActive,
       'isFeatured': isFeatured,
       'isVerified': isVerified,
-      'durationInHours':
-          durationInHours,
-      'createdAt':
-          createdAt?.toIso8601String(),
-      'updatedAt':
-          updatedAt?.toIso8601String(),
+
+      'durationInHours': durationInHours,
+
+      'createdAt': createdAt?.toIso8601String(),
+      'updatedAt': updatedAt?.toIso8601String(),
     };
   }
+
+  // =============================================================
+  // ✅ COPY WITH
+  // =============================================================
 
   ServiceModel copyWith({
     String? id,
@@ -205,72 +329,106 @@ class ServiceModel {
   }) {
     return ServiceModel(
       id: id ?? this.id,
-      providerId:
-          providerId ??
-              this.providerId,
-      providerName:
-          providerName ??
-              this.providerName,
-      categoryId:
-          categoryId ??
-              this.categoryId,
-      categoryName:
-          categoryName ??
-              this.categoryName,
+      providerId: providerId ?? this.providerId,
+      providerName: providerName ?? this.providerName,
+      categoryId: categoryId ?? this.categoryId,
+      categoryName: categoryName ?? this.categoryName,
       title: title ?? this.title,
-      description:
-          description ??
-              this.description,
+      description: description ?? this.description,
       price: price ?? this.price,
       discountedPrice:
-          discountedPrice ??
-              this.discountedPrice,
+          discountedPrice ?? this.discountedPrice,
       rating: rating ?? this.rating,
-      reviewCount:
-          reviewCount ??
-              this.reviewCount,
+      reviewCount: reviewCount ?? this.reviewCount,
       images: images ?? this.images,
       city: city ?? this.city,
       state: state ?? this.state,
-      address:
-          address ?? this.address,
-      isActive:
-          isActive ?? this.isActive,
-      isFeatured:
-          isFeatured ??
-              this.isFeatured,
-      isVerified:
-          isVerified ??
-              this.isVerified,
+      address: address ?? this.address,
+      isActive: isActive ?? this.isActive,
+      isFeatured: isFeatured ?? this.isFeatured,
+      isVerified: isVerified ?? this.isVerified,
       durationInHours:
-          durationInHours ??
-              this.durationInHours,
-      createdAt:
-          createdAt ??
-              this.createdAt,
-      updatedAt:
-          updatedAt ??
-              this.updatedAt,
+          durationInHours ?? this.durationInHours,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
     );
   }
 
-  bool get hasDiscount =>
-      discountedPrice > 0 &&
-      discountedPrice < price;
+  // =============================================================
+  // ✅ CALCULATED FIELDS
+  // =============================================================
 
-  double get finalPrice =>
-      hasDiscount
-          ? discountedPrice
-          : price;
+  bool get hasDiscount {
+    return discountedPrice > 0 &&
+        discountedPrice < price;
+  }
+
+  double get finalPrice {
+    return hasDiscount ? discountedPrice : price;
+  }
 
   double get discountPercentage {
-    if (!hasDiscount) return 0;
+    if (!hasDiscount || price <= 0) return 0;
 
-    return ((price -
-                discountedPrice) /
-            price) *
-        100;
+    return ((price - discountedPrice) / price) * 100;
   }
+
+  // =============================================================
+  // ✅ SAFE PARSERS
+  // =============================================================
+
+  static double _toDouble(dynamic value) {
+    if (value == null) return 0;
+
+    if (value is double) return value;
+
+    if (value is int) return value.toDouble();
+
+    if (value is num) return value.toDouble();
+
+    return double.tryParse(value.toString()) ?? 0;
+  }
+
+  static int _toInt(dynamic value) {
+    if (value == null) return 0;
+
+    if (value is int) return value;
+
+    if (value is double) return value.toInt();
+
+    if (value is num) return value.toInt();
+
+    return int.tryParse(value.toString()) ?? 0;
+  }
+
+  static bool _toBool(
+    dynamic value, {
+    bool defaultValue = false,
+  }) {
+    if (value == null) return defaultValue;
+
+    if (value is bool) return value;
+
+    final text = value.toString().toLowerCase();
+
+    return text == 'true' ||
+        text == '1' ||
+        text == 'yes';
+  }
+
+  static DateTime? _toDateTime(dynamic value) {
+    if (value == null) return null;
+
+    if (value is DateTime) return value;
+
+    return DateTime.tryParse(
+      value.toString(),
+    );
+  }
+
+  // =============================================================
+  // ✅ OVERRIDES
+  // =============================================================
 
   @override
   String toString() {
@@ -280,8 +438,7 @@ class ServiceModel {
   @override
   bool operator ==(Object other) {
     return identical(this, other) ||
-        other is ServiceModel &&
-            other.id == id;
+        other is ServiceModel && other.id == id;
   }
 
   @override

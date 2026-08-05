@@ -4,11 +4,9 @@ import '../services/booking_service.dart';
 class BookingRepository {
   BookingRepository._();
 
-  static final BookingRepository instance =
-      BookingRepository._();
+  static final BookingRepository instance = BookingRepository._();
 
-  final BookingService _bookingService =
-      BookingService.instance;
+  final BookingService _bookingService = BookingService.instance;
 
   // ==========================================
   // CREATE BOOKING
@@ -16,24 +14,34 @@ class BookingRepository {
 
   Future<BookingModel> createBooking({
     required String serviceId,
-    required DateTime bookingDate,
-    required String bookingTime,
-    required String address,
-    required double latitude,
-    required double longitude,
+    DateTime? bookingDate,
+    String? bookingTime,
+    double? amount,
+    String? providerId,
+    String? address,
+    double? latitude,
+    double? longitude,
     String? notes,
     String? couponCode,
+    Map<String, dynamic>? data,
   }) async {
-    return await _bookingService.createBooking(
-      serviceId: serviceId,
-      bookingDate: bookingDate,
-      bookingTime: bookingTime,
-      address: address,
-      latitude: latitude,
-      longitude: longitude,
-      notes: notes,
-      couponCode: couponCode,
-    );
+    try {
+      return await _bookingService.createBooking(
+        serviceId: serviceId,
+        bookingDate: bookingDate,
+        bookingTime: bookingTime,
+        amount: amount,
+        providerId: providerId,
+        address: address,
+        latitude: latitude,
+        longitude: longitude,
+        notes: notes,
+        couponCode: couponCode,
+        data: data,
+      );
+    } catch (_) {
+      rethrow;
+    }
   }
 
   // ==========================================
@@ -44,96 +52,97 @@ class BookingRepository {
     int page = 1,
     int limit = 20,
   }) async {
-    return await _bookingService.getMyBookings(
-      page: page,
-      limit: limit,
-    );
+    try {
+      return await _bookingService.getMyBookings(
+        page: page,
+        limit: limit,
+      );
+    } catch (_) {
+      rethrow;
+    }
   }
 
   // ==========================================
-  // GET BOOKING BY ID
+  // BOOKING DETAILS
   // ==========================================
 
   Future<BookingModel> getBookingById(
     String bookingId,
   ) async {
-    return await _bookingService.getBookingById(
-      bookingId,
-    );
+    try {
+      return await _bookingService.getBookingById(
+        bookingId,
+      );
+    } catch (_) {
+      rethrow;
+    }
   }
 
   // ==========================================
   // PROVIDER BOOKINGS
   // ==========================================
 
-  Future<List<BookingModel>>
-      getProviderBookings({
+  Future<List<BookingModel>> getProviderBookings({
     int page = 1,
     int limit = 20,
   }) async {
-    return await _bookingService
-        .getProviderBookings(
-      page: page,
-      limit: limit,
-    );
+    try {
+      return await _bookingService.getProviderBookings(
+        page: page,
+        limit: limit,
+      );
+    } catch (_) {
+      rethrow;
+    }
+  }
+
+  // ==========================================
+  // BOOKING HISTORY
+  // ==========================================
+
+  Future<List<BookingModel>> getBookingHistory() async {
+    try {
+      return await _bookingService.getBookingHistory();
+    } catch (_) {
+      rethrow;
+    }
+  }
+
+  // ==========================================
+  // UPDATE BOOKING STATUS
+  // ==========================================
+
+  Future<BookingModel> updateBookingStatus({
+    required String bookingId,
+    required String status,
+  }) async {
+    try {
+      return await _bookingService.updateBookingStatus(
+        bookingId: bookingId,
+        status: status,
+      );
+    } catch (_) {
+      rethrow;
+    }
   }
 
   // ==========================================
   // UPDATE STATUS
+  // Backward compatibility for BookingProvider
   // ==========================================
 
   Future<BookingModel> updateStatus({
     required String bookingId,
     required String status,
   }) async {
-    return await _bookingService.updateStatus(
-      bookingId: bookingId,
-      status: status,
-    );
-  }
-
-  // ==========================================
-  // ACCEPT BOOKING
-  // ==========================================
-
-  Future<bool> acceptBooking(
-    String bookingId,
-  ) async {
-    return await _bookingService
-        .acceptBooking(bookingId);
-  }
-
-  // ==========================================
-  // CONFIRM BOOKING
-  // ==========================================
-
-  Future<bool> confirmBooking(
-    String bookingId,
-  ) async {
-    return await _bookingService
-        .confirmBooking(bookingId);
-  }
-
-  // ==========================================
-  // START BOOKING
-  // ==========================================
-
-  Future<bool> startBooking(
-    String bookingId,
-  ) async {
-    return await _bookingService
-        .startBooking(bookingId);
-  }
-
-  // ==========================================
-  // COMPLETE BOOKING
-  // ==========================================
-
-  Future<bool> completeBooking(
-    String bookingId,
-  ) async {
-    return await _bookingService
-        .completeBooking(bookingId);
+    try {
+      return await updateBookingStatus(
+        bookingId: bookingId,
+        status: status,
+      );
+    } catch (_) {
+      rethrow;
+    }
   }
 
   // ==========================================
@@ -144,10 +153,100 @@ class BookingRepository {
     required String bookingId,
     String? reason,
   }) async {
-    return await _bookingService.cancelBooking(
-      bookingId: bookingId,
-      reason: reason,
-    );
+    try {
+      return await _bookingService.cancelBooking(
+        bookingId: bookingId,
+        reason: reason,
+      );
+    } catch (_) {
+      rethrow;
+    }
+  }
+
+  // ==========================================
+  // ACCEPT BOOKING
+  // ==========================================
+
+  Future<bool> acceptBooking(
+    String bookingId,
+  ) async {
+    try {
+      return await _bookingService.acceptBooking(
+        bookingId,
+      );
+    } catch (_) {
+      rethrow;
+    }
+  }
+
+  // ==========================================
+  // CONFIRM BOOKING
+  // ==========================================
+
+  Future<bool> confirmBooking(
+    String bookingId,
+  ) async {
+    try {
+      return await _bookingService.confirmBooking(
+        bookingId,
+      );
+    } catch (_) {
+      rethrow;
+    }
+  }
+
+  // ==========================================
+  // START BOOKING
+  // ==========================================
+
+  Future<bool> startBooking(
+    String bookingId,
+  ) async {
+    try {
+      return await _bookingService.startBooking(
+        bookingId,
+      );
+    } catch (_) {
+      rethrow;
+    }
+  }
+
+  // ==========================================
+  // COMPLETE BOOKING
+  // ==========================================
+
+  Future<bool> completeBooking(
+    String bookingId,
+  ) async {
+    try {
+      return await _bookingService.completeBooking(
+        bookingId,
+      );
+    } catch (_) {
+      rethrow;
+    }
+  }
+
+  // ==========================================
+  // RESCHEDULE BOOKING
+  // ==========================================
+
+  Future<bool> rescheduleBooking({
+    required String bookingId,
+    DateTime? bookingDate,
+    String? bookingTime,
+    String? reason,
+  }) async {
+    try {
+      return await _bookingService.rescheduleBooking(
+        bookingId: bookingId,
+        bookingDate: bookingDate,
+        bookingTime: bookingTime,
+        reason: reason,
+      );
+    } catch (_) {
+      rethrow;
+    }
   }
 
   // ==========================================
@@ -157,19 +256,13 @@ class BookingRepository {
   Future<Map<String, dynamic>> trackBooking(
     String bookingId,
   ) async {
-    return await _bookingService.trackBooking(
-      bookingId,
-    );
-  }
-
-  // ==========================================
-  // BOOKING HISTORY
-  // ==========================================
-
-  Future<List<BookingModel>>
-      getBookingHistory() async {
-    return await _bookingService
-        .getBookingHistory();
+    try {
+      return await _bookingService.trackBooking(
+        bookingId: bookingId,
+      );
+    } catch (_) {
+      rethrow;
+    }
   }
 
   // ==========================================
@@ -179,7 +272,12 @@ class BookingRepository {
   Future<bool> deleteBooking(
     String bookingId,
   ) async {
-    return await _bookingService
-        .deleteBooking(bookingId);
+    try {
+      return await _bookingService.deleteBooking(
+        bookingId,
+      );
+    } catch (_) {
+      rethrow;
+    }
   }
 }

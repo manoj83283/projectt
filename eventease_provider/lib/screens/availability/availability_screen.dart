@@ -7,12 +7,10 @@ class AvailabilityScreen extends StatefulWidget {
   const AvailabilityScreen({super.key});
 
   @override
-  State<AvailabilityScreen> createState() =>
-      _AvailabilityScreenState();
+  State<AvailabilityScreen> createState() => _AvailabilityScreenState();
 }
 
-class _AvailabilityScreenState
-    extends State<AvailabilityScreen> {
+class _AvailabilityScreenState extends State<AvailabilityScreen> {
   bool _isAvailable = true;
 
   final List<String> _days = [
@@ -25,8 +23,7 @@ class _AvailabilityScreenState
     'Sunday',
   ];
 
-  final Map<String, bool> _dayAvailability =
-      {};
+  final Map<String, bool> _dayAvailability = {};
 
   TimeOfDay? _startTime;
   TimeOfDay? _endTime;
@@ -49,37 +46,39 @@ class _AvailabilityScreenState
       minute: 0,
     );
 
-    WidgetsBinding.instance
-        .addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadAvailability();
     });
   }
 
+  // =============================================================
+  // ✅ LOAD EXISTING AVAILABILITY
+  // =============================================================
   Future<void> _loadAvailability() async {
     try {
-      await context
-          .read<ProviderProvider>()
-          .getProfile();
+      final provider = context.read<ProviderProvider>();
 
-      final provider =
-          context.read<ProviderProvider>();
+      await provider.getProfile();
+
+      if (!mounted) return;
 
       if (provider.provider != null) {
         setState(() {
-          _isAvailable =
-              provider.provider?.isAvailable ??
-                  true;
+          _isAvailable = provider.provider?.isAvailable ?? true;
         });
       }
-    } catch (_) {}
+    } catch (_) {
+      // Silent fail to avoid UI crash
+    }
   }
 
+  // =============================================================
+  // ✅ PICK START TIME
+  // =============================================================
   Future<void> _pickStartTime() async {
-    final selectedTime =
-        await showTimePicker(
+    final selectedTime = await showTimePicker(
       context: context,
-      initialTime:
-          _startTime ??
+      initialTime: _startTime ??
           const TimeOfDay(
             hour: 9,
             minute: 0,
@@ -93,12 +92,13 @@ class _AvailabilityScreenState
     }
   }
 
+  // =============================================================
+  // ✅ PICK END TIME
+  // =============================================================
   Future<void> _pickEndTime() async {
-    final selectedTime =
-        await showTimePicker(
+    final selectedTime = await showTimePicker(
       context: context,
-      initialTime:
-          _endTime ??
+      initialTime: _endTime ??
           const TimeOfDay(
             hour: 18,
             minute: 0,
@@ -112,34 +112,40 @@ class _AvailabilityScreenState
     }
   }
 
+  // =============================================================
+  // ✅ SAVE AVAILABILITY
+  // =============================================================
   Future<void> _saveAvailability() async {
-    final provider =
-        context.read<ProviderProvider>();
+    final provider = context.read<ProviderProvider>();
 
-    final success =
-        await provider.updateAvailability(
-      data: {
-        'isAvailable': _isAvailable,
-        'workingDays':
-            _dayAvailability.entries
-                .where(
-                  (e) => e.value,
-                )
-                .map(
-                  (e) => e.key,
-                )
-                .toList(),
-        'startTime':
-            _startTime?.format(context),
-        'endTime':
-            _endTime?.format(context),
-      },
-    );
+    bool success = false;
+
+    try {
+      /// ✅ Your ProviderProvider currently expects a bool argument.
+      /// This fixes:
+      /// Too few positional arguments: 1 required, 0 given.
+      success = await provider.updateAvailability(
+        _isAvailable,
+      );
+
+      /// ✅ If later your backend supports working days/time,
+      /// update ProviderProvider.updateAvailability() to accept:
+      ///
+      /// {
+      ///   "isAvailable": _isAvailable,
+      ///   "workingDays": [...],
+      ///   "startTime": "...",
+      ///   "endTime": "..."
+      /// }
+      ///
+      /// For now we keep this screen compatible with your current provider.
+    } catch (_) {
+      success = false;
+    }
 
     if (!mounted) return;
 
-    ScaffoldMessenger.of(context)
-        .showSnackBar(
+    ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
           success
@@ -150,11 +156,18 @@ class _AvailabilityScreenState
     );
   }
 
+  // =============================================================
+  // ✅ TIME TEXT
+  // =============================================================
   String _timeText(TimeOfDay? time) {
     if (time == null) return '--:--';
+
     return time.format(context);
   }
 
+  // =============================================================
+  // ✅ UI
+  // =============================================================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -170,16 +183,13 @@ class _AvailabilityScreenState
           child,
         ) {
           return SingleChildScrollView(
-            padding:
-                const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(16),
             child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // =====================
                 // AVAILABILITY STATUS
                 // =====================
-
                 Card(
                   child: SwitchListTile(
                     value: _isAvailable,
@@ -193,8 +203,7 @@ class _AvailabilityScreenState
                     ),
                     onChanged: (value) {
                       setState(() {
-                        _isAvailable =
-                            value;
+                        _isAvailable = value;
                       });
                     },
                   ),
@@ -208,8 +217,7 @@ class _AvailabilityScreenState
                   'Working Days',
                   style: TextStyle(
                     fontSize: 18,
-                    fontWeight:
-                        FontWeight.bold,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
 
@@ -219,22 +227,14 @@ class _AvailabilityScreenState
 
                 Card(
                   child: Column(
-                    children:
-                        _days.map(
+                    children: _days.map(
                       (day) {
                         return CheckboxListTile(
-                          value:
-                              _dayAvailability[
-                                      day] ??
-                                  false,
+                          value: _dayAvailability[day] ?? false,
                           title: Text(day),
-                          onChanged:
-                              (value) {
+                          onChanged: (value) {
                             setState(() {
-                              _dayAvailability[
-                                      day] =
-                                  value ??
-                                      false;
+                              _dayAvailability[day] = value ?? false;
                             });
                           },
                         );
@@ -251,8 +251,7 @@ class _AvailabilityScreenState
                   'Working Hours',
                   style: TextStyle(
                     fontSize: 18,
-                    fontWeight:
-                        FontWeight.bold,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
 
@@ -265,23 +264,18 @@ class _AvailabilityScreenState
                     Expanded(
                       child: Card(
                         child: ListTile(
-                          leading:
-                              const Icon(
-                            Icons
-                                .schedule,
+                          leading: const Icon(
+                            Icons.schedule,
                           ),
-                          title:
-                              const Text(
+                          title: const Text(
                             'Start Time',
                           ),
-                          subtitle:
-                              Text(
+                          subtitle: Text(
                             _timeText(
                               _startTime,
                             ),
                           ),
-                          onTap:
-                              _pickStartTime,
+                          onTap: _pickStartTime,
                         ),
                       ),
                     ),
@@ -293,23 +287,18 @@ class _AvailabilityScreenState
                     Expanded(
                       child: Card(
                         child: ListTile(
-                          leading:
-                              const Icon(
-                            Icons
-                                .schedule,
+                          leading: const Icon(
+                            Icons.schedule,
                           ),
-                          title:
-                              const Text(
+                          title: const Text(
                             'End Time',
                           ),
-                          subtitle:
-                              Text(
+                          subtitle: Text(
                             _timeText(
                               _endTime,
                             ),
                           ),
-                          onTap:
-                              _pickEndTime,
+                          onTap: _pickEndTime,
                         ),
                       ),
                     ),
@@ -321,22 +310,17 @@ class _AvailabilityScreenState
                 ),
 
                 Card(
-                  color: Colors.blue
-                      .withOpacity(0.08),
+                  color: Colors.blue.withValues(alpha: 0.08),
                   child: const Padding(
-                    padding:
-                        EdgeInsets.all(
+                    padding: EdgeInsets.all(
                       16,
                     ),
                     child: Row(
-                      crossAxisAlignment:
-                          CrossAxisAlignment
-                              .start,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Icon(
                           Icons.info,
-                          color:
-                              Colors.blue,
+                          color: Colors.blue,
                         ),
                         SizedBox(
                           width: 10,
@@ -356,29 +340,20 @@ class _AvailabilityScreenState
                 ),
 
                 SizedBox(
-                  width:
-                      double.infinity,
+                  width: double.infinity,
                   height: 55,
-                  child:
-                      ElevatedButton.icon(
-                    onPressed:
-                        provider.isLoading
-                            ? null
-                            : _saveAvailability,
+                  child: ElevatedButton.icon(
+                    onPressed: provider.isLoading ? null : _saveAvailability,
                     icon: const Icon(
                       Icons.save,
                     ),
-                    label: provider
-                            .isLoading
+                    label: provider.isLoading
                         ? const SizedBox(
                             height: 22,
                             width: 22,
-                            child:
-                                CircularProgressIndicator(
-                              color:
-                                  Colors.white,
-                              strokeWidth:
-                                  2,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
                             ),
                           )
                         : const Text(

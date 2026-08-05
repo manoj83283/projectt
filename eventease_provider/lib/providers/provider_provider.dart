@@ -4,8 +4,7 @@ import '../models/provider_model.dart';
 import '../repositories/provider_repository.dart';
 
 class ProviderProvider extends ChangeNotifier {
-  final ProviderRepository _repository =
-      ProviderRepository.instance;
+  final ProviderRepository _repository = ProviderRepository.instance;
 
   // =========================
   // STATE
@@ -31,23 +30,25 @@ class ProviderProvider extends ChangeNotifier {
 
   bool get isLoading => _isLoading;
 
-  String? get errorMessage =>
-      _errorMessage;
+  String? get errorMessage => _errorMessage;
 
-  ProviderModel? get provider =>
-      _provider;
+  ProviderModel? get provider => _provider;
 
-  Map<String, dynamic> get dashboard =>
-      _dashboard;
+  Map<String, dynamic> get dashboard => _dashboard;
 
-  Map<String, dynamic> get earnings =>
-      _earnings;
+  Map<String, dynamic> get earnings => _earnings;
 
-  Map<String, dynamic> get kycStatus =>
-      _kycStatus;
+  Map<String, dynamic> get kycStatus => _kycStatus;
 
-  List<String> get portfolioImages =>
-      _portfolioImages;
+  List<String> get portfolioImages => _portfolioImages;
+
+  bool get hasProvider => _provider != null;
+
+  bool get isAvailable => _provider?.isAvailable ?? true;
+
+  bool get isOnline => _provider?.isOnline ?? false;
+
+  bool get isVerified => _provider?.isVerified ?? false;
 
   // =========================
   // HELPERS
@@ -58,9 +59,22 @@ class ProviderProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  void _setError(Object e) {
+    _errorMessage = e.toString();
+    notifyListeners();
+  }
+
   void clearError() {
     _errorMessage = null;
     notifyListeners();
+  }
+
+  // =========================
+  // INIT
+  // =========================
+
+  Future<void> init() async {
+    await refreshData();
   }
 
   // =========================
@@ -70,14 +84,13 @@ class ProviderProvider extends ChangeNotifier {
   Future<void> getProfile() async {
     try {
       _setLoading(true);
+      clearError();
 
-      _provider =
-          await _repository
-              .getProviderProfile();
+      _provider = await _repository.getProviderProfile();
 
       notifyListeners();
     } catch (e) {
-      _errorMessage = e.toString();
+      _setError(e);
     } finally {
       _setLoading(false);
     }
@@ -91,10 +104,11 @@ class ProviderProvider extends ChangeNotifier {
     String providerId,
   ) async {
     try {
-      return await _repository
-          .getProviderById(providerId);
+      clearError();
+
+      return await _repository.getProviderById(providerId);
     } catch (e) {
-      _errorMessage = e.toString();
+      _setError(e);
       return null;
     }
   }
@@ -108,10 +122,9 @@ class ProviderProvider extends ChangeNotifier {
   }) async {
     try {
       _setLoading(true);
+      clearError();
 
-      _provider =
-          await _repository
-              .updateProviderProfile(
+      _provider = await _repository.updateProviderProfile(
         data: data,
       );
 
@@ -119,7 +132,7 @@ class ProviderProvider extends ChangeNotifier {
 
       return true;
     } catch (e) {
-      _errorMessage = e.toString();
+      _setError(e);
       return false;
     } finally {
       _setLoading(false);
@@ -137,10 +150,9 @@ class ProviderProvider extends ChangeNotifier {
   }) async {
     try {
       _setLoading(true);
+      clearError();
 
-      _provider =
-          await _repository
-              .updateBusinessDetails(
+      _provider = await _repository.updateBusinessDetails(
         businessName: businessName,
         businessType: businessType,
         categoryId: categoryId,
@@ -150,8 +162,7 @@ class ProviderProvider extends ChangeNotifier {
 
       return true;
     } catch (e) {
-      _errorMessage = e.toString();
-
+      _setError(e);
       return false;
     } finally {
       _setLoading(false);
@@ -166,12 +177,23 @@ class ProviderProvider extends ChangeNotifier {
     bool isOnline,
   ) async {
     try {
-      return await _repository
-          .updateOnlineStatus(
+      clearError();
+
+      final success = await _repository.updateOnlineStatus(
         isOnline: isOnline,
       );
+
+      if (success && _provider != null) {
+        _provider = _provider!.copyWith(
+          isOnline: isOnline,
+        );
+
+        notifyListeners();
+      }
+
+      return success;
     } catch (e) {
-      _errorMessage = e.toString();
+      _setError(e);
       return false;
     }
   }
@@ -185,13 +207,25 @@ class ProviderProvider extends ChangeNotifier {
     required double longitude,
   }) async {
     try {
-      return await _repository
-          .updateLocation(
+      clearError();
+
+      final success = await _repository.updateLocation(
         latitude: latitude,
         longitude: longitude,
       );
+
+      if (success && _provider != null) {
+        _provider = _provider!.copyWith(
+          latitude: latitude,
+          longitude: longitude,
+        );
+
+        notifyListeners();
+      }
+
+      return success;
     } catch (e) {
-      _errorMessage = e.toString();
+      _setError(e);
       return false;
     }
   }
@@ -204,13 +238,64 @@ class ProviderProvider extends ChangeNotifier {
     bool available,
   ) async {
     try {
-      return await _repository
-          .updateAvailability(
+      _setLoading(true);
+      clearError();
+
+      final success = await _repository.updateAvailability(
         available: available,
       );
+
+      if (success && _provider != null) {
+        _provider = _provider!.copyWith(
+          isAvailable: available,
+        );
+      }
+
+      notifyListeners();
+
+      return success;
     } catch (e) {
-      _errorMessage = e.toString();
+      _setError(e);
       return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  // =========================
+  // UPDATE AVAILABILITY WITH SCHEDULE
+  // =========================
+  // Optional helper for future use. Existing screen can still call:
+  // updateAvailability(true/false)
+
+  Future<bool> updateAvailabilityWithSchedule({
+    required bool available,
+    List<String> workingDays = const [],
+    String? startTime,
+    String? endTime,
+  }) async {
+    try {
+      _setLoading(true);
+      clearError();
+
+      final success = await _repository.updateAvailability(
+        available: available,
+      );
+
+      if (success && _provider != null) {
+        _provider = _provider!.copyWith(
+          isAvailable: available,
+        );
+      }
+
+      notifyListeners();
+
+      return success;
+    } catch (e) {
+      _setError(e);
+      return false;
+    } finally {
+      _setLoading(false);
     }
   }
 
@@ -227,6 +312,7 @@ class ProviderProvider extends ChangeNotifier {
   }) async {
     try {
       _setLoading(true);
+      clearError();
 
       await _repository.submitKyc(
         aadhaarNumber: aadhaarNumber,
@@ -240,8 +326,7 @@ class ProviderProvider extends ChangeNotifier {
 
       return true;
     } catch (e) {
-      _errorMessage = e.toString();
-
+      _setError(e);
       return false;
     } finally {
       _setLoading(false);
@@ -254,12 +339,13 @@ class ProviderProvider extends ChangeNotifier {
 
   Future<void> getKycStatus() async {
     try {
-      _kycStatus =
-          await _repository.getKycStatus();
+      clearError();
+
+      _kycStatus = await _repository.getKycStatus();
 
       notifyListeners();
     } catch (e) {
-      _errorMessage = e.toString();
+      _setError(e);
     }
   }
 
@@ -267,16 +353,15 @@ class ProviderProvider extends ChangeNotifier {
   // DASHBOARD
   // =========================
 
-  Future<void>
-      getDashboardSummary() async {
+  Future<void> getDashboardSummary() async {
     try {
-      _dashboard =
-          await _repository
-              .getDashboardSummary();
+      clearError();
+
+      _dashboard = await _repository.getDashboardSummary();
 
       notifyListeners();
     } catch (e) {
-      _errorMessage = e.toString();
+      _setError(e);
     }
   }
 
@@ -284,16 +369,15 @@ class ProviderProvider extends ChangeNotifier {
   // EARNINGS
   // =========================
 
-  Future<void>
-      getEarningsSummary() async {
+  Future<void> getEarningsSummary() async {
     try {
-      _earnings =
-          await _repository
-              .getEarningsSummary();
+      clearError();
+
+      _earnings = await _repository.getEarningsSummary();
 
       notifyListeners();
     } catch (e) {
-      _errorMessage = e.toString();
+      _setError(e);
     }
   }
 
@@ -301,16 +385,15 @@ class ProviderProvider extends ChangeNotifier {
   // PORTFOLIO
   // =========================
 
-  Future<void>
-      getPortfolioImages() async {
+  Future<void> getPortfolioImages() async {
     try {
-      _portfolioImages =
-          await _repository
-              .getPortfolioImages();
+      clearError();
+
+      _portfolioImages = await _repository.getPortfolioImages();
 
       notifyListeners();
     } catch (e) {
-      _errorMessage = e.toString();
+      _setError(e);
     }
   }
 
@@ -322,9 +405,9 @@ class ProviderProvider extends ChangeNotifier {
     required String imageUrl,
   }) async {
     try {
-      final success =
-          await _repository
-              .addPortfolioImage(
+      clearError();
+
+      final success = await _repository.addPortfolioImage(
         imageUrl: imageUrl,
       );
 
@@ -335,8 +418,7 @@ class ProviderProvider extends ChangeNotifier {
 
       return success;
     } catch (e) {
-      _errorMessage = e.toString();
-
+      _setError(e);
       return false;
     }
   }
@@ -349,24 +431,20 @@ class ProviderProvider extends ChangeNotifier {
     required String imageUrl,
   }) async {
     try {
-      final success =
-          await _repository
-              .deletePortfolioImage(
+      clearError();
+
+      final success = await _repository.deletePortfolioImage(
         imageUrl: imageUrl,
       );
 
       if (success) {
-        _portfolioImages.remove(
-          imageUrl,
-        );
-
+        _portfolioImages.remove(imageUrl);
         notifyListeners();
       }
 
       return success;
     } catch (e) {
-      _errorMessage = e.toString();
-
+      _setError(e);
       return false;
     }
   }
@@ -392,14 +470,15 @@ class ProviderProvider extends ChangeNotifier {
   Future<bool> deleteAccount() async {
     try {
       _setLoading(true);
+      clearError();
 
-      final success =
-          await _repository.deleteAccount();
+      final success = await _repository.deleteAccount();
 
       if (success) {
         _provider = null;
         _dashboard = {};
         _earnings = {};
+        _kycStatus = {};
         _portfolioImages = [];
       }
 
@@ -407,11 +486,26 @@ class ProviderProvider extends ChangeNotifier {
 
       return success;
     } catch (e) {
-      _errorMessage = e.toString();
-
+      _setError(e);
       return false;
     } finally {
       _setLoading(false);
     }
+  }
+
+  // =========================
+  // RESET
+  // =========================
+
+  void reset() {
+    _isLoading = false;
+    _errorMessage = null;
+    _provider = null;
+    _dashboard = {};
+    _earnings = {};
+    _kycStatus = {};
+    _portfolioImages = [];
+
+    notifyListeners();
   }
 }

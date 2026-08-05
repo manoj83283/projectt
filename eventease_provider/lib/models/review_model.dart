@@ -4,6 +4,50 @@ enum ReviewStatus {
   rejected,
 }
 
+extension ReviewStatusExtension on ReviewStatus {
+  String get value {
+    switch (this) {
+      case ReviewStatus.pending:
+        return 'pending';
+
+      case ReviewStatus.approved:
+        return 'approved';
+
+      case ReviewStatus.rejected:
+        return 'rejected';
+    }
+  }
+
+  String get label {
+    switch (this) {
+      case ReviewStatus.pending:
+        return 'Pending';
+
+      case ReviewStatus.approved:
+        return 'Approved';
+
+      case ReviewStatus.rejected:
+        return 'Rejected';
+    }
+  }
+
+  static ReviewStatus fromString(dynamic value) {
+    final status = value?.toString().toLowerCase().trim() ?? '';
+
+    switch (status) {
+      case 'approved':
+        return ReviewStatus.approved;
+
+      case 'rejected':
+        return ReviewStatus.rejected;
+
+      case 'pending':
+      default:
+        return ReviewStatus.pending;
+    }
+  }
+}
+
 class ReviewModel {
   final String id;
 
@@ -35,14 +79,24 @@ class ReviewModel {
 
   final String providerReply;
 
-  final ReviewStatus status;
+  /// ✅ Kept as String because screens may directly display status/title
+  final String status;
 
-  final DateTime reviewDate;
+  /// ✅ Kept as String because your screens use:
+  /// review.createdAt ?? ''
+  final String reviewDate;
 
-  final DateTime? replyDate;
+  final String replyDate;
 
-  final DateTime? createdAt;
-  final DateTime? updatedAt;
+  final String createdAt;
+  final String updatedAt;
+
+  final Map<String, dynamic>? rawUser;
+  final Map<String, dynamic>? rawCustomer;
+  final Map<String, dynamic>? rawProvider;
+  final Map<String, dynamic>? rawService;
+  final Map<String, dynamic>? rawBooking;
+  final Map<String, dynamic>? rawOrder;
 
   const ReviewModel({
     required this.id,
@@ -65,13 +119,19 @@ class ReviewModel {
     required this.providerReply,
     required this.status,
     required this.reviewDate,
-    this.replyDate,
-    this.createdAt,
-    this.updatedAt,
+    required this.replyDate,
+    required this.createdAt,
+    required this.updatedAt,
+    this.rawUser,
+    this.rawCustomer,
+    this.rawProvider,
+    this.rawService,
+    this.rawBooking,
+    this.rawOrder,
   });
 
   factory ReviewModel.empty() {
-    return ReviewModel(
+    return const ReviewModel(
       id: '',
       bookingId: '',
       orderId: '',
@@ -85,176 +145,294 @@ class ReviewModel {
       rating: 0,
       title: '',
       comment: '',
-      images: const [],
+      images: [],
       likesCount: 0,
       isEdited: false,
       providerReplied: false,
       providerReply: '',
-      status: ReviewStatus.pending,
-      reviewDate: DateTime.now(),
+      status: 'pending',
+      reviewDate: '',
+      replyDate: '',
+      createdAt: '',
+      updatedAt: '',
     );
   }
 
   factory ReviewModel.fromJson(
     Map<String, dynamic> json,
   ) {
+    final user = _asMap(json['user']);
+
+    final customer = _asMap(json['customer']) ?? user;
+
+    final provider = _asMap(json['provider']);
+
+    final service = _asMap(json['service']);
+
+    final booking = _asMap(json['booking']);
+
+    final order = _asMap(json['order']);
+
+    final customerFirstName = customer?['firstName']?.toString() ?? '';
+    final customerLastName = customer?['lastName']?.toString() ?? '';
+    final customerFullName = customer?['name']?.toString() ?? '';
+
+    final parsedCustomerName = customerFullName.isNotEmpty
+        ? customerFullName
+        : '$customerFirstName $customerLastName'.trim();
+
+    final parsedBookingId = booking?['_id']?.toString() ??
+        booking?['id']?.toString() ??
+        json['bookingId']?.toString() ??
+        json['booking']?.toString() ??
+        '';
+
+    final parsedOrderId = order?['_id']?.toString() ??
+        order?['id']?.toString() ??
+        json['orderId']?.toString() ??
+        json['order']?.toString() ??
+        '';
+
+    final parsedCustomerId = customer?['_id']?.toString() ??
+        customer?['id']?.toString() ??
+        json['customerId']?.toString() ??
+        json['userId']?.toString() ??
+        json['customer']?.toString() ??
+        json['user']?.toString() ??
+        '';
+
+    final parsedProviderId = provider?['_id']?.toString() ??
+        provider?['id']?.toString() ??
+        service?['provider']?.toString() ??
+        json['providerId']?.toString() ??
+        json['provider']?.toString() ??
+        '';
+
+    final parsedServiceId = service?['_id']?.toString() ??
+        service?['id']?.toString() ??
+        json['serviceId']?.toString() ??
+        json['service']?.toString() ??
+        '';
+
+    final dynamic rawImages = json['images'];
+
+    List<String> parsedImages = [];
+
+    if (rawImages is List) {
+      parsedImages = rawImages
+          .map((item) => item.toString())
+          .where((item) => item.trim().isNotEmpty)
+          .toList();
+    }
+
+    final parsedComment = json['comment']?.toString() ??
+        json['review']?.toString() ??
+        json['message']?.toString() ??
+        '';
+
+    final parsedReply = json['providerReply']?.toString() ??
+        json['reply']?.toString() ??
+        json['response']?.toString() ??
+        '';
+
     return ReviewModel(
       id: json['_id']?.toString() ??
           json['id']?.toString() ??
           '',
-      bookingId:
-          json['bookingId']?.toString() ??
-              '',
-      orderId:
-          json['orderId']?.toString() ??
-              '',
-      customerId:
-          json['customerId']?.toString() ??
-              '',
-      customerName:
-          json['customerName']?.toString() ??
-              '',
-      customerImage:
-          json['customerImage']?.toString() ??
-              '',
-      providerId:
-          json['providerId']?.toString() ??
-              '',
-      providerName:
-          json['providerName']?.toString() ??
-              '',
-      serviceId:
-          json['serviceId']?.toString() ??
-              '',
-      serviceName:
-          json['serviceName']?.toString() ??
-              '',
-      rating:
-          (json['rating'] ?? 0).toDouble(),
-      title:
-          json['title']?.toString() ?? '',
-      comment:
-          json['comment']?.toString() ?? '',
-      images: json['images'] != null
-          ? List<String>.from(json['images'])
-          : [],
-      likesCount:
-          json['likesCount'] ?? 0,
-      isEdited:
-          json['isEdited'] ?? false,
-      providerReplied:
-          json['providerReplied'] ?? false,
-      providerReply:
-          json['providerReply']?.toString() ??
-              '',
-      status: _parseStatus(
-        json['status'],
+
+      bookingId: parsedBookingId,
+
+      orderId: parsedOrderId,
+
+      customerId: parsedCustomerId,
+
+      customerName: json['customerName']?.toString() ??
+          parsedCustomerName,
+
+      customerImage: json['customerImage']?.toString() ??
+          customer?['image']?.toString() ??
+          customer?['profileImage']?.toString() ??
+          '',
+
+      providerId: parsedProviderId,
+
+      providerName: json['providerName']?.toString() ??
+          provider?['name']?.toString() ??
+          provider?['firstName']?.toString() ??
+          '',
+
+      serviceId: parsedServiceId,
+
+      serviceName: json['serviceName']?.toString() ??
+          service?['name']?.toString() ??
+          service?['title']?.toString() ??
+          'Service',
+
+      rating: _toDouble(
+        json['rating'],
       ),
-      reviewDate:
-          json['reviewDate'] != null
-              ? DateTime.parse(
-                  json['reviewDate']
-                      .toString(),
-                )
-              : DateTime.now(),
-      replyDate:
-          json['replyDate'] != null
-              ? DateTime.tryParse(
-                  json['replyDate']
-                      .toString(),
-                )
-              : null,
-      createdAt:
-          json['createdAt'] != null
-              ? DateTime.tryParse(
-                  json['createdAt']
-                      .toString(),
-                )
-              : null,
-      updatedAt:
-          json['updatedAt'] != null
-              ? DateTime.tryParse(
-                  json['updatedAt']
-                      .toString(),
-                )
-              : null,
+
+      title: json['title']?.toString() ?? '',
+
+      comment: parsedComment,
+
+      images: parsedImages,
+
+      likesCount: _toInt(
+        json['likesCount'] ??
+            json['likes'] ??
+            0,
+      ),
+
+      isEdited: _toBool(
+        json['isEdited'],
+      ),
+
+      providerReplied: _toBool(
+        json['providerReplied'] ??
+            (parsedReply.isNotEmpty),
+      ),
+
+      providerReply: parsedReply,
+
+      status: json['status']?.toString().toLowerCase().trim() ??
+          'pending',
+
+      reviewDate: json['reviewDate']?.toString() ??
+          json['createdAt']?.toString() ??
+          '',
+
+      replyDate: json['replyDate']?.toString() ??
+          json['repliedAt']?.toString() ??
+          '',
+
+      createdAt: json['createdAt']?.toString() ?? '',
+
+      updatedAt: json['updatedAt']?.toString() ?? '',
+
+      rawUser: user,
+      rawCustomer: customer,
+      rawProvider: provider,
+      rawService: service,
+      rawBooking: booking,
+      rawOrder: order,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
       '_id': id,
+      'id': id,
+
       'bookingId': bookingId,
       'orderId': orderId,
+
       'customerId': customerId,
       'customerName': customerName,
       'customerImage': customerImage,
+
       'providerId': providerId,
       'providerName': providerName,
+
       'serviceId': serviceId,
       'serviceName': serviceName,
+
       'rating': rating,
+
       'title': title,
       'comment': comment,
+      'review': comment,
+
       'images': images,
+
       'likesCount': likesCount,
+
       'isEdited': isEdited,
+
       'providerReplied': providerReplied,
       'providerReply': providerReply,
-      'status': status.name,
-      'reviewDate':
-          reviewDate.toIso8601String(),
-      'replyDate':
-          replyDate?.toIso8601String(),
-      'createdAt':
-          createdAt?.toIso8601String(),
-      'updatedAt':
-          updatedAt?.toIso8601String(),
+      'reply': providerReply,
+
+      'status': status,
+
+      'reviewDate': reviewDate,
+      'replyDate': replyDate,
+
+      'createdAt': createdAt,
+      'updatedAt': updatedAt,
+
+      'user': rawUser,
+      'customer': rawCustomer,
+      'provider': rawProvider,
+      'service': rawService,
+      'booking': rawBooking,
+      'order': rawOrder,
     };
   }
 
   static ReviewStatus _parseStatus(
     dynamic value,
   ) {
-    switch (
-        value.toString().toLowerCase()) {
-      case 'approved':
-        return ReviewStatus.approved;
+    return ReviewStatusExtension.fromString(value);
+  }
 
-      case 'rejected':
-        return ReviewStatus.rejected;
-
-      default:
-        return ReviewStatus.pending;
-    }
+  ReviewStatus get statusEnum {
+    return _parseStatus(status);
   }
 
   String get statusText {
-    switch (status) {
-      case ReviewStatus.pending:
-        return 'Pending';
-
-      case ReviewStatus.approved:
-        return 'Approved';
-
-      case ReviewStatus.rejected:
-        return 'Rejected';
-    }
+    return statusEnum.label;
   }
 
-  bool get isApproved =>
-      status == ReviewStatus.approved;
+  /// ✅ Fixes: review.reply
+  String get reply {
+    return providerReply;
+  }
 
-  bool get isRejected =>
-      status == ReviewStatus.rejected;
+  /// ✅ Optional alias for UI
+  String get review {
+    return comment;
+  }
 
-  bool get isPending =>
-      status == ReviewStatus.pending;
+  DateTime? get reviewDateTime {
+    return _toDateTime(reviewDate);
+  }
 
-  bool get isFiveStar => rating >= 5;
+  DateTime? get replyDateTime {
+    return _toDateTime(replyDate);
+  }
 
-  bool get hasImages =>
-      images.isNotEmpty;
+  DateTime? get createdAtDateTime {
+    return _toDateTime(createdAt);
+  }
+
+  DateTime? get updatedAtDateTime {
+    return _toDateTime(updatedAt);
+  }
+
+  bool get isApproved {
+    return status.toLowerCase() == 'approved';
+  }
+
+  bool get isRejected {
+    return status.toLowerCase() == 'rejected';
+  }
+
+  bool get isPending {
+    return status.toLowerCase() == 'pending';
+  }
+
+  bool get isFiveStar {
+    return rating >= 5;
+  }
+
+  bool get hasImages {
+    return images.isNotEmpty;
+  }
+
+  bool get hasReply {
+    return providerReply.trim().isNotEmpty;
+  }
 
   ReviewModel copyWith({
     String? id,
@@ -275,75 +453,131 @@ class ReviewModel {
     bool? isEdited,
     bool? providerReplied,
     String? providerReply,
-    ReviewStatus? status,
-    DateTime? reviewDate,
-    DateTime? replyDate,
-    DateTime? createdAt,
-    DateTime? updatedAt,
+    String? status,
+    String? reviewDate,
+    String? replyDate,
+    String? createdAt,
+    String? updatedAt,
+    Map<String, dynamic>? rawUser,
+    Map<String, dynamic>? rawCustomer,
+    Map<String, dynamic>? rawProvider,
+    Map<String, dynamic>? rawService,
+    Map<String, dynamic>? rawBooking,
+    Map<String, dynamic>? rawOrder,
   }) {
     return ReviewModel(
       id: id ?? this.id,
-      bookingId:
-          bookingId ?? this.bookingId,
-      orderId:
-          orderId ?? this.orderId,
-      customerId:
-          customerId ?? this.customerId,
-      customerName:
-          customerName ??
-              this.customerName,
-      customerImage:
-          customerImage ??
-              this.customerImage,
-      providerId:
-          providerId ?? this.providerId,
-      providerName:
-          providerName ??
-              this.providerName,
-      serviceId:
-          serviceId ?? this.serviceId,
-      serviceName:
-          serviceName ??
-              this.serviceName,
+      bookingId: bookingId ?? this.bookingId,
+      orderId: orderId ?? this.orderId,
+      customerId: customerId ?? this.customerId,
+      customerName: customerName ?? this.customerName,
+      customerImage: customerImage ?? this.customerImage,
+      providerId: providerId ?? this.providerId,
+      providerName: providerName ?? this.providerName,
+      serviceId: serviceId ?? this.serviceId,
+      serviceName: serviceName ?? this.serviceName,
       rating: rating ?? this.rating,
       title: title ?? this.title,
-      comment:
-          comment ?? this.comment,
+      comment: comment ?? this.comment,
       images: images ?? this.images,
-      likesCount:
-          likesCount ?? this.likesCount,
-      isEdited:
-          isEdited ?? this.isEdited,
+      likesCount: likesCount ?? this.likesCount,
+      isEdited: isEdited ?? this.isEdited,
       providerReplied:
-          providerReplied ??
-              this.providerReplied,
+          providerReplied ?? this.providerReplied,
       providerReply:
-          providerReply ??
-              this.providerReply,
+          providerReply ?? this.providerReply,
       status: status ?? this.status,
-      reviewDate:
-          reviewDate ?? this.reviewDate,
-      replyDate:
-          replyDate ?? this.replyDate,
-      createdAt:
-          createdAt ?? this.createdAt,
-      updatedAt:
-          updatedAt ?? this.updatedAt,
+      reviewDate: reviewDate ?? this.reviewDate,
+      replyDate: replyDate ?? this.replyDate,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rawUser: rawUser ?? this.rawUser,
+      rawCustomer: rawCustomer ?? this.rawCustomer,
+      rawProvider: rawProvider ?? this.rawProvider,
+      rawService: rawService ?? this.rawService,
+      rawBooking: rawBooking ?? this.rawBooking,
+      rawOrder: rawOrder ?? this.rawOrder,
+    );
+  }
+
+  static Map<String, dynamic>? _asMap(dynamic value) {
+    if (value == null) return null;
+
+    if (value is Map<String, dynamic>) {
+      return value;
+    }
+
+    if (value is Map) {
+      return value.map(
+        (key, val) => MapEntry(
+          key.toString(),
+          val,
+        ),
+      );
+    }
+
+    return null;
+  }
+
+  static double _toDouble(dynamic value) {
+    if (value == null) return 0;
+
+    if (value is double) return value;
+
+    if (value is int) return value.toDouble();
+
+    if (value is num) return value.toDouble();
+
+    return double.tryParse(value.toString()) ?? 0;
+  }
+
+  static int _toInt(dynamic value) {
+    if (value == null) return 0;
+
+    if (value is int) return value;
+
+    if (value is double) return value.toInt();
+
+    if (value is num) return value.toInt();
+
+    return int.tryParse(value.toString()) ?? 0;
+  }
+
+  static bool _toBool(dynamic value) {
+    if (value == null) return false;
+
+    if (value is bool) return value;
+
+    final text = value.toString().toLowerCase();
+
+    return text == 'true' ||
+        text == '1' ||
+        text == 'yes';
+  }
+
+  static DateTime? _toDateTime(dynamic value) {
+    if (value == null) return null;
+
+    if (value is DateTime) return value;
+
+    return DateTime.tryParse(
+      value.toString(),
     );
   }
 
   @override
   bool operator ==(Object other) {
     return identical(this, other) ||
-        other is ReviewModel &&
-            other.id == id;
+        other is ReviewModel && other.id == id;
   }
 
   @override
-  int get hashCode => id.hashCode;
+  int get hashCode {
+    return id.hashCode;
+  }
 
   @override
   String toString() {
-    return 'ReviewModel(id: $id, rating: $rating)';
+    return 'ReviewModel(id: $id, rating: $rating, status: $status)';
   }
 }
