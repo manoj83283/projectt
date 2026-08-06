@@ -35,7 +35,7 @@ class AuthRepository {
   // REGISTER
   // =========================
 
-  Future<Map<String, dynamic>> register({
+  Future<Map<String, dynamic>> signup({
     required String fullName,
     required String email,
     required String phone,
@@ -43,7 +43,7 @@ class AuthRepository {
     required String businessName,
   }) async {
     try {
-      return await _authService.register(
+      return await _authService.signup(
         fullName: fullName,
         email: email,
         phone: phone,
