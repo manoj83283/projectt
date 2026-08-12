@@ -1,4 +1,7 @@
 import express from "express";
+import {
+  getNotifications,
+} from "../controllers/notificationController.js";
 
 import {
   createOrder,
@@ -70,6 +73,15 @@ router.get(
   protect,
   authorizeRoles("provider"),
   getProviderOrders
+);
+router.get(
+  "/notifications",
+  protect,
+  authorizeRoles(
+    "admin",
+    "user"
+  ),
+  getNotifications
 );
 
 // Accept Order

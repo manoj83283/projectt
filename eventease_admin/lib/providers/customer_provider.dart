@@ -143,7 +143,7 @@ class CustomerProvider extends ChangeNotifier {
       );
 
       _customers =
-          (response as List)
+          (response)
               .map(
                 (e) =>
                     CustomerModel.fromJson(e),

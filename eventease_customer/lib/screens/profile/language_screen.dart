@@ -17,48 +17,48 @@ class _LanguageScreenState
 
   final List<Map<String, String>> languages = [
     {
-      "name": "English",
-      "code": "en",
+      'name': 'English',
+      'code': 'en',
     },
     {
-      "name": "Hindi",
-      "code": "hi",
+      'name': 'Hindi',
+      'code': 'hi',
     },
     {
-      "name": "Telugu",
-      "code": "te",
+      'name': 'Telugu',
+      'code': 'te',
     },
     {
-      "name": "Tamil",
-      "code": "ta",
+      'name': 'Tamil',
+      'code': 'ta',
     },
     {
-      "name": "Kannada",
-      "code": "kn",
+      'name': 'Kannada',
+      'code': 'kn',
     },
     {
-      "name": "Malayalam",
-      "code": "ml",
+      'name': 'Malayalam',
+      'code': 'ml',
     },
     {
-      "name": "Marathi",
-      "code": "mr",
+      'name': 'Marathi',
+      'code': 'mr',
     },
     {
-      "name": "Bengali",
-      "code": "bn",
+      'name': 'Bengali',
+      'code': 'bn',
     },
     {
-      "name": "Gujarati",
-      "code": "gu",
+      'name': 'Gujarati',
+      'code': 'gu',
     },
     {
-      "name": "Punjabi",
-      "code": "pa",
+      'name': 'Punjabi',
+      'code': 'pa',
     },
     {
-      "name": "Odia",
-      "code": "or",
+      'name': 'Odia',
+      'code': 'or',
     },
   ];
 

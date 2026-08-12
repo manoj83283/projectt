@@ -19,28 +19,28 @@ class _ChatScreenState extends State<ChatScreen> {
 
   final List<Map<String, dynamic>> messages = [
     {
-      "message":
-          "Hello, I would like to know more about your photography package.",
-      "isMe": true,
-      "time": "09:30 AM",
+      'message':
+          'Hello, I would like to know more about your photography package.',
+      'isMe': true,
+      'time': '09:30 AM',
     },
     {
-      "message":
-          "Sure, we provide Premium Wedding Photography and Videography services.",
-      "isMe": false,
-      "time": "09:31 AM",
+      'message':
+          'Sure, we provide Premium Wedding Photography and Videography services.',
+      'isMe': false,
+      'time': '09:31 AM',
     },
     {
-      "message":
-          "Can you share package details?",
-      "isMe": true,
-      "time": "09:32 AM",
+      'message':
+          'Can you share package details?',
+      'isMe': true,
+      'time': '09:32 AM',
     },
     {
-      "message":
-          "Yes, basic package starts from ₹15,000.",
-      "isMe": false,
-      "time": "09:33 AM",
+      'message':
+          'Yes, basic package starts from ₹15,000.',
+      'isMe': false,
+      'time': '09:33 AM',
     },
   ];
 
@@ -59,9 +59,9 @@ class _ChatScreenState extends State<ChatScreen> {
 
     setState(() {
       messages.add({
-        "message": text,
-        "isMe": true,
-        "time":
+        'message': text,
+        'isMe': true,
+        'time':
             "${TimeOfDay.now().hour}:${TimeOfDay.now().minute.toString().padLeft(2, '0')}",
       });
     });
@@ -87,7 +87,7 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     const providerName =
-        "RK Photography";
+        'RK Photography';
 
     return Scaffold(
       backgroundColor:
@@ -95,21 +95,21 @@ class _ChatScreenState extends State<ChatScreen> {
 
       appBar: AppBar(
         elevation: 0,
-        title: Row(
+        title: const Row(
           children: [
-            const CircleAvatar(
+            CircleAvatar(
               child: Icon(
                 Icons.person,
               ),
             ),
 
-            const SizedBox(width: 10),
+            SizedBox(width: 10),
 
             Expanded(
               child: Column(
                 crossAxisAlignment:
                     CrossAxisAlignment.start,
-                children: const [
+                children: [
                   Text(
                     providerName,
                     style: TextStyle(
@@ -117,7 +117,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     ),
                   ),
                   Text(
-                    "Online",
+                    'Online',
                     style: TextStyle(
                       fontSize: 12,
                     ),
@@ -266,7 +266,7 @@ class _ChatScreenState extends State<ChatScreen> {
                       decoration:
                           InputDecoration(
                         hintText:
-                            "Type message...",
+                            'Type message...',
                         filled: true,
                         fillColor:
                             Colors.grey.shade100,

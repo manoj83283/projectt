@@ -9,11 +9,11 @@ class AppErrorWidget extends StatelessWidget {
 
   const AppErrorWidget({
     super.key,
-    this.title = "Something Went Wrong",
+    this.title = 'Something Went Wrong',
     this.message =
-        "Unable to load data. Please try again.",
+        'Unable to load data. Please try again.',
     this.icon = Icons.error_outline,
-    this.buttonText = "Retry",
+    this.buttonText = 'Retry',
     this.onRetry,
   });
 
@@ -86,9 +86,9 @@ class NetworkErrorWidget
   Widget build(BuildContext context) {
     return AppErrorWidget(
       icon: Icons.wifi_off,
-      title: "No Internet Connection",
+      title: 'No Internet Connection',
       message:
-          "Please check your network connection and try again.",
+          'Please check your network connection and try again.',
       onRetry: onRetry,
     );
   }
@@ -108,9 +108,9 @@ class ServerErrorWidget
   Widget build(BuildContext context) {
     return AppErrorWidget(
       icon: Icons.cloud_off,
-      title: "Server Error",
+      title: 'Server Error',
       message:
-          "Server is temporarily unavailable. Please try again later.",
+          'Server is temporarily unavailable. Please try again later.',
       onRetry: onRetry,
     );
   }
@@ -130,9 +130,9 @@ class DataNotFoundWidget
   Widget build(BuildContext context) {
     return AppErrorWidget(
       icon: Icons.search_off,
-      title: "No Data Found",
+      title: 'No Data Found',
       message:
-          "The requested information could not be found.",
+          'The requested information could not be found.',
       onRetry: onRetry,
     );
   }
@@ -152,10 +152,10 @@ class UnauthorizedWidget
   Widget build(BuildContext context) {
     return AppErrorWidget(
       icon: Icons.lock_outline,
-      title: "Unauthorized Access",
+      title: 'Unauthorized Access',
       message:
-          "Please login to continue.",
-      buttonText: "Login",
+          'Please login to continue.',
+      buttonText: 'Login',
       onRetry: onLogin,
     );
   }
@@ -171,9 +171,9 @@ class FullScreenErrorWidget
   const FullScreenErrorWidget({
     super.key,
     this.title =
-        "Something Went Wrong",
+        'Something Went Wrong',
     this.message =
-        "An unexpected error occurred.",
+        'An unexpected error occurred.',
     this.onRetry,
   });
 

@@ -154,7 +154,7 @@ class SettlementProvider extends ChangeNotifier {
       );
 
       _settlements =
-          (response as List)
+          (response)
               .map(
                 (e) =>
                     SettlementModel.fromJson(

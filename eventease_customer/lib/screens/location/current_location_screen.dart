@@ -93,7 +93,7 @@ class _CurrentLocationScreenState
         }
       } catch (_) {
         _address =
-            "Location detected successfully";
+            'Location detected successfully';
       }
 
       setState(() {});
@@ -132,15 +132,15 @@ class _CurrentLocationScreenState
         .showSnackBar(
       const SnackBar(
         content: Text(
-          "Location saved successfully",
+          'Location saved successfully',
         ),
       ),
     );
 
     Navigator.pop(context, {
-      "latitude": _latitude,
-      "longitude": _longitude,
-      "address": _address,
+      'latitude': _latitude,
+      'longitude': _longitude,
+      'address': _address,
     });
   }
 
@@ -152,7 +152,7 @@ class _CurrentLocationScreenState
 
       appBar: AppBar(
         title: const Text(
-          "Current Location",
+          'Current Location',
         ),
       ),
 
@@ -174,8 +174,8 @@ class _CurrentLocationScreenState
                     decoration:
                         BoxDecoration(
                       color: AppColors.primary
-                          .withOpacity(
-                        0.1,
+                          .withValues(
+                        alpha: 0.1,
                       ),
                       shape:
                           BoxShape.circle,
@@ -207,7 +207,7 @@ class _CurrentLocationScreenState
                               .start,
                       children: [
                         const Text(
-                          "Detected Address",
+                          'Detected Address',
                           style:
                               AppStyles.title,
                         ),
@@ -218,7 +218,7 @@ class _CurrentLocationScreenState
 
                         Text(
                           _address.isEmpty
-                              ? "Address not available"
+                              ? 'Address not available'
                               : _address,
                         ),
 
@@ -263,7 +263,7 @@ class _CurrentLocationScreenState
                         Icons.save,
                       ),
                       label: const Text(
-                        "Save Location",
+                        'Save Location',
                       ),
                     ),
                   ),
@@ -285,7 +285,7 @@ class _CurrentLocationScreenState
                         Icons.refresh,
                       ),
                       label: const Text(
-                        "Refresh Location",
+                        'Refresh Location',
                       ),
                     ),
                   ),

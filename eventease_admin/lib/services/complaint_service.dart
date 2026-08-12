@@ -30,11 +30,10 @@ class ComplaintService {
         query: {
           'page': page,
           'limit': limit,
-          if (search != null) 'search': search,
-          if (status != null) 'status': status,
-          if (priority != null) 'priority': priority,
-          if (complaintType != null)
-            'complaintType': complaintType,
+          'search': ?search,
+          'status': ?status,
+          'priority': ?priority,
+          'complaintType': ?complaintType,
         },
       );
 

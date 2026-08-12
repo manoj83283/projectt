@@ -744,7 +744,7 @@ class _EditCouponScreenState extends State<EditCouponScreen> {
               });
             },
             contentPadding: EdgeInsets.zero,
-            activeColor: AppColors.success,
+            activeThumbColor: AppColors.success,
             title: const Text(
               'Coupon Active',
               style: TextStyle(
@@ -875,7 +875,7 @@ class _SectionCard extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.035),
+            color: Colors.black.withValues(alpha: 0.035),
             blurRadius: 18,
             offset: const Offset(0, 8),
           ),
@@ -888,7 +888,7 @@ class _SectionCard extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 18,
-                backgroundColor: AppColors.primary.withOpacity(0.1),
+                backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                 child: Icon(
                   icon,
                   color: AppColors.primary,

@@ -25,10 +25,8 @@ class AnalyticsService {
       final response = await _api.get(
         '/admin/analytics/dashboard',
         query: {
-          if (startDate != null)
-            'startDate': startDate,
-          if (endDate != null)
-            'endDate': endDate,
+          'startDate': ?startDate,
+          'endDate': ?endDate,
         },
       );
 
@@ -54,10 +52,8 @@ class AnalyticsService {
         '/admin/analytics/revenue',
         query: {
           'groupBy': groupBy,
-          if (startDate != null)
-            'startDate': startDate,
-          if (endDate != null)
-            'endDate': endDate,
+          'startDate': ?startDate,
+          'endDate': ?endDate,
         },
       );
 
@@ -81,10 +77,8 @@ class AnalyticsService {
       final response = await _api.get(
         '/admin/analytics/bookings',
         query: {
-          if (startDate != null)
-            'startDate': startDate,
-          if (endDate != null)
-            'endDate': endDate,
+          'startDate': ?startDate,
+          'endDate': ?endDate,
         },
       );
 
@@ -108,10 +102,8 @@ class AnalyticsService {
       final response = await _api.get(
         '/admin/analytics/orders',
         query: {
-          if (startDate != null)
-            'startDate': startDate,
-          if (endDate != null)
-            'endDate': endDate,
+          'startDate': ?startDate,
+          'endDate': ?endDate,
         },
       );
 

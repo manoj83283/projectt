@@ -16,31 +16,31 @@ class _WishlistScreenState
     extends State<WishlistScreen> {
   final List<Map<String, dynamic>> wishlistItems = [
     {
-      "id": "1",
-      "name": "Wedding Photography",
-      "provider": "Royal Photography",
-      "price": 25000,
-      "rating": 4.8,
-      "image":
-          "https://via.placeholder.com/300",
+      'id': '1',
+      'name': 'Wedding Photography',
+      'provider': 'Royal Photography',
+      'price': 25000,
+      'rating': 4.8,
+      'image':
+          'https://via.placeholder.com/300',
     },
     {
-      "id": "2",
-      "name": "Event Decoration",
-      "provider": "Dream Decorators",
-      "price": 18000,
-      "rating": 4.6,
-      "image":
-          "https://via.placeholder.com/300",
+      'id': '2',
+      'name': 'Event Decoration',
+      'provider': 'Dream Decorators',
+      'price': 18000,
+      'rating': 4.6,
+      'image':
+          'https://via.placeholder.com/300',
     },
     {
-      "id": "3",
-      "name": "Luxury Convention Hall",
-      "provider": "Grand Hall",
-      "price": 65000,
-      "rating": 4.9,
-      "image":
-          "https://via.placeholder.com/300",
+      'id': '3',
+      'name': 'Luxury Convention Hall',
+      'provider': 'Grand Hall',
+      'price': 65000,
+      'rating': 4.9,
+      'image':
+          'https://via.placeholder.com/300',
     },
   ];
 
@@ -52,7 +52,7 @@ class _WishlistScreenState
 
   void _removeFromWishlist(int index) {
     final serviceName =
-        wishlistItems[index]["name"];
+        wishlistItems[index]['name'];
 
     setState(() {
       wishlistItems.removeAt(index);
@@ -63,7 +63,7 @@ class _WishlistScreenState
       ..showSnackBar(
         SnackBar(
           content: Text(
-            "$serviceName removed from wishlist",
+            '$serviceName removed from wishlist',
           ),
         ),
       );
@@ -76,7 +76,7 @@ class _WishlistScreenState
           AppColors.background,
       appBar: AppBar(
         title: const Text(
-          "My Wishlist",
+          'My Wishlist',
         ),
       ),
       body: RefreshIndicator(
@@ -112,7 +112,7 @@ class _WishlistScreenState
                             ),
                           ),
                           child: Image.network(
-                            item["image"],
+                            item['image'],
                             height: 180,
                             width:
                                 double.infinity,
@@ -153,7 +153,7 @@ class _WishlistScreenState
                                   Expanded(
                                     child: Text(
                                       item[
-                                          "name"],
+                                          'name'],
                                       style:
                                           AppStyles
                                               .title,
@@ -188,7 +188,7 @@ class _WishlistScreenState
 
                               Text(
                                 item[
-                                    "provider"],
+                                    'provider'],
                                 style: AppStyles
                                     .bodyMedium,
                               ),
@@ -210,7 +210,7 @@ class _WishlistScreenState
                                   ),
                                   Text(
                                     item[
-                                            "rating"]
+                                            'rating']
                                         .toString(),
                                   ),
                                 ],
@@ -224,7 +224,7 @@ class _WishlistScreenState
                                 CurrencyFormatter
                                     .format(
                                   item[
-                                      "price"],
+                                      'price'],
                                 ),
                                 style:
                                     const TextStyle(
@@ -253,7 +253,7 @@ class _WishlistScreenState
                                       },
                                       child:
                                           const Text(
-                                        "View Details",
+                                        'View Details',
                                       ),
                                     ),
                                   ),
@@ -275,14 +275,14 @@ class _WishlistScreenState
                                           const SnackBar(
                                             content:
                                                 Text(
-                                              "Added to cart",
+                                              'Added to cart',
                                             ),
                                           ),
                                         );
                                       },
                                       child:
                                           const Text(
-                                        "Add To Cart",
+                                        'Add To Cart',
                                       ),
                                     ),
                                   ),
@@ -312,7 +312,7 @@ class _WishlistScreenState
         SizedBox(height: 20),
         Center(
           child: Text(
-            "Your wishlist is empty",
+            'Your wishlist is empty',
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
@@ -322,7 +322,7 @@ class _WishlistScreenState
         SizedBox(height: 10),
         Center(
           child: Text(
-            "Save services and providers you like.",
+            'Save services and providers you like.',
           ),
         ),
       ],

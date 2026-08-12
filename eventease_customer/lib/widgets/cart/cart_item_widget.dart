@@ -15,12 +15,7 @@ class CartItemWidget extends StatelessWidget {
   final VoidCallback? onTap;
 
   const CartItemWidget({
-    super.key,
-    required this.id,
-    required this.serviceName,
-    required this.providerName,
-    required this.imageUrl,
-    required this.price,
+    required this.id, required this.serviceName, required this.providerName, required this.imageUrl, required this.price, super.key,
     this.originalPrice,
     this.quantity = 1,
     this.onIncrement,
@@ -150,8 +145,8 @@ class CartItemWidget extends StatelessWidget {
                         decoration:
                             BoxDecoration(
                           color: Colors.red
-                              .withOpacity(
-                            0.1,
+                              .withValues(
+                            alpha: 0.1,
                           ),
                           borderRadius:
                               BorderRadius.circular(
@@ -159,7 +154,7 @@ class CartItemWidget extends StatelessWidget {
                           ),
                         ),
                         child: Text(
-                          "$discountPercentage% OFF",
+                          '$discountPercentage% OFF',
                           style:
                               const TextStyle(
                             color:
@@ -179,7 +174,7 @@ class CartItemWidget extends StatelessWidget {
                     Row(
                       children: [
                         Text(
-                          "₹${price.toStringAsFixed(0)}",
+                          '₹${price.toStringAsFixed(0)}',
                           style:
                               const TextStyle(
                             color:
@@ -197,7 +192,7 @@ class CartItemWidget extends StatelessWidget {
 
                         if (hasDiscount)
                           Text(
-                            "₹${originalPrice!.toStringAsFixed(0)}",
+                            '₹${originalPrice!.toStringAsFixed(0)}',
                             style:
                                 const TextStyle(
                               color:
@@ -215,7 +210,7 @@ class CartItemWidget extends StatelessWidget {
                     ),
 
                     Text(
-                      "Subtotal: ₹${(price * quantity).toStringAsFixed(0)}",
+                      'Subtotal: ₹${(price * quantity).toStringAsFixed(0)}',
                       style:
                           const TextStyle(
                         fontWeight:

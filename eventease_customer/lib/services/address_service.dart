@@ -56,14 +56,7 @@ class AddressService {
     required String fullName,
     required String mobile,
     required String addressLine1,
-    String? addressLine2,
-    required String landmark,
-    required String city,
-    required String state,
-    required String country,
-    required String postalCode,
-    required double latitude,
-    required double longitude,
+    required String landmark, required String city, required String state, required String country, required String postalCode, required double latitude, required double longitude, String? addressLine2,
     bool isDefault = false,
   }) async {
     final response =

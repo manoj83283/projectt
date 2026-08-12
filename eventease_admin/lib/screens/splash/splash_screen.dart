@@ -248,8 +248,8 @@ class _SplashScreenState
                 .bodyMedium
                 ?.copyWith(
                   color:
-                      Colors.white.withOpacity(
-                    0.85,
+                      Colors.white.withValues(
+                    alpha: 0.85,
                   ),
                   fontWeight: FontWeight.w400,
                 ),
@@ -294,8 +294,8 @@ class _SplashScreenState
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(
-              0.18,
+            color: Colors.black.withValues(
+              alpha: 0.18,
             ),
             blurRadius: 30,
             offset: const Offset(
@@ -334,8 +334,8 @@ class _SplashScreenState
         Text(
           'Version ${AppConfig.appVersion}',
           style: TextStyle(
-            color: Colors.white.withOpacity(
-              0.85,
+            color: Colors.white.withValues(
+              alpha: 0.85,
             ),
             fontSize: 12,
             fontWeight: FontWeight.w500,
@@ -347,8 +347,8 @@ class _SplashScreenState
         Text(
           AppConfig.environmentName,
           style: TextStyle(
-            color: Colors.white.withOpacity(
-              0.65,
+            color: Colors.white.withValues(
+              alpha: 0.65,
             ),
             fontSize: 11,
           ),
@@ -379,8 +379,8 @@ class _CircleDecoration
       height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: Colors.white.withOpacity(
-          opacity,
+        color: Colors.white.withValues(
+          alpha: opacity,
         ),
       ),
     );

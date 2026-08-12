@@ -200,8 +200,8 @@ class _NotificationsScreenState
                   color:
                       Theme.of(context)
                           .primaryColor
-                          .withOpacity(
-                            0.08,
+                          .withValues(
+                            alpha: 0.08,
                           ),
                   borderRadius:
                       BorderRadius.circular(
@@ -409,8 +409,8 @@ class _NotificationsScreenState
                                       leading:
                                           CircleAvatar(
                                         backgroundColor:
-                                            color.withOpacity(
-                                          0.15,
+                                            color.withValues(
+                                          alpha: 0.15,
                                         ),
                                         child:
                                             Icon(

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../config/theme_config.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({
@@ -163,8 +162,8 @@ class _NotificationsScreenState
                             BoxDecoration(
                           color: (item['color']
                                   as Color)
-                              .withOpacity(
-                            0.12,
+                              .withValues(
+                            alpha: 0.12,
                           ),
                           borderRadius:
                               BorderRadius.circular(

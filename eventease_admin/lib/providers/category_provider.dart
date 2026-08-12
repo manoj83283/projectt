@@ -454,7 +454,7 @@ class CategoryProvider extends ChangeNotifier {
       );
 
       _categories =
-          (response as List)
+          (response)
               .map(
                 (e) =>
                     CategoryModel.fromJson(

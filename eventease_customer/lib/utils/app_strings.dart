@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 class AppStrings {
   AppStrings._();
 
@@ -6,54 +5,54 @@ class AppStrings {
   // APP
   // =====================================================
 
-  static const String appName = "EventEase";
-  static const String welcome = "Welcome";
-  static const String continueText = "Continue";
-  static const String save = "Save";
-  static const String update = "Update";
-  static const String submit = "Submit";
-  static const String cancel = "Cancel";
-  static const String delete = "Delete";
-  static const String edit = "Edit";
-  static const String search = "Search";
-  static const String retry = "Retry";
-  static const String loading = "Loading...";
-  static const String noDataFound = "No Data Found";
+  static const String appName = 'EventEase';
+  static const String welcome = 'Welcome';
+  static const String continueText = 'Continue';
+  static const String save = 'Save';
+  static const String update = 'Update';
+  static const String submit = 'Submit';
+  static const String cancel = 'Cancel';
+  static const String delete = 'Delete';
+  static const String edit = 'Edit';
+  static const String search = 'Search';
+  static const String retry = 'Retry';
+  static const String loading = 'Loading...';
+  static const String noDataFound = 'No Data Found';
 
   // =====================================================
   // AUTH
   // =====================================================
 
-  static const String login = "Login";
-  static const String register = "Register";
-  static const String logout = "Logout";
+  static const String login = 'Login';
+  static const String register = 'Register';
+  static const String logout = 'Logout';
   static const String forgotPassword =
-      "Forgot Password?";
+      'Forgot Password?';
   static const String resetPassword =
-      "Reset Password";
+      'Reset Password';
   static const String changePassword =
-      "Change Password";
+      'Change Password';
 
   static const String email =
-      "Email Address";
+      'Email Address';
 
   static const String password =
-      "Password";
+      'Password';
 
   static const String confirmPassword =
-      "Confirm Password";
+      'Confirm Password';
 
   static const String fullName =
-      "Full Name";
+      'Full Name';
 
   static const String mobileNumber =
-      "Mobile Number";
+      'Mobile Number';
 
   static const String createAccount =
-      "Create Account";
+      'Create Account';
 
   static const String alreadyHaveAccount =
-      "Already have an account?";
+      'Already have an account?';
 
   static const String dontHaveAccount =
       "Don't have an account?";
@@ -62,326 +61,326 @@ class AppStrings {
   // HOME
   // =====================================================
 
-  static const String hello = "Hello";
+  static const String hello = 'Hello';
   static const String currentLocation =
-      "Current Location";
+      'Current Location';
 
   static const String featuredServices =
-      "Featured Services";
+      'Featured Services';
 
   static const String popularServices =
-      "Popular Services";
+      'Popular Services';
 
   static const String categories =
-      "Categories";
+      'Categories';
 
   static const String nearbyProviders =
-      "Nearby Providers";
+      'Nearby Providers';
 
-  static const String seeAll = "See All";
+  static const String seeAll = 'See All';
 
   static const String searchHint =
-      "Search services, providers, venues...";
+      'Search services, providers, venues...';
 
   // =====================================================
   // SERVICES
   // =====================================================
 
   static const String bookNow =
-      "Book Now";
+      'Book Now';
 
   static const String addToCart =
-      "Add To Cart";
+      'Add To Cart';
 
   static const String viewDetails =
-      "View Details";
+      'View Details';
 
   static const String serviceDetails =
-      "Service Details";
+      'Service Details';
 
   static const String reviews =
-      "Reviews";
+      'Reviews';
 
-  static const String rating = "Rating";
+  static const String rating = 'Rating';
 
   static const String provider =
-      "Provider";
+      'Provider';
 
   // =====================================================
   // BOOKINGS
   // =====================================================
 
   static const String booking =
-      "Booking";
+      'Booking';
 
   static const String bookings =
-      "Bookings";
+      'Bookings';
 
   static const String bookingDetails =
-      "Booking Details";
+      'Booking Details';
 
   static const String trackBooking =
-      "Track Booking";
+      'Track Booking';
 
   static const String cancelBooking =
-      "Cancel Booking";
+      'Cancel Booking';
 
   static const String bookingConfirmed =
-      "Booking Confirmed";
+      'Booking Confirmed';
 
   static const String bookingCancelled =
-      "Booking Cancelled";
+      'Booking Cancelled';
 
   static const String pending =
-      "Pending";
+      'Pending';
 
   static const String confirmed =
-      "Confirmed";
+      'Confirmed';
 
   static const String completed =
-      "Completed";
+      'Completed';
 
   static const String inProgress =
-      "In Progress";
+      'In Progress';
 
   // =====================================================
   // CART
   // =====================================================
 
-  static const String cart = "Cart";
+  static const String cart = 'Cart';
 
   static const String checkout =
-      "Checkout";
+      'Checkout';
 
   static const String applyCoupon =
-      "Apply Coupon";
+      'Apply Coupon';
 
   static const String proceedToPay =
-      "Proceed To Pay";
+      'Proceed To Pay';
 
   static const String itemTotal =
-      "Item Total";
+      'Item Total';
 
   static const String grandTotal =
-      "Grand Total";
+      'Grand Total';
 
   static const String yourCartIsEmpty =
-      "Your Cart Is Empty";
+      'Your Cart Is Empty';
 
   // =====================================================
   // PAYMENT
   // =====================================================
 
   static const String payment =
-      "Payment";
+      'Payment';
 
   static const String payments =
-      "Payments";
+      'Payments';
 
   static const String paymentSuccess =
-      "Payment Successful";
+      'Payment Successful';
 
   static const String paymentFailed =
-      "Payment Failed";
+      'Payment Failed';
 
   static const String paymentPending =
-      "Payment Pending";
+      'Payment Pending';
 
   // =====================================================
   // ORDERS
   // =====================================================
 
   static const String orders =
-      "Orders";
+      'Orders';
 
   static const String orderHistory =
-      "Order History";
+      'Order History';
 
   static const String orderDetails =
-      "Order Details";
+      'Order Details';
 
   // =====================================================
   // CHAT
   // =====================================================
 
-  static const String chat = "Chat";
+  static const String chat = 'Chat';
 
-  static const String chats = "Chats";
+  static const String chats = 'Chats';
 
   static const String typeMessage =
-      "Type a message...";
+      'Type a message...';
 
   static const String noMessages =
-      "No Messages";
+      'No Messages';
 
   // =====================================================
   // NOTIFICATIONS
   // =====================================================
 
   static const String notifications =
-      "Notifications";
+      'Notifications';
 
   static const String noNotifications =
-      "No Notifications Yet";
+      'No Notifications Yet';
 
   // =====================================================
   // PROFILE
   // =====================================================
 
   static const String profile =
-      "Profile";
+      'Profile';
 
   static const String editProfile =
-      "Edit Profile";
+      'Edit Profile';
 
   static const String settings =
-      "Settings";
+      'Settings';
 
   static const String addresses =
-      "Addresses";
+      'Addresses';
 
   static const String language =
-      "Language";
+      'Language';
 
   static const String privacyPolicy =
-      "Privacy Policy";
+      'Privacy Policy';
 
   static const String termsConditions =
-      "Terms & Conditions";
+      'Terms & Conditions';
 
   static const String helpSupport =
-      "Help & Support";
+      'Help & Support';
 
   static const String aboutUs =
-      "About Us";
+      'About Us';
 
   // =====================================================
   // ADDRESS
   // =====================================================
 
   static const String addAddress =
-      "Add Address";
+      'Add Address';
 
   static const String updateAddress =
-      "Update Address";
+      'Update Address';
 
   static const String addressLine =
-      "Address";
+      'Address';
 
-  static const String city = "City";
+  static const String city = 'City';
 
-  static const String state = "State";
+  static const String state = 'State';
 
   static const String pincode =
-      "Pincode";
+      'Pincode';
 
   // =====================================================
   // VALIDATION
   // =====================================================
 
   static const String requiredField =
-      "This field is required";
+      'This field is required';
 
   static const String invalidEmail =
-      "Please enter a valid email";
+      'Please enter a valid email';
 
   static const String invalidMobile =
-      "Please enter a valid mobile number";
+      'Please enter a valid mobile number';
 
   static const String passwordTooShort =
-      "Password must be at least 8 characters";
+      'Password must be at least 8 characters';
 
   static const String passwordMismatch =
-      "Passwords do not match";
+      'Passwords do not match';
 
   // =====================================================
   // SUCCESS
   // =====================================================
 
   static const String loginSuccess =
-      "Login successful";
+      'Login successful';
 
   static const String registerSuccess =
-      "Registration successful";
+      'Registration successful';
 
   static const String profileUpdated =
-      "Profile updated successfully";
+      'Profile updated successfully';
 
   static const String passwordChanged =
-      "Password changed successfully";
+      'Password changed successfully';
 
   static const String bookingCreated =
-      "Booking created successfully";
+      'Booking created successfully';
 
   static const String addressAdded =
-      "Address added successfully";
+      'Address added successfully';
 
   // =====================================================
   // ERROR
   // =====================================================
 
   static const String somethingWentWrong =
-      "Something went wrong";
+      'Something went wrong';
 
   static const String noInternet =
-      "No internet connection";
+      'No internet connection';
 
   static const String serverError =
-      "Server error. Please try again later";
+      'Server error. Please try again later';
 
   static const String unauthorized =
-      "Unauthorized access";
+      'Unauthorized access';
 
   static const String sessionExpired =
-      "Session expired. Please login again";
+      'Session expired. Please login again';
 
   // =====================================================
   // SUPPORT
   // =====================================================
 
   static const String contactUs =
-      "Contact Us";
+      'Contact Us';
 
   static const String faq =
-      "Frequently Asked Questions";
+      'Frequently Asked Questions';
 
   static const String reportIssue =
-      "Report Issue";
+      'Report Issue';
 
   static const String callSupport =
-      "Call Support";
+      'Call Support';
 
   static const String emailSupport =
-      "Email Support";
+      'Email Support';
 
   // =====================================================
   // BUTTONS
   // =====================================================
 
-  static const String yes = "Yes";
-  static const String no = "No";
-  static const String ok = "OK";
-  static const String close = "Close";
-  static const String next = "Next";
-  static const String back = "Back";
-  static const String done = "Done";
+  static const String yes = 'Yes';
+  static const String no = 'No';
+  static const String ok = 'OK';
+  static const String close = 'Close';
+  static const String next = 'Next';
+  static const String back = 'Back';
+  static const String done = 'Done';
 
   // =====================================================
   // EMPTY STATES
   // =====================================================
 
   static const String noBookings =
-      "No bookings found";
+      'No bookings found';
 
   static const String noServices =
-      "No services available";
+      'No services available';
 
   static const String noProviders =
-      "No providers available";
+      'No providers available';
 
   static const String noReviews =
-      "No reviews available";
+      'No reviews available';
 
   static const String noAddresses =
-      "No addresses saved";
+      'No addresses saved';
 }

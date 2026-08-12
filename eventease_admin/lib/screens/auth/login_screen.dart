@@ -276,7 +276,7 @@ class _LoginScreenState
                   'Track bookings, manage providers, monitor orders, handle payments, verify KYC, send notifications, and analyze platform growth in real time.',
                   style: TextStyle(
                     color: Colors.white
-                        .withOpacity(0.88),
+                        .withValues(alpha: 0.88),
                     fontSize: 16,
                     height: 1.6,
                   ),
@@ -313,7 +313,7 @@ class _LoginScreenState
                   'Version ${AppConfig.appVersion} • ${AppConfig.environmentName}',
                   style: TextStyle(
                     color: Colors.white
-                        .withOpacity(0.70),
+                        .withValues(alpha: 0.70),
                     fontSize: 13,
                   ),
                 ),
@@ -538,7 +538,7 @@ class _LoginScreenState
                     const EdgeInsets.all(14),
                 decoration: BoxDecoration(
                   color: AppColors.primary
-                      .withOpacity(0.08),
+                      .withValues(alpha: 0.08),
                   borderRadius:
                       BorderRadius.circular(
                     AppDimensions.radius20,
@@ -591,13 +591,13 @@ class _LoginScreenState
       ),
       decoration: BoxDecoration(
         color: AppColors.info
-            .withOpacity(0.08),
+            .withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(
           AppDimensions.radius12,
         ),
         border: Border.all(
           color: AppColors.info
-              .withOpacity(0.18),
+              .withValues(alpha: 0.18),
         ),
       ),
       child: const Row(
@@ -649,8 +649,8 @@ class _DecorativeCircle
       width: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: Colors.white.withOpacity(
-          opacity,
+        color: Colors.white.withValues(
+          alpha: opacity,
         ),
       ),
     );
@@ -679,15 +679,15 @@ class _FeatureBadge extends StatelessWidget {
         vertical: 10,
       ),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(
-          0.12,
+        color: Colors.white.withValues(
+          alpha: 0.12,
         ),
         borderRadius: BorderRadius.circular(
           30,
         ),
         border: Border.all(
-          color: Colors.white.withOpacity(
-            0.18,
+          color: Colors.white.withValues(
+            alpha: 0.18,
           ),
         ),
       ),

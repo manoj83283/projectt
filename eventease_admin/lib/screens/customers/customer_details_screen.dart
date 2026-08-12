@@ -254,7 +254,7 @@ class _CustomerDetailsScreenState
               radius: 45,
               backgroundColor:
                   AppColors.primary
-                      .withOpacity(0.1),
+                      .withValues(alpha: 0.1),
               backgroundImage:
                   customer.profileImage !=
                               null &&
@@ -574,7 +574,7 @@ class _CustomerDetailsScreenState
         vertical: 8,
       ),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius:
             BorderRadius.circular(30),
       ),

@@ -148,7 +148,7 @@ class AppColors {
   // ==================================================
 
   static Color shadow =
-      Colors.black.withOpacity(0.08);
+      Colors.black.withValues(alpha: 0.08);
 
   // ==================================================
   // GRADIENTS
@@ -196,22 +196,22 @@ class AppColors {
       String status) {
     switch (
         status.toLowerCase()) {
-      case "pending":
+      case 'pending':
         return pending;
 
-      case "confirmed":
+      case 'confirmed':
         return confirmed;
 
-      case "assigned":
+      case 'assigned':
         return assigned;
 
-      case "in progress":
+      case 'in progress':
         return inProgress;
 
-      case "completed":
+      case 'completed':
         return completed;
 
-      case "cancelled":
+      case 'cancelled':
         return cancelled;
 
       default:

@@ -29,10 +29,9 @@ class KycService {
         query: {
           'page': page,
           'limit': limit,
-          if (status != null) 'status': status,
-          if (providerId != null)
-            'providerId': providerId,
-          if (search != null) 'search': search,
+          'status': ?status,
+          'providerId': ?providerId,
+          'search': ?search,
         },
       );
 

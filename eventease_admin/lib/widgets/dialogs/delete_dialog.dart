@@ -63,8 +63,8 @@ class DeleteDialog extends StatelessWidget {
                 height: 76,
                 width: 76,
                 decoration: BoxDecoration(
-                  color: AppColors.error.withOpacity(
-                    0.10,
+                  color: AppColors.error.withValues(
+                    alpha: 0.10,
                   ),
                   shape: BoxShape.circle,
                 ),
@@ -126,15 +126,15 @@ class DeleteDialog extends StatelessWidget {
                     AppDimensions.padding12,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.error.withOpacity(
-                      0.06,
+                    color: AppColors.error.withValues(
+                      alpha: 0.06,
                     ),
                     borderRadius: BorderRadius.circular(
                       AppDimensions.radius12,
                     ),
                     border: Border.all(
-                      color: AppColors.error.withOpacity(
-                        0.18,
+                      color: AppColors.error.withValues(
+                        alpha: 0.18,
                       ),
                     ),
                   ),

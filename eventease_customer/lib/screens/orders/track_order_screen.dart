@@ -14,39 +14,39 @@ class TrackOrderScreen extends StatefulWidget {
 class _TrackOrderScreenState
     extends State<TrackOrderScreen> {
   final Map<String, dynamic> order = {
-    "orderId": "ORD2026001",
-    "service": "Wedding Photography",
-    "provider": "RK Photography",
-    "status": "On The Way",
-    "eta": "25 Minutes",
-    "location": "Hyderabad, Telangana",
-    "amount": "₹15,500",
+    'orderId': 'ORD2026001',
+    'service': 'Wedding Photography',
+    'provider': 'RK Photography',
+    'status': 'On The Way',
+    'eta': '25 Minutes',
+    'location': 'Hyderabad, Telangana',
+    'amount': '₹15,500',
   };
 
   final List<Map<String, dynamic>> timeline = [
     {
-      "title": "Order Placed",
-      "completed": true,
+      'title': 'Order Placed',
+      'completed': true,
     },
     {
-      "title": "Payment Successful",
-      "completed": true,
+      'title': 'Payment Successful',
+      'completed': true,
     },
     {
-      "title": "Provider Assigned",
-      "completed": true,
+      'title': 'Provider Assigned',
+      'completed': true,
     },
     {
-      "title": "Provider On The Way",
-      "completed": true,
+      'title': 'Provider On The Way',
+      'completed': true,
     },
     {
-      "title": "Service Started",
-      "completed": false,
+      'title': 'Service Started',
+      'completed': false,
     },
     {
-      "title": "Order Completed",
-      "completed": false,
+      'title': 'Order Completed',
+      'completed': false,
     },
   ];
 
@@ -158,8 +158,8 @@ class _TrackOrderScreenState
                           decoration:
                               BoxDecoration(
                             color: Colors.orange
-                                .withOpacity(
-                              0.15,
+                                .withValues(
+                              alpha: 0.15,
                             ),
                             borderRadius:
                                 BorderRadius.circular(

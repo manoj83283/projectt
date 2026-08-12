@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'dart:math';
 
 class DistanceCalculator {
@@ -44,10 +43,10 @@ class DistanceCalculator {
     double distanceKm,
   ) {
     if (distanceKm < 1) {
-      return "${(distanceKm * 1000).round()} m";
+      return '${(distanceKm * 1000).round()} m';
     }
 
-    return "${distanceKm.toStringAsFixed(1)} km";
+    return '${distanceKm.toStringAsFixed(1)} km';
   }
 
   // =====================================================
@@ -87,13 +86,13 @@ class DistanceCalculator {
         (hours * 60).round();
 
     if (minutes < 60) {
-      return "$minutes min";
+      return '$minutes min';
     }
 
     final hrs = minutes ~/ 60;
     final mins = minutes % 60;
 
-    return "$hrs hr $mins min";
+    return '$hrs hr $mins min';
   }
 
   // =====================================================
@@ -104,18 +103,18 @@ class DistanceCalculator {
     double distanceKm,
   ) {
     if (distanceKm <= 2) {
-      return "Very Near";
+      return 'Very Near';
     }
 
     if (distanceKm <= 5) {
-      return "Nearby";
+      return 'Nearby';
     }
 
     if (distanceKm <= 15) {
-      return "Moderate";
+      return 'Moderate';
     }
 
-    return "Far";
+    return 'Far';
   }
 
   // =====================================================

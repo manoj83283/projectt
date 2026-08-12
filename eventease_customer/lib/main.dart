@@ -137,8 +137,8 @@ class EventEaseApp extends StatelessWidget {
       RouteConfig.login: (context) => const LoginScreen(),
       RouteConfig.signup: (context) => const SignupScreen(),
       RouteConfig.forgotPassword: (context) => const ForgotPasswordScreen(),
-      RouteConfig.otp: (context) => OtpScreen(),
-      RouteConfig.resetPassword: (context) => ResetPasswordScreen(),
+      RouteConfig.otp: (context) => const OtpScreen(),
+      RouteConfig.resetPassword: (context) => const ResetPasswordScreen(),
 
       // Home
       RouteConfig.home: (context) => const HomeScreen(),
@@ -155,7 +155,7 @@ class EventEaseApp extends StatelessWidget {
 
       // Booking
       RouteConfig.booking: (context) => const BookingScreen(),
-      RouteConfig.myBookings: (context) => booking_screens.MyBookingsScreen(),
+      RouteConfig.myBookings: (context) => const booking_screens.MyBookingsScreen(),
       RouteConfig.bookingDetails: (context) => const BookingDetailsScreen(),
       RouteConfig.trackBooking: (context) => const TrackBookingScreen(),
       RouteConfig.orderSuccess: (context) => const OrderSuccessScreen(),
@@ -165,7 +165,7 @@ class EventEaseApp extends StatelessWidget {
       RouteConfig.checkout: (context) => const CheckoutScreen(),
 
       // Orders
-      RouteConfig.myOrders: (context) => order_screens.MyOrdersScreen(),
+      RouteConfig.myOrders: (context) => const order_screens.MyOrdersScreen(),
       RouteConfig.orderDetails: (context) => const OrderDetailsScreen(),
       RouteConfig.trackOrder: (context) => const TrackOrderScreen(),
 

@@ -5,18 +5,12 @@ import 'package:provider/provider.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimensions.dart';
-import '../../core/constants/app_strings.dart';
 import '../../core/utils/formatters.dart';
 import '../../models/coupon_model.dart';
 import '../../providers/coupon_provider.dart';
 import '../../routes/app_routes.dart';
-import '../../routes/navigation_service.dart';
-import '../../widgets/common/custom_button.dart';
 import '../../widgets/common/custom_dropdown.dart';
 import '../../widgets/common/search_bar.dart';
-import '../../widgets/common/error_widget.dart';
-import '../../widgets/common/loading_widget.dart';
-import '../../widgets/common/empty_widget.dart';
 import '../../widgets/common/pagination_widget.dart';
 
 class CouponsScreen extends StatefulWidget {
@@ -478,7 +472,7 @@ class _CouponsScreenState extends State<CouponsScreen> {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.035),
+            color: Colors.black.withValues(alpha: 0.035),
             blurRadius: 18,
             offset: const Offset(0, 8),
           ),
@@ -606,10 +600,10 @@ class _CouponsScreenState extends State<CouponsScreen> {
                       margin: const EdgeInsets.only(bottom: 16),
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: AppColors.error.withOpacity(0.08),
+                        color: AppColors.error.withValues(alpha: 0.08),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: AppColors.error.withOpacity(0.25),
+                          color: AppColors.error.withValues(alpha: 0.25),
                         ),
                       ),
                       child: Text(
@@ -710,7 +704,7 @@ class CouponsTable extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.035),
+            color: Colors.black.withValues(alpha: 0.035),
             blurRadius: 18,
             offset: const Offset(0, 8),
           ),
@@ -876,7 +870,7 @@ class _CouponCodeCell extends StatelessWidget {
             height: 36,
             width: 36,
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
+              color: AppColors.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: const Icon(
@@ -1208,7 +1202,7 @@ class _CouponSummaryCard extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.035),
+            color: Colors.black.withValues(alpha: 0.035),
             blurRadius: 18,
             offset: const Offset(0, 8),
           ),
@@ -1220,7 +1214,7 @@ class _CouponSummaryCard extends StatelessWidget {
             height: 46,
             width: 46,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.11),
+              color: color.withValues(alpha: 0.11),
               borderRadius: BorderRadius.circular(14),
             ),
             child: Icon(
@@ -1359,10 +1353,10 @@ class _StatusChip extends StatelessWidget {
         vertical: 7,
       ),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.11),
+        color: color.withValues(alpha: 0.11),
         borderRadius: BorderRadius.circular(999),
         border: Border.all(
-          color: color.withOpacity(0.24),
+          color: color.withValues(alpha: 0.24),
         ),
       ),
       child: Text(

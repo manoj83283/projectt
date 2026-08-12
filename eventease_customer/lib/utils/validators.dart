@@ -9,10 +9,10 @@ class Validators {
 
   static String? required(
     String? value, {
-    String fieldName = "Field",
+    String fieldName = 'Field',
   }) {
     if (value == null || value.trim().isEmpty) {
-      return "$fieldName is required";
+      return '$fieldName is required';
     }
 
     return null;
@@ -24,11 +24,11 @@ class Validators {
 
   static String? name(String? value) {
     if (value == null || value.trim().isEmpty) {
-      return "Name is required";
+      return 'Name is required';
     }
 
     if (value.trim().length < 3) {
-      return "Name must be at least 3 characters";
+      return 'Name must be at least 3 characters';
     }
 
     return null;
@@ -40,14 +40,14 @@ class Validators {
 
   static String? email(String? value) {
     if (value == null || value.trim().isEmpty) {
-      return "Email is required";
+      return 'Email is required';
     }
 
     final emailRegex =
         RegExp(AppConstants.emailRegex);
 
     if (!emailRegex.hasMatch(value.trim())) {
-      return "Enter a valid email address";
+      return 'Enter a valid email address';
     }
 
     return null;
@@ -59,14 +59,14 @@ class Validators {
 
   static String? mobile(String? value) {
     if (value == null || value.trim().isEmpty) {
-      return "Mobile number is required";
+      return 'Mobile number is required';
     }
 
     final mobileRegex =
         RegExp(AppConstants.mobileRegex);
 
     if (!mobileRegex.hasMatch(value.trim())) {
-      return "Enter a valid 10-digit mobile number";
+      return 'Enter a valid 10-digit mobile number';
     }
 
     return null;
@@ -78,23 +78,23 @@ class Validators {
 
   static String? password(String? value) {
     if (value == null || value.isEmpty) {
-      return "Password is required";
+      return 'Password is required';
     }
 
     if (value.length < 8) {
-      return "Password must be at least 8 characters";
+      return 'Password must be at least 8 characters';
     }
 
     if (!RegExp(r'[A-Z]').hasMatch(value)) {
-      return "Password must contain an uppercase letter";
+      return 'Password must contain an uppercase letter';
     }
 
     if (!RegExp(r'[a-z]').hasMatch(value)) {
-      return "Password must contain a lowercase letter";
+      return 'Password must contain a lowercase letter';
     }
 
     if (!RegExp(r'[0-9]').hasMatch(value)) {
-      return "Password must contain a number";
+      return 'Password must contain a number';
     }
 
     if (!RegExp(
@@ -160,7 +160,7 @@ class Validators {
 
  *static String? city(String? value)*{
     if (value == null || value.t*im().isEmpty) {
-      return "City*is required";
+      return 'City*is required';
     }
 
     return nu*l;
@@ -172,7 +172,7 @@ class Validators {
 
  *static String? state(String? value* {
     if (value == null || value.*rim().isEmpty) {
-      return "Sta*e is required";
+      return 'Sta*e is required';
     }
 
     return *ull;
@@ -184,14 +184,14 @@ class Validators {
 
   static String? pincode(String?*value) {
     if (value == null || *alue.trim().isEmpty) {
-      retur* "Pincode is required";
+      retur* 'Pincode is required';
     }
 
    *final pincodeRegex =
         RegEx*(AppConstants.pincodeRegex);
 
     *f (!pincodeRegex.hasMatch(value.tr*m())) {
-      return "Enter a vali* pincode";
+      return 'Enter a vali* pincode';
     }
 
     return null;*  }
@@ -201,7 +201,7 @@ class Validators {
   // ========================*============================
 
   st*tic String? title(String? value) {*    if (value == null || value.tri*().isEmpty) {
-      return "Title *s required";
+      return 'Title *s required';
     }
 
     return nul*;

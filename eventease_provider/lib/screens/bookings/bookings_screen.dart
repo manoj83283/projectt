@@ -54,7 +54,7 @@ class _BookingsScreenState
 
     return bookings.where((booking) {
       return booking.status
-              ?.toLowerCase() ==
+              .toLowerCase() ==
           status.toLowerCase();
     }).toList();
   }
@@ -248,7 +248,7 @@ class _BookingList extends StatelessWidget {
                       ),
                       child: Text(
                         booking.status
-                                ?.toUpperCase() ??
+                                .toUpperCase() ??
                             'PENDING',
                         style:
                             const TextStyle(

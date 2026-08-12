@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimensions.dart';
-import '../../core/constants/app_strings.dart';
 import '../../core/utils/formatters.dart';
 import '../../models/provider_model.dart';
 import '../../providers/kyc_provider.dart';
@@ -208,7 +207,7 @@ class _ProviderDocumentsScreenState
               radius: 35,
               backgroundColor:
                   AppColors.primary
-                      .withOpacity(0.1),
+                      .withValues(alpha: 0.1),
               child: Text(
                 AppFormatters.getInitials(
                   _provider!.displayName,

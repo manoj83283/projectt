@@ -33,18 +33,13 @@ class OrderService {
         query: {
           'page': page,
           'limit': limit,
-          if (search != null) 'search': search,
-          if (status != null) 'status': status,
-          if (customerId != null)
-            'customerId': customerId,
-          if (providerId != null)
-            'providerId': providerId,
-          if (orderType != null)
-            'orderType': orderType,
-          if (startDate != null)
-            'startDate': startDate,
-          if (endDate != null)
-            'endDate': endDate,
+          'search': ?search,
+          'status': ?status,
+          'customerId': ?customerId,
+          'providerId': ?providerId,
+          'orderType': ?orderType,
+          'startDate': ?startDate,
+          'endDate': ?endDate,
         },
       );
 

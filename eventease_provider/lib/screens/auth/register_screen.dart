@@ -4,20 +4,24 @@ import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import 'login_screen.dart';
 
-class RegisterScreen extends StatefulWidget {
-  const RegisterScreen({super.key});
+class SignupScreen extends StatefulWidget {
+  const SignupScreen({super.key});
 
   @override
-  State<RegisterScreen> createState() =>
-      _RegisterScreenState();
+  State<SignupScreen> createState() =>
+      _SignupScreenState();
 }
 
-class _RegisterScreenState
-    extends State<RegisterScreen> {
+class _SignupScreenState
+    extends State<SignupScreen> {
   final _formKey = GlobalKey<FormState>();
 
   final TextEditingController
-      _fullNameController =
+      _firstNameController =
+      TextEditingController();
+      
+  final TextEditingController
+      _lastNameController =
       TextEditingController();
 
   final TextEditingController
@@ -46,7 +50,8 @@ class _RegisterScreenState
 
   @override
   void dispose() {
-    _fullNameController.dispose();
+    _firstNameController.dispose();
+    _lastNameController.dispose();
     _businessNameController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
@@ -55,7 +60,7 @@ class _RegisterScreenState
     super.dispose();
   }
 
-  Future<void> _register() async {
+  Future<void> _signup() async {
     if (!_formKey.currentState!
         .validate()) {
       return;
@@ -65,9 +70,11 @@ class _RegisterScreenState
         context.read<AuthProvider>();
 
     final success =
-        await authProvider.register(
-      fullName:
-          _fullNameController.text.trim(),
+        await authProvider.signup(
+      firstName:
+          _firstNameController.text.trim(),
+      lastName:
+          _lastNameController.text.trim(),
       email:
           _emailController.text.trim(),
       phone:
@@ -184,7 +191,9 @@ class _RegisterScreenState
 
                     TextFormField(
                       controller:
-                          _fullNameController,
+                          _firstNameController,
+                      controller:
+                          _lastNameController,
                       decoration:
                           const InputDecoration(
                         labelText:
@@ -432,7 +441,7 @@ class _RegisterScreenState
                             authProvider
                                     .isLoading
                                 ? null
-                                : _register,
+                                : _signup,
                         child:
                             authProvider
                                     .isLoading
@@ -441,7 +450,7 @@ class _RegisterScreenState
                                         .white,
                                   )
                                 : const Text(
-                                    'REGISTER',
+                                    'SIGNUP',
                                   ),
                       ),
                     ),

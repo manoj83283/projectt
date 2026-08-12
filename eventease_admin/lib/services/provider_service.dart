@@ -33,13 +33,10 @@ class ProviderService {
           if (search != null &&
               search.isNotEmpty)
             'search': search,
-          if (status != null)
-            'status': status,
-          if (category != null)
-            'category': category,
-          if (verificationStatus != null)
-            'verificationStatus':
-                verificationStatus,
+          'status': ?status,
+          'category': ?category,
+          'verificationStatus':
+                ?verificationStatus,
         },
       );
 

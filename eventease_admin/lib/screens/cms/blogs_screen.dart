@@ -279,7 +279,7 @@ class _BlogsScreenState extends State<BlogsScreen> {
                   child: Row(
                     children: [
                       CircleAvatar(
-                        backgroundColor: AppColors.primary.withOpacity(0.1),
+                        backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                         child: const Icon(
                           Icons.article_outlined,
                           color: AppColors.primary,
@@ -319,7 +319,7 @@ class _BlogsScreenState extends State<BlogsScreen> {
                               height: 220,
                               width: double.infinity,
                               fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) {
+                              errorBuilder: (_, _, _) {
                                 return Container(
                                   height: 220,
                                   width: double.infinity,
@@ -665,7 +665,7 @@ class _BlogsScreenState extends State<BlogsScreen> {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.035),
+            color: Colors.black.withValues(alpha: 0.035),
             blurRadius: 18,
             offset: const Offset(0, 8),
           ),
@@ -771,10 +771,10 @@ class _BlogsScreenState extends State<BlogsScreen> {
                       margin: const EdgeInsets.only(bottom: 16),
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: AppColors.error.withOpacity(0.08),
+                        color: AppColors.error.withValues(alpha: 0.08),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: AppColors.error.withOpacity(0.25),
+                          color: AppColors.error.withValues(alpha: 0.25),
                         ),
                       ),
                       child: Text(
@@ -860,7 +860,7 @@ class BlogsTable extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.035),
+            color: Colors.black.withValues(alpha: 0.035),
             blurRadius: 18,
             offset: const Offset(0, 8),
           ),
@@ -1088,7 +1088,7 @@ class _BlogThumbnail extends StatelessWidget {
         height: 48,
         width: 56,
         decoration: BoxDecoration(
-          color: AppColors.primary.withOpacity(0.1),
+          color: AppColors.primary.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
         ),
         child: const Icon(
@@ -1105,7 +1105,7 @@ class _BlogThumbnail extends StatelessWidget {
         height: 48,
         width: 56,
         fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) {
+        errorBuilder: (_, _, _) {
           return Container(
             height: 48,
             width: 56,
@@ -1414,7 +1414,7 @@ class _BlogFormDialogState extends State<_BlogFormDialog> {
                 Row(
                   children: [
                     CircleAvatar(
-                      backgroundColor: AppColors.primary.withOpacity(0.1),
+                      backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                       child: const Icon(
                         Icons.article_outlined,
                         color: AppColors.primary,
@@ -1584,7 +1584,7 @@ class _BlogFormDialogState extends State<_BlogFormDialog> {
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
                   value: _isFeatured,
-                  activeColor: Colors.purple,
+                  activeThumbColor: Colors.purple,
                   title: const Text(
                     'Featured Blog',
                     style: TextStyle(
@@ -1723,7 +1723,7 @@ class _BlogSummaryCard extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.035),
+            color: Colors.black.withValues(alpha: 0.035),
             blurRadius: 18,
             offset: const Offset(0, 8),
           ),
@@ -1735,7 +1735,7 @@ class _BlogSummaryCard extends StatelessWidget {
             height: 46,
             width: 46,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.11),
+              color: color.withValues(alpha: 0.11),
               borderRadius: BorderRadius.circular(14),
             ),
             child: Icon(
@@ -1968,10 +1968,10 @@ class _StatusChip extends StatelessWidget {
         vertical: 7,
       ),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.11),
+        color: color.withValues(alpha: 0.11),
         borderRadius: BorderRadius.circular(999),
         border: Border.all(
-          color: color.withOpacity(0.24),
+          color: color.withValues(alpha: 0.24),
         ),
       ),
       child: Text(

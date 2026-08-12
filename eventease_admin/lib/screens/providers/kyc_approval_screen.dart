@@ -707,7 +707,7 @@ class _KycApprovalScreenState
                   radius: 42,
                   backgroundColor:
                       AppColors.primary
-                          .withOpacity(0.10),
+                          .withValues(alpha: 0.10),
                   child: Text(
                     AppFormatters.getInitials(
                       providerName,
@@ -1830,12 +1830,12 @@ class _MiniInfoBox extends StatelessWidget {
         AppDimensions.padding14,
       ),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
+        color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(
           AppDimensions.radius14,
         ),
         border: Border.all(
-          color: color.withOpacity(0.18),
+          color: color.withValues(alpha: 0.18),
         ),
       ),
       child: Row(
@@ -1898,11 +1898,11 @@ class _StatusChip extends StatelessWidget {
         vertical: 7,
       ),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.10),
+        color: color.withValues(alpha: 0.10),
         borderRadius:
             BorderRadius.circular(30),
         border: Border.all(
-          color: color.withOpacity(0.25),
+          color: color.withValues(alpha: 0.25),
         ),
       ),
       child: Text(

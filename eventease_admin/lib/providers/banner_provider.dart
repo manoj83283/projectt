@@ -464,7 +464,7 @@ class BannerProvider extends ChangeNotifier {
       );
 
       _banners =
-          (response as List)
+          (response)
               .map(
                 (e) =>
                     BannerModel.fromJson(

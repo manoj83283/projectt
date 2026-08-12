@@ -90,7 +90,7 @@ class _LanguageSelectionScreenState
             ),
             child: Column(
               children: [
-                Icon(
+                const Icon(
                   Icons.language,
                   size: 80,
                   color:
@@ -173,8 +173,8 @@ class _LanguageSelectionScreenState
                       backgroundColor:
                           ThemeConfig
                               .primaryColor
-                              .withOpacity(
-                        0.1,
+                              .withValues(
+                        alpha: 0.1,
                       ),
                       child: Text(
                         language['code']!

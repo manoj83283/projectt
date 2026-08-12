@@ -320,7 +320,7 @@ class _CommissionSettingsScreenState extends State<CommissionSettingsScreen> {
                   Row(
                     children: [
                       CircleAvatar(
-                        backgroundColor: AppColors.primary.withOpacity(0.1),
+                        backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                         child: const Icon(
                           Icons.percent_outlined,
                           color: AppColors.primary,
@@ -953,10 +953,10 @@ class _CommissionSettingsScreenState extends State<CommissionSettingsScreen> {
                               margin: const EdgeInsets.only(bottom: 16),
                               padding: const EdgeInsets.all(14),
                               decoration: BoxDecoration(
-                                color: AppColors.error.withOpacity(0.08),
+                                color: AppColors.error.withValues(alpha: 0.08),
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                  color: AppColors.error.withOpacity(0.25),
+                                  color: AppColors.error.withValues(alpha: 0.25),
                                 ),
                               ),
                               child: Text(
@@ -984,7 +984,7 @@ class _CommissionSettingsScreenState extends State<CommissionSettingsScreen> {
                 ),
                 if (_isLoading || provider.isLoading)
                   Container(
-                    color: Colors.black.withOpacity(0.04),
+                    color: Colors.black.withValues(alpha: 0.04),
                     child: const Center(
                       child: CircularProgressIndicator(),
                     ),
@@ -1061,7 +1061,7 @@ class CategoryCommissionTable extends StatelessWidget {
                           CircleAvatar(
                             radius: 17,
                             backgroundColor:
-                                AppColors.primary.withOpacity(0.1),
+                                AppColors.primary.withValues(alpha: 0.1),
                             child: const Icon(
                               Icons.category_outlined,
                               color: AppColors.primary,
@@ -1363,7 +1363,7 @@ class _CategoryCommissionDialogState extends State<_CategoryCommissionDialog> {
                 Row(
                   children: [
                     CircleAvatar(
-                      backgroundColor: Colors.purple.withOpacity(0.1),
+                      backgroundColor: Colors.purple.withValues(alpha: 0.1),
                       child: const Icon(
                         Icons.category_outlined,
                         color: Colors.purple,
@@ -1555,7 +1555,7 @@ class _CategoryCommissionDialogState extends State<_CategoryCommissionDialog> {
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
                   value: _isActive,
-                  activeColor: AppColors.success,
+                  activeThumbColor: AppColors.success,
                   title: const Text(
                     'Active Rule',
                     style: TextStyle(
@@ -1722,7 +1722,7 @@ class _SwitchOptionTile extends StatelessWidget {
     return SwitchListTile(
       contentPadding: EdgeInsets.zero,
       value: value,
-      activeColor: color,
+      activeThumbColor: color,
       title: Text(
         title,
         style: const TextStyle(
@@ -1770,7 +1770,7 @@ class _CommissionSummaryCard extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.035),
+            color: Colors.black.withValues(alpha: 0.035),
             blurRadius: 18,
             offset: const Offset(0, 8),
           ),
@@ -1782,7 +1782,7 @@ class _CommissionSummaryCard extends StatelessWidget {
             height: 46,
             width: 46,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.11),
+              color: color.withValues(alpha: 0.11),
               borderRadius: BorderRadius.circular(14),
             ),
             child: Icon(
@@ -1963,10 +1963,10 @@ class _StatusChip extends StatelessWidget {
         vertical: 7,
       ),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.11),
+        color: color.withValues(alpha: 0.11),
         borderRadius: BorderRadius.circular(999),
         border: Border.all(
-          color: color.withOpacity(0.24),
+          color: color.withValues(alpha: 0.24),
         ),
       ),
       child: Text(
@@ -2007,7 +2007,7 @@ class _SectionCard extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.035),
+            color: Colors.black.withValues(alpha: 0.035),
             blurRadius: 18,
             offset: const Offset(0, 8),
           ),
@@ -2020,7 +2020,7 @@ class _SectionCard extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 18,
-                backgroundColor: AppColors.primary.withOpacity(0.1),
+                backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                 child: Icon(
                   icon,
                   color: AppColors.primary,
@@ -2036,7 +2036,7 @@ class _SectionCard extends StatelessWidget {
                       ),
                 ),
               ),
-              if (action != null) action!,
+              ?action,
             ],
           ),
           const SizedBox(height: 20),

@@ -31,14 +31,11 @@ class ReviewService {
         query: {
           'page': page,
           'limit': limit,
-          if (search != null) 'search': search,
-          if (providerId != null)
-            'providerId': providerId,
-          if (customerId != null)
-            'customerId': customerId,
-          if (serviceId != null)
-            'serviceId': serviceId,
-          if (rating != null) 'rating': rating,
+          'search': ?search,
+          'providerId': ?providerId,
+          'customerId': ?customerId,
+          'serviceId': ?serviceId,
+          'rating': ?rating,
         },
       );
 

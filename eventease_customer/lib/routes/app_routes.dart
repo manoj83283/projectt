@@ -1,41 +1,35 @@
 import 'package:flutter/material.dart';
 
-// Splash
-import '../screens/splash/splash_screen.dart';
-
+import '../screens/auth/forgot_password_screen.dart';
 // Auth
 import '../screens/auth/login_screen.dart';
-import '../screens/auth/register_screen.dart';
-import '../screens/auth/forgot_password_screen.dart';
-
-// Home
-import '../screens/home/home_screen.dart';
-
-// Profile
-import '../screens/profile/profile_screen.dart';
-import '../screens/profile/edit_profile_screen.dart';
-import '../screens/profile/address_screen.dart';
-import '../screens/profile/settings_screen.dart';
-import '../screens/profile/language_screen.dart';
-import '../screens/profile/change_password_screen.dart';
-import '../screens/profile/help_support_screen.dart';
-import '../screens/profile/privacy_policy_screen.dart';
-import '../screens/profile/terms_conditions_screen.dart';
-
+import '../screens/auth/signup_screen.dart';
+import '../screens/booking/booking_details_screen.dart';
 // Booking
 import '../screens/booking/booking_screen.dart';
-import '../screens/booking/booking_details_screen.dart';
 import '../screens/booking/track_order_screen.dart';
-
 // Cart
 import '../screens/cart/cart_screen.dart';
 import '../screens/cart/checkout_screen.dart';
-
+// Home
+import '../screens/home/home_screen.dart';
 // Notifications
 import '../screens/notifications/notifications_screen.dart';
-
+import '../screens/profile/address_screen.dart';
+import '../screens/profile/change_password_screen.dart';
+import '../screens/profile/edit_profile_screen.dart';
+import '../screens/profile/help_support_screen.dart';
+import '../screens/profile/language_screen.dart';
+import '../screens/profile/privacy_policy_screen.dart';
+// Profile
+import '../screens/profile/profile_screen.dart';
+import '../screens/profile/settings_screen.dart';
+import '../screens/profile/terms_conditions_screen.dart';
+// Splash
+import '../screens/splash/splash_screen.dart';
 // Support
 import '../screens/support/about_screen.dart';
+import '../screens/search/search_screen.dart';
 
 class AppRoutes {
   AppRoutes._();
@@ -95,6 +89,7 @@ class AppRoutes {
       '/notifications';
 
   static const String about = '/about';
+  static const String wishlist = '/wishlist';
 
   // =====================================================
   // ROUTES MAP
@@ -109,7 +104,7 @@ class AppRoutes {
                 const LoginScreen(),
 
             register: (_) =>
-                const RegisterScreen(),
+                const SignupScreen(),
 
             forgotPassword: (_) =>
                 const ForgotPasswordScreen(),
@@ -164,6 +159,9 @@ class AppRoutes {
 
             about: (_) =>
                 const AboutScreen(),
+                
+            wishlist: (_) =>
+                const WishlistScreen(),
           };
 
   // =====================================================

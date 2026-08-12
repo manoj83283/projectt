@@ -126,8 +126,8 @@ class _BookingScreenState
                         color:
                             ThemeConfig
                                 .primaryColor
-                                .withOpacity(
-                          0.1,
+                                .withValues(
+                          alpha: 0.1,
                         ),
                         borderRadius:
                             BorderRadius.circular(
@@ -164,10 +164,10 @@ class _BookingScreenState
                           const SizedBox(
                               height:
                                   6),
-                          Text(
+                          const Text(
                             'Starting from ₹15,000',
                             style:
-                                const TextStyle(
+                                TextStyle(
                               color: Colors
                                   .green,
                               fontWeight:
@@ -335,8 +335,8 @@ class _BookingScreenState
                     BorderRadius
                         .circular(12),
               ),
-              child: Row(
-                children: const [
+              child: const Row(
+                children: [
                   Icon(
                     Icons.location_on,
                     color: Colors.red,

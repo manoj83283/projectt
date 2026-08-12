@@ -15,9 +15,7 @@ class CustomTextField extends StatefulWidget {
   final ValueChanged<String>? onChanged;
 
   const CustomTextField({
-    super.key,
-    required this.controller,
-    required this.hintText,
+    required this.controller, required this.hintText, super.key,
     this.labelText,
     this.prefixIcon,
     this.suffixIcon,

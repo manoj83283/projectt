@@ -260,7 +260,7 @@ class DashboardProvider extends ChangeNotifier {
         generatedAt:
             _dashboard!.generatedAt,
         recentBookings:
-            (response as List)
+            (response)
                 .map(
                   (e) =>
                       RecentBookingModel
@@ -303,7 +303,7 @@ class DashboardProvider extends ChangeNotifier {
         generatedAt:
             _dashboard!.generatedAt,
         recentOrders:
-            (response as List)
+            (response)
                 .map(
                   (e) =>
                       RecentOrderModel

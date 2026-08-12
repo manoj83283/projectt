@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 extension StringExtensions on String {
   // =====================================================
   // CAPITALIZE FIRST LETTER

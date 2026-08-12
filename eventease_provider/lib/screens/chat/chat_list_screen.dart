@@ -100,8 +100,8 @@ class _ChatListScreenState
                     BoxDecoration(
                   color: Theme.of(
                     context,
-                  ).primaryColor.withOpacity(
-                        0.08,
+                  ).primaryColor.withValues(
+                        alpha: 0.08,
                       ),
                   borderRadius:
                       BorderRadius.circular(

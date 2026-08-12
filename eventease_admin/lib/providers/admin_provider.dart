@@ -347,7 +347,7 @@ class AdminProvider extends ChangeNotifier {
       );
 
       _admins =
-          (response as List)
+          (response)
               .map(
                 (e) =>
                     AdminModel.fromJson(e),

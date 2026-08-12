@@ -162,7 +162,7 @@ class _MyOrdersScreenState
                                       .read<
                                           OrderProvider>()
                                       .getOrderById(
-                                        order.id!,
+                                        order.id,
                                       );
                                 },
                                 child:
@@ -182,7 +182,7 @@ class _MyOrdersScreenState
                                       .read<
                                           OrderProvider>()
                                       .trackOrder(
-                                        order.id!,
+                                        order.id,
                                       );
                                 },
                                 child:
@@ -238,7 +238,7 @@ class _MyOrdersScreenState
         vertical: 4,
       ),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.15),
+        color: color.withValues(alpha: 0.15),
         borderRadius:
             BorderRadius.circular(20),
       ),

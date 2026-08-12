@@ -173,8 +173,8 @@ class RevenueChart extends StatelessWidget {
 
           belowBarData: BarAreaData(
             show: true,
-            color: lineColor.withOpacity(
-              0.15,
+            color: lineColor.withValues(
+              alpha: 0.15,
             ),
           ),
 
@@ -270,8 +270,8 @@ class _InfoTile extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color:
-            AppColors.primary.withOpacity(
-          0.08,
+            AppColors.primary.withValues(
+          alpha: 0.08,
         ),
         borderRadius:
             BorderRadius.circular(12),

@@ -95,15 +95,15 @@ extension DateExtensions on DateTime {
 
   String get relativeDate {
     if (isToday) {
-      return "Today";
+      return 'Today';
     }
 
     if (isYesterday) {
-      return "Yesterday";
+      return 'Yesterday';
     }
 
     if (isTomorrow) {
-      return "Tomorrow";
+      return 'Tomorrow';
     }
 
     final difference =
@@ -111,7 +111,7 @@ extension DateExtensions on DateTime {
 
     if (difference.inDays < 7 &&
         difference.inDays > 0) {
-      return "${difference.inDays} days ago";
+      return '${difference.inDays} days ago';
     }
 
     return formattedDate;
@@ -126,30 +126,30 @@ extension DateExtensions on DateTime {
         DateTime.now().difference(this);
 
     if (difference.inSeconds < 60) {
-      return "Just now";
+      return 'Just now';
     }
 
     if (difference.inMinutes < 60) {
-      return "${difference.inMinutes} min ago";
+      return '${difference.inMinutes} min ago';
     }
 
     if (difference.inHours < 24) {
-      return "${difference.inHours} hr ago";
+      return '${difference.inHours} hr ago';
     }
 
     if (difference.inDays < 7) {
-      return "${difference.inDays} days ago";
+      return '${difference.inDays} days ago';
     }
 
     if (difference.inDays < 30) {
-      return "${(difference.inDays / 7).floor()} weeks ago";
+      return '${(difference.inDays / 7).floor()} weeks ago';
     }
 
     if (difference.inDays < 365) {
-      return "${(difference.inDays / 30).floor()} months ago";
+      return '${(difference.inDays / 30).floor()} months ago';
     }
 
-    return "${(difference.inDays / 365).floor()} years ago";
+    return '${(difference.inDays / 365).floor()} years ago';
   }
 
   // =====================================================
@@ -161,18 +161,18 @@ extension DateExtensions on DateTime {
         difference(DateTime.now()).inDays;
 
     if (days < 0) {
-      return "Completed";
+      return 'Completed';
     }
 
     if (days == 0) {
-      return "Today";
+      return 'Today';
     }
 
     if (days == 1) {
-      return "Tomorrow";
+      return 'Tomorrow';
     }
 
-    return "$days days left";
+    return '$days days left';
   }
 
   // =====================================================

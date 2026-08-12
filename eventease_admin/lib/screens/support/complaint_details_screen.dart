@@ -476,7 +476,7 @@ class _ComplaintDetailsScreenState extends State<ComplaintDetailsScreen> {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.035),
+            color: Colors.black.withValues(alpha: 0.035),
             blurRadius: 18,
             offset: const Offset(0, 8),
           ),
@@ -520,10 +520,10 @@ class _ComplaintDetailsScreenState extends State<ComplaintDetailsScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(AppDimensions.padding20),
       decoration: BoxDecoration(
-        color: _statusColor.withOpacity(0.08),
+        color: _statusColor.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(AppDimensions.radius16),
         border: Border.all(
-          color: _statusColor.withOpacity(0.24),
+          color: _statusColor.withValues(alpha: 0.24),
         ),
       ),
       child: Column(
@@ -919,10 +919,10 @@ class _ComplaintDetailsScreenState extends State<ComplaintDetailsScreen> {
                           margin: const EdgeInsets.only(bottom: 16),
                           padding: const EdgeInsets.all(14),
                           decoration: BoxDecoration(
-                            color: AppColors.error.withOpacity(0.08),
+                            color: AppColors.error.withValues(alpha: 0.08),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: AppColors.error.withOpacity(0.25),
+                              color: AppColors.error.withValues(alpha: 0.25),
                             ),
                           ),
                           child: Text(
@@ -952,7 +952,7 @@ class _ComplaintDetailsScreenState extends State<ComplaintDetailsScreen> {
                 ),
                 if (_isLoading)
                   Container(
-                    color: Colors.black.withOpacity(0.08),
+                    color: Colors.black.withValues(alpha: 0.08),
                     child: const Center(
                       child: CircularProgressIndicator(),
                     ),
@@ -1032,7 +1032,7 @@ class _InfoTile extends StatelessWidget {
         children: [
           CircleAvatar(
             radius: 18,
-            backgroundColor: AppColors.primary.withOpacity(0.1),
+            backgroundColor: AppColors.primary.withValues(alpha: 0.1),
             child: Icon(
               icon,
               color: AppColors.primary,
@@ -1093,10 +1093,10 @@ class _AlertBox extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(AppDimensions.padding16),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
+        color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(AppDimensions.radius12),
         border: Border.all(
-          color: color.withOpacity(0.22),
+          color: color.withValues(alpha: 0.22),
         ),
       ),
       child: Row(
@@ -1314,10 +1314,10 @@ class _StatusChip extends StatelessWidget {
         vertical: 7,
       ),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.11),
+        color: color.withValues(alpha: 0.11),
         borderRadius: BorderRadius.circular(999),
         border: Border.all(
-          color: color.withOpacity(0.24),
+          color: color.withValues(alpha: 0.24),
         ),
       ),
       child: Text(
@@ -1356,7 +1356,7 @@ class _SectionCard extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.035),
+            color: Colors.black.withValues(alpha: 0.035),
             blurRadius: 18,
             offset: const Offset(0, 8),
           ),
@@ -1369,7 +1369,7 @@ class _SectionCard extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 18,
-                backgroundColor: AppColors.primary.withOpacity(0.1),
+                backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                 child: Icon(
                   icon,
                   color: AppColors.primary,

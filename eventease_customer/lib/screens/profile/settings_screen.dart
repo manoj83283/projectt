@@ -18,17 +18,17 @@ class _SettingsScreenState
   bool emailNotifications = true;
   bool smsNotifications = false;
 
-  String selectedLanguage = "English";
+  String selectedLanguage = 'English';
 
   final List<String> languages = [
-    "English",
-    "Hindi",
-    "Telugu",
-    "Tamil",
-    "Kannada",
-    "Malayalam",
-    "Marathi",
-    "Bengali",
+    'English',
+    'Hindi',
+    'Telugu',
+    'Tamil',
+    'Kannada',
+    'Malayalam',
+    'Marathi',
+    'Bengali',
   ];
 
   Future<void> _selectLanguage() async {
@@ -74,10 +74,10 @@ class _SettingsScreenState
       builder: (context) {
         return AlertDialog(
           title: const Text(
-            "Logout",
+            'Logout',
           ),
           content: const Text(
-            "Are you sure you want to logout?",
+            'Are you sure you want to logout?',
           ),
           actions: [
             TextButton(
@@ -85,7 +85,7 @@ class _SettingsScreenState
                 Navigator.pop(context);
               },
               child: const Text(
-                "Cancel",
+                'Cancel',
               ),
             ),
             ElevatedButton(
@@ -99,7 +99,7 @@ class _SettingsScreenState
                 );
               },
               child: const Text(
-                "Logout",
+                'Logout',
               ),
             ),
           ],
@@ -114,10 +114,10 @@ class _SettingsScreenState
       builder: (context) {
         return AlertDialog(
           title: const Text(
-            "Delete Account",
+            'Delete Account',
           ),
           content: const Text(
-            "This action cannot be undone. Do you want to continue?",
+            'This action cannot be undone. Do you want to continue?',
           ),
           actions: [
             TextButton(
@@ -125,7 +125,7 @@ class _SettingsScreenState
                 Navigator.pop(context);
               },
               child: const Text(
-                "Cancel",
+                'Cancel',
               ),
             ),
             ElevatedButton(
@@ -141,13 +141,13 @@ class _SettingsScreenState
                     .showSnackBar(
                   const SnackBar(
                     content: Text(
-                      "Delete account API integration pending",
+                      'Delete account API integration pending',
                     ),
                   ),
                 );
               },
               child: const Text(
-                "Delete",
+                'Delete',
               ),
             ),
           ],
@@ -185,7 +185,7 @@ class _SettingsScreenState
 
       appBar: AppBar(
         title: const Text(
-          "Settings",
+          'Settings',
         ),
       ),
 
@@ -195,7 +195,7 @@ class _SettingsScreenState
           // APP SETTINGS
           // ======================
 
-          sectionTitle("App Settings"),
+          sectionTitle('App Settings'),
 
           Card(
             margin:
@@ -207,7 +207,7 @@ class _SettingsScreenState
                 SwitchListTile(
                   value: darkMode,
                   title: const Text(
-                    "Dark Mode",
+                    'Dark Mode',
                   ),
                   secondary: const Icon(
                     Icons.dark_mode,
@@ -226,7 +226,7 @@ class _SettingsScreenState
                     Icons.language,
                   ),
                   title: const Text(
-                    "Language",
+                    'Language',
                   ),
                   subtitle: Text(
                     selectedLanguage,
@@ -246,7 +246,7 @@ class _SettingsScreenState
           // ======================
 
           sectionTitle(
-            "Notification Settings",
+            'Notification Settings',
           ),
 
           Card(
@@ -260,7 +260,7 @@ class _SettingsScreenState
                   value:
                       pushNotifications,
                   title: const Text(
-                    "Push Notifications",
+                    'Push Notifications',
                   ),
                   secondary: const Icon(
                     Icons.notifications,
@@ -277,7 +277,7 @@ class _SettingsScreenState
                   value:
                       emailNotifications,
                   title: const Text(
-                    "Email Notifications",
+                    'Email Notifications',
                   ),
                   secondary: const Icon(
                     Icons.email,
@@ -293,7 +293,7 @@ class _SettingsScreenState
                 SwitchListTile(
                   value: smsNotifications,
                   title: const Text(
-                    "SMS Notifications",
+                    'SMS Notifications',
                   ),
                   secondary: const Icon(
                     Icons.sms,
@@ -313,7 +313,7 @@ class _SettingsScreenState
           // SECURITY
           // ======================
 
-          sectionTitle("Security"),
+          sectionTitle('Security'),
 
           Card(
             margin:
@@ -327,7 +327,7 @@ class _SettingsScreenState
                     Icons.lock,
                   ),
                   title: const Text(
-                    "Change Password",
+                    'Change Password',
                   ),
                   trailing: const Icon(
                     Icons.arrow_forward_ios,
@@ -343,7 +343,7 @@ class _SettingsScreenState
                     Icons.security,
                   ),
                   title: const Text(
-                    "Privacy Policy",
+                    'Privacy Policy',
                   ),
                   trailing: const Icon(
                     Icons.arrow_forward_ios,
@@ -359,7 +359,7 @@ class _SettingsScreenState
                     Icons.description,
                   ),
                   title: const Text(
-                    "Terms & Conditions",
+                    'Terms & Conditions',
                   ),
                   trailing: const Icon(
                     Icons.arrow_forward_ios,
@@ -375,7 +375,7 @@ class _SettingsScreenState
           // ACCOUNT
           // ======================
 
-          sectionTitle("Account"),
+          sectionTitle('Account'),
 
           Card(
             margin:
@@ -390,7 +390,7 @@ class _SettingsScreenState
                     color: Colors.red,
                   ),
                   title: const Text(
-                    "Delete Account",
+                    'Delete Account',
                   ),
                   onTap: deleteAccount,
                 ),
@@ -403,7 +403,7 @@ class _SettingsScreenState
                     color: Colors.red,
                   ),
                   title: const Text(
-                    "Logout",
+                    'Logout',
                   ),
                   onTap: logout,
                 ),
@@ -415,11 +415,11 @@ class _SettingsScreenState
           // VERSION
           // ======================
 
-          Padding(
+          const Padding(
             padding:
-                const EdgeInsets.all(24),
+                EdgeInsets.all(24),
             child: Column(
-              children: const [
+              children: [
                 Icon(
                   Icons.event_available,
                   size: 50,
@@ -428,7 +428,7 @@ class _SettingsScreenState
                 ),
                 SizedBox(height: 10),
                 Text(
-                  "EventEase",
+                  'EventEase',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight:
@@ -437,7 +437,7 @@ class _SettingsScreenState
                 ),
                 SizedBox(height: 4),
                 Text(
-                  "Version 1.0.0",
+                  'Version 1.0.0',
                   style: TextStyle(
                     color: Colors.grey,
                   ),

@@ -31,14 +31,11 @@ class ServiceService {
         query: {
           'page': page,
           'limit': limit,
-          if (search != null) 'search': search,
-          if (categoryId != null)
-            'categoryId': categoryId,
-          if (providerId != null)
-            'providerId': providerId,
-          if (status != null) 'status': status,
-          if (isActive != null)
-            'isActive': isActive,
+          'search': ?search,
+          'categoryId': ?categoryId,
+          'providerId': ?providerId,
+          'status': ?status,
+          'isActive': ?isActive,
         },
       );
 
@@ -122,15 +119,12 @@ class ServiceService {
       final response = await _api.put(
         '/admin/services/$serviceId',
         data: {
-          if (name != null) 'name': name,
-          if (description != null)
-            'description': description,
-          if (categoryId != null)
-            'categoryId': categoryId,
-          if (price != null) 'price': price,
-          if (images != null) 'images': images,
-          if (isActive != null)
-            'isActive': isActive,
+          'name': ?name,
+          'description': ?description,
+          'categoryId': ?categoryId,
+          'price': ?price,
+          'images': ?images,
+          'isActive': ?isActive,
         },
       );
 

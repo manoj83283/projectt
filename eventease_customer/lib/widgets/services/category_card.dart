@@ -10,11 +10,8 @@ class CategoryCard extends StatelessWidget {
   final VoidCallback? onTap;
 
   const CategoryCard({
-    super.key,
-    required this.id,
-    required this.title,
+    required this.id, required this.title, required this.icon, super.key,
     this.imageUrl,
-    required this.icon,
     this.serviceCount = 0,
     this.color = Colors.blue,
     this.onTap,
@@ -32,8 +29,8 @@ class CategoryCard extends StatelessWidget {
               BorderRadius.circular(20),
           gradient: LinearGradient(
             colors: [
-              color.withOpacity(0.90),
-              color.withOpacity(0.65),
+              color.withValues(alpha: 0.90),
+              color.withValues(alpha: 0.65),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -41,7 +38,7 @@ class CategoryCard extends StatelessWidget {
           boxShadow: [
             BoxShadow(
               color:
-                  color.withOpacity(0.25),
+                  color.withValues(alpha: 0.25),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -140,7 +137,7 @@ class CategoryCard extends StatelessWidget {
               const SizedBox(height: 6),
 
               Text(
-                "$serviceCount Services",
+                '$serviceCount Services',
                 style: const TextStyle(
                   color: Colors.white70,
                   fontSize: 12,

@@ -297,8 +297,8 @@ class _BookingCard extends StatelessWidget {
                     height: 60,
                     width: 60,
                     decoration: BoxDecoration(
-                      color: statusColor.withOpacity(
-                        0.12,
+                      color: statusColor.withValues(
+                        alpha: 0.12,
                       ),
                       borderRadius: BorderRadius.circular(
                         12,
@@ -377,8 +377,8 @@ class _BookingCard extends StatelessWidget {
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: statusColor.withOpacity(
-                        0.12,
+                      color: statusColor.withValues(
+                        alpha: 0.12,
                       ),
                       borderRadius: BorderRadius.circular(
                         20,

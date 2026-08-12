@@ -14,8 +14,7 @@ class CheckoutSummaryWidget extends StatelessWidget {
   final VoidCallback? onCheckout;
 
   const CheckoutSummaryWidget({
-    super.key,
-    required this.itemTotal,
+    required this.itemTotal, super.key,
     this.discount = 0,
     this.couponDiscount = 0,
     this.serviceFee = 0,
@@ -89,7 +88,7 @@ class CheckoutSummaryWidget extends StatelessWidget {
               CrossAxisAlignment.start,
           children: [
             const Text(
-              "Price Details",
+              'Price Details',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight:
@@ -100,53 +99,53 @@ class CheckoutSummaryWidget extends StatelessWidget {
             const SizedBox(height: 16),
 
             _priceRow(
-              title: "Item Total",
+              title: 'Item Total',
               value:
-                  "₹${itemTotal.toStringAsFixed(0)}",
+                  '₹${itemTotal.toStringAsFixed(0)}',
             ),
 
             if (discount > 0)
               _priceRow(
-                title: "Discount",
+                title: 'Discount',
                 value:
-                    "-₹${discount.toStringAsFixed(0)}",
+                    '-₹${discount.toStringAsFixed(0)}',
                 color: Colors.green,
               ),
 
             if (couponDiscount > 0)
               _priceRow(
-                title: "Coupon Discount",
+                title: 'Coupon Discount',
                 value:
-                    "-₹${couponDiscount.toStringAsFixed(0)}",
+                    '-₹${couponDiscount.toStringAsFixed(0)}',
                 color: Colors.green,
               ),
 
             if (platformFee > 0)
               _priceRow(
-                title: "Platform Fee",
+                title: 'Platform Fee',
                 value:
-                    "₹${platformFee.toStringAsFixed(0)}",
+                    '₹${platformFee.toStringAsFixed(0)}',
               ),
 
             if (serviceFee > 0)
               _priceRow(
-                title: "Service Fee",
+                title: 'Service Fee',
                 value:
-                    "₹${serviceFee.toStringAsFixed(0)}",
+                    '₹${serviceFee.toStringAsFixed(0)}',
               ),
 
             if (deliveryFee > 0)
               _priceRow(
-                title: "Delivery Fee",
+                title: 'Delivery Fee',
                 value:
-                    "₹${deliveryFee.toStringAsFixed(0)}",
+                    '₹${deliveryFee.toStringAsFixed(0)}',
               ),
 
             if (tax > 0)
               _priceRow(
-                title: "GST / Tax",
+                title: 'GST / Tax',
                 value:
-                    "₹${tax.toStringAsFixed(0)}",
+                    '₹${tax.toStringAsFixed(0)}',
               ),
 
             const Divider(height: 24),
@@ -177,7 +176,7 @@ class CheckoutSummaryWidget extends StatelessWidget {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        "Coupon Applied: $couponCode",
+                        'Coupon Applied: $couponCode',
                         style:
                             const TextStyle(
                           color:
@@ -197,7 +196,7 @@ class CheckoutSummaryWidget extends StatelessWidget {
                 Icons.discount,
               ),
               label: const Text(
-                "Apply Coupon",
+                'Apply Coupon',
               ),
             ),
 
@@ -217,7 +216,7 @@ class CheckoutSummaryWidget extends StatelessWidget {
               child: Row(
                 children: [
                   const Text(
-                    "Grand Total",
+                    'Grand Total',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight:
@@ -226,7 +225,7 @@ class CheckoutSummaryWidget extends StatelessWidget {
                   ),
                   const Spacer(),
                   Text(
-                    "₹${totalAmount.toStringAsFixed(0)}",
+                    '₹${totalAmount.toStringAsFixed(0)}',
                     style:
                         const TextStyle(
                       fontSize: 20,
@@ -250,7 +249,7 @@ class CheckoutSummaryWidget extends StatelessWidget {
                   Icons.payment,
                 ),
                 label: Text(
-                  "Proceed to Pay ₹${totalAmount.toStringAsFixed(0)}",
+                  'Proceed to Pay ₹${totalAmount.toStringAsFixed(0)}',
                 ),
               ),
             ),

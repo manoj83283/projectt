@@ -91,10 +91,10 @@ class EmptyOrdersWidget
   Widget build(BuildContext context) {
     return EmptyWidget(
       icon: Icons.shopping_bag_outlined,
-      title: "No Orders Yet",
+      title: 'No Orders Yet',
       message:
-          "Your orders will appear here after placing an order.",
-      buttonText: "Browse Services",
+          'Your orders will appear here after placing an order.',
+      buttonText: 'Browse Services',
       onPressed: onBrowse,
     );
   }
@@ -114,10 +114,10 @@ class EmptyCartWidget
   Widget build(BuildContext context) {
     return EmptyWidget(
       icon: Icons.shopping_cart_outlined,
-      title: "Your Cart Is Empty",
+      title: 'Your Cart Is Empty',
       message:
           "Looks like you haven't added any services yet.",
-      buttonText: "Shop Now",
+      buttonText: 'Shop Now',
       onPressed: onShopNow,
     );
   }
@@ -134,9 +134,9 @@ class EmptyChatWidget
   Widget build(BuildContext context) {
     return const EmptyWidget(
       icon: Icons.chat_bubble_outline,
-      title: "No Conversations",
+      title: 'No Conversations',
       message:
-          "Start chatting with providers to see messages here.",
+          'Start chatting with providers to see messages here.',
     );
   }
 }
@@ -152,9 +152,9 @@ class EmptyReviewsWidget
   Widget build(BuildContext context) {
     return const EmptyWidget(
       icon: Icons.rate_review_outlined,
-      title: "No Reviews",
+      title: 'No Reviews',
       message:
-          "Reviews and ratings will appear here.",
+          'Reviews and ratings will appear here.',
     );
   }
 }
@@ -173,10 +173,10 @@ class EmptyAddressWidget
   Widget build(BuildContext context) {
     return EmptyWidget(
       icon: Icons.location_off_outlined,
-      title: "No Saved Addresses",
+      title: 'No Saved Addresses',
       message:
-          "Add an address for faster bookings and deliveries.",
-      buttonText: "Add Address",
+          'Add an address for faster bookings and deliveries.',
+      buttonText: 'Add Address',
       onPressed: onAddAddress,
     );
   }

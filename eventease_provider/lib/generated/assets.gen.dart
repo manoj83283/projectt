@@ -4,6 +4,7 @@
 /// Asset Generator
 ///
 /// lib/generated/assets.gen.dart
+library;
 
 class Assets {
   Assets._();

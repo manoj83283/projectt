@@ -447,8 +447,8 @@ class _EditAdminScreenState
         CircleAvatar(
           radius: 30,
           backgroundColor:
-              AppColors.primary.withOpacity(
-            0.10,
+              AppColors.primary.withValues(
+            alpha: 0.10,
           ),
           backgroundImage: _admin!
                           .profileImage !=
@@ -660,14 +660,14 @@ class _EditAdminScreenState
             ),
             decoration: BoxDecoration(
               color: AppColors.warning
-                  .withOpacity(0.08),
+                  .withValues(alpha: 0.08),
               borderRadius:
                   BorderRadius.circular(
                 AppDimensions.radius12,
               ),
               border: Border.all(
                 color: AppColors.warning
-                    .withOpacity(0.18),
+                    .withValues(alpha: 0.18),
               ),
             ),
             child: const Row(
@@ -791,7 +791,7 @@ class _EditAdminScreenState
                   ),
                   selected: selected,
                   selectedColor: AppColors.primary
-                      .withOpacity(0.16),
+                      .withValues(alpha: 0.16),
                   checkmarkColor:
                       AppColors.primary,
                   onSelected: (value) {

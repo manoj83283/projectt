@@ -33,7 +33,7 @@ class _AddAddressScreenState
   final TextEditingController pincodeController =
       TextEditingController();
 
-  String addressType = "Home";
+  String addressType = 'Home';
   bool setAsDefault = true;
   bool isLoading = false;
 
@@ -69,16 +69,16 @@ class _AddAddressScreenState
     });
 
     final addressData = {
-      "name": nameController.text.trim(),
-      "phone": phoneController.text.trim(),
-      "house": houseController.text.trim(),
-      "landmark": landmarkController.text.trim(),
-      "city": cityController.text.trim(),
-      "state": stateController.text.trim(),
-      "pincode":
+      'name': nameController.text.trim(),
+      'phone': phoneController.text.trim(),
+      'house': houseController.text.trim(),
+      'landmark': landmarkController.text.trim(),
+      'city': cityController.text.trim(),
+      'state': stateController.text.trim(),
+      'pincode':
           pincodeController.text.trim(),
-      "type": addressType,
-      "default": setAsDefault,
+      'type': addressType,
+      'default': setAsDefault,
     };
 
     Navigator.pop(
@@ -117,7 +117,7 @@ class _AddAddressScreenState
 
       appBar: AppBar(
         title: const Text(
-          "Add Address",
+          'Add Address',
         ),
       ),
 
@@ -142,7 +142,7 @@ class _AddAddressScreenState
                         decoration:
                             const InputDecoration(
                           labelText:
-                              "Full Name",
+                              'Full Name',
                           prefixIcon:
                               Icon(
                             Icons.person,
@@ -154,7 +154,7 @@ class _AddAddressScreenState
                                   null ||
                               value
                                   .isEmpty) {
-                            return "Enter full name";
+                            return 'Enter full name';
                           }
                           return null;
                         },
@@ -172,7 +172,7 @@ class _AddAddressScreenState
                         decoration:
                             const InputDecoration(
                           labelText:
-                              "Mobile Number",
+                              'Mobile Number',
                           prefixIcon:
                               Icon(
                             Icons.phone,
@@ -186,7 +186,7 @@ class _AddAddressScreenState
                                       .trim()
                                       .length <
                                   10) {
-                            return "Enter valid mobile number";
+                            return 'Enter valid mobile number';
                           }
                           return null;
                         },
@@ -201,7 +201,7 @@ class _AddAddressScreenState
                         decoration:
                             const InputDecoration(
                           labelText:
-                              "House / Flat / Building",
+                              'House / Flat / Building',
                           prefixIcon:
                               Icon(
                             Icons.home,
@@ -213,7 +213,7 @@ class _AddAddressScreenState
                                   null ||
                               value
                                   .isEmpty) {
-                            return "Enter address";
+                            return 'Enter address';
                           }
                           return null;
                         },
@@ -228,7 +228,7 @@ class _AddAddressScreenState
                         decoration:
                             const InputDecoration(
                           labelText:
-                              "Landmark",
+                              'Landmark',
                           prefixIcon:
                               Icon(
                             Icons.place,
@@ -245,7 +245,7 @@ class _AddAddressScreenState
                         decoration:
                             const InputDecoration(
                           labelText:
-                              "City",
+                              'City',
                           prefixIcon:
                               Icon(
                             Icons.location_city,
@@ -257,7 +257,7 @@ class _AddAddressScreenState
                                   null ||
                               value
                                   .isEmpty) {
-                            return "Enter city";
+                            return 'Enter city';
                           }
                           return null;
                         },
@@ -272,7 +272,7 @@ class _AddAddressScreenState
                         decoration:
                             const InputDecoration(
                           labelText:
-                              "State",
+                              'State',
                           prefixIcon:
                               Icon(
                             Icons.map,
@@ -284,7 +284,7 @@ class _AddAddressScreenState
                                   null ||
                               value
                                   .isEmpty) {
-                            return "Enter state";
+                            return 'Enter state';
                           }
                           return null;
                         },
@@ -302,7 +302,7 @@ class _AddAddressScreenState
                         decoration:
                             const InputDecoration(
                           labelText:
-                              "Pincode",
+                              'Pincode',
                           prefixIcon:
                               Icon(
                             Icons.pin,
@@ -316,7 +316,7 @@ class _AddAddressScreenState
                                       .trim()
                                       .length !=
                                   6) {
-                            return "Enter valid pincode";
+                            return 'Enter valid pincode';
                           }
                           return null;
                         },
@@ -340,7 +340,7 @@ class _AddAddressScreenState
                             .start,
                     children: [
                       const Text(
-                        "Address Type",
+                        'Address Type',
                         style: TextStyle(
                           fontWeight:
                               FontWeight.bold,
@@ -354,11 +354,11 @@ class _AddAddressScreenState
                         spacing: 10,
                         children: [
                           buildTypeChip(
-                              "Home"),
+                              'Home'),
                           buildTypeChip(
-                              "Work"),
+                              'Work'),
                           buildTypeChip(
-                              "Other"),
+                              'Other'),
                         ],
                       ),
 
@@ -369,7 +369,7 @@ class _AddAddressScreenState
                         value:
                             setAsDefault,
                         title: const Text(
-                          "Set as Default Address",
+                          'Set as Default Address',
                         ),
                         onChanged:
                             (value) {
@@ -411,8 +411,8 @@ class _AddAddressScreenState
                         ),
                   label: Text(
                     isLoading
-                        ? "Saving..."
-                        : "Save Address",
+                        ? 'Saving...'
+                        : 'Save Address',
                   ),
                 ),
               ),

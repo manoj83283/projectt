@@ -32,8 +32,7 @@ class CategoryGridWidget extends StatelessWidget {
   final ScrollPhysics? physics;
 
   const CategoryGridWidget({
-    super.key,
-    required this.categories,
+    required this.categories, super.key,
     this.onCategoryTap,
     this.crossAxisCount = 2,
     this.childAspectRatio = 1.0,
@@ -49,7 +48,7 @@ class CategoryGridWidget extends StatelessWidget {
     if (categories.isEmpty) {
       return const Center(
         child: Text(
-          "No Categories Available",
+          'No Categories Available',
         ),
       );
     }

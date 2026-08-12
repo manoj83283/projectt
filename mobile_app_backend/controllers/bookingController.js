@@ -2,6 +2,7 @@ import Booking from "../models/Booking.js";
 import Service from "../models/service.js";
 import { io } from "../server.js";
 import { sendNotification } from "../utils/notification.js";
+import Notification from "../models/Notification.js";
 
 // =======================================================
 // ✅ CREATE BOOKING

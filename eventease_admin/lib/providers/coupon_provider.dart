@@ -7,7 +7,7 @@ class CouponProvider extends ChangeNotifier {
   final CouponService _couponService =
       CouponService();
 
-  bool _isLoading = false;
+  final bool _isLoading = false;
 
   String? _errorMessage;
 

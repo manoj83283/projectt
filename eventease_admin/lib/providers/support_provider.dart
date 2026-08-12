@@ -157,7 +157,7 @@ class SupportProvider extends ChangeNotifier {
       );
 
       _tickets =
-          (response as List)
+          (response)
               .map(
                 (e) =>
                     TicketModel.fromJson(e),

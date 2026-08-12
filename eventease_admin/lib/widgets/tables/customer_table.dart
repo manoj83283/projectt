@@ -229,7 +229,7 @@ class _CustomerInfoCell extends StatelessWidget {
         CircleAvatar(
           radius: 20,
           backgroundColor:
-              AppColors.primary.withOpacity(0.10),
+              AppColors.primary.withValues(alpha: 0.10),
           backgroundImage:
               customer.hasProfileImage
                   ? NetworkImage(
@@ -394,12 +394,12 @@ class _StatusChip extends StatelessWidget {
         vertical: 6,
       ),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.10),
+        color: color.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(
           30,
         ),
         border: Border.all(
-          color: color.withOpacity(0.25),
+          color: color.withValues(alpha: 0.25),
         ),
       ),
       child: Text(

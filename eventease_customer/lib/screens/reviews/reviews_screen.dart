@@ -17,36 +17,36 @@ class _ReviewsScreenState
 
   List<Map<String, dynamic>> reviews = [
     {
-      "name": "Manoj Kumar",
-      "rating": 5,
-      "date": "08 Jul 2026",
-      "comment":
-          "Excellent service. Very professional and delivered everything on time.",
-      "verified": true,
+      'name': 'Manoj Kumar',
+      'rating': 5,
+      'date': '08 Jul 2026',
+      'comment':
+          'Excellent service. Very professional and delivered everything on time.',
+      'verified': true,
     },
     {
-      "name": "Ravi Kumar",
-      "rating": 4,
-      "date": "05 Jul 2026",
-      "comment":
-          "Good experience with the provider. Highly recommended.",
-      "verified": true,
+      'name': 'Ravi Kumar',
+      'rating': 4,
+      'date': '05 Jul 2026',
+      'comment':
+          'Good experience with the provider. Highly recommended.',
+      'verified': true,
     },
     {
-      "name": "Suresh",
-      "rating": 5,
-      "date": "01 Jul 2026",
-      "comment":
-          "Amazing photography and customer support.",
-      "verified": false,
+      'name': 'Suresh',
+      'rating': 5,
+      'date': '01 Jul 2026',
+      'comment':
+          'Amazing photography and customer support.',
+      'verified': false,
     },
     {
-      "name": "Anil",
-      "rating": 3,
-      "date": "28 Jun 2026",
-      "comment":
-          "Service was okay but can improve response time.",
-      "verified": true,
+      'name': 'Anil',
+      'rating': 3,
+      'date': '28 Jun 2026',
+      'comment':
+          'Service was okay but can improve response time.',
+      'verified': true,
     },
   ];
 
@@ -334,7 +334,7 @@ class _ReviewsScreenState
                                         review[
                                             'date'],
                                         style:
-                                            TextStyle(
+                                            const TextStyle(
                                           color: Colors
                                               .grey,
                                           fontSize:
@@ -359,8 +359,8 @@ class _ReviewsScreenState
                                         BoxDecoration(
                                       color: Colors
                                           .green
-                                          .withOpacity(
-                                              0.1),
+                                          .withValues(
+                                              alpha: 0.1),
                                       borderRadius:
                                           BorderRadius.circular(
                                               12),

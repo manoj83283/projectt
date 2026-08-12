@@ -66,10 +66,8 @@ class DashboardService {
       final response = await _api.get(
         '/admin/dashboard/revenue',
         query: {
-          if (startDate != null)
-            'startDate': startDate,
-          if (endDate != null)
-            'endDate': endDate,
+          'startDate': ?startDate,
+          'endDate': ?endDate,
         },
       );
 

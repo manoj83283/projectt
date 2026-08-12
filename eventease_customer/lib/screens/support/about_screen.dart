@@ -16,11 +16,11 @@ class AboutScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            Card(
+            const Card(
               child: Padding(
-                padding: const EdgeInsets.all(24),
+                padding: EdgeInsets.all(24),
                 child: Column(
-                  children: const [
+                  children: [
                     CircleAvatar(
                       radius: 50,
                       child: Icon(
@@ -48,13 +48,13 @@ class AboutScreen extends StatelessWidget {
 
             const SizedBox(height: 16),
 
-            Card(
+            const Card(
               child: Padding(
-                padding: const EdgeInsets.all(20),
+                padding: EdgeInsets.all(20),
                 child: Column(
                   crossAxisAlignment:
                       CrossAxisAlignment.start,
-                  children: const [
+                  children: [
                     Text(
                       'Our Mission',
                       style: TextStyle(
@@ -74,13 +74,13 @@ class AboutScreen extends StatelessWidget {
 
             const SizedBox(height: 16),
 
-            Card(
+            const Card(
               child: Padding(
-                padding: const EdgeInsets.all(20),
+                padding: EdgeInsets.all(20),
                 child: Column(
                   crossAxisAlignment:
                       CrossAxisAlignment.start,
-                  children: const [
+                  children: [
                     Text(
                       'Why EventEase?',
                       style: TextStyle(
@@ -133,9 +133,9 @@ class AboutScreen extends StatelessWidget {
 
             const SizedBox(height: 16),
 
-            Card(
+            const Card(
               child: Column(
-                children: const [
+                children: [
                   ListTile(
                     leading: Icon(Icons.web),
                     title: Text('Website'),
@@ -165,11 +165,11 @@ class AboutScreen extends StatelessWidget {
 
             const SizedBox(height: 16),
 
-            Card(
+            const Card(
               child: Padding(
-                padding: const EdgeInsets.all(20),
+                padding: EdgeInsets.all(20),
                 child: Column(
-                  children: const [
+                  children: [
                     ListTile(
                       leading: Icon(
                         Icons.info_outline,

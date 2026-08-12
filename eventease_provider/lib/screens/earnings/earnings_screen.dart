@@ -213,8 +213,8 @@ class _EarningsScreenState
                               backgroundColor:
                                   Colors
                                       .green
-                                      .withOpacity(
-                                0.1,
+                                      .withValues(
+                                alpha: 0.1,
                               ),
                               child:
                                   const Icon(

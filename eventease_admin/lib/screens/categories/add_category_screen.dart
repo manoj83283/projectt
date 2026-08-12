@@ -343,8 +343,8 @@ class _AddCategoryScreenState
           width: 54,
           decoration: BoxDecoration(
             color:
-                AppColors.primary.withOpacity(
-              0.10,
+                AppColors.primary.withValues(
+              alpha: 0.10,
             ),
             borderRadius: BorderRadius.circular(
               AppDimensions.radius16,
@@ -484,7 +484,7 @@ class _AddCategoryScreenState
                         width: 64,
                         decoration: BoxDecoration(
                           color: AppColors.primary
-                              .withOpacity(0.10),
+                              .withValues(alpha: 0.10),
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(

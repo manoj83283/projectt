@@ -33,29 +33,7 @@ class AuthService {
 
       final Map<String, dynamic> data = _normalizeMap(response);
 
-      final token = data['token']?.toString();
-
-      if (token != null && token.isNotEmpty) {
-        await StorageHelper.saveToken(token);
-      }
-
-      final userId =
-          data['user']?['_id']?.toString() ??
-          data['user']?['id']?.toString() ??
-          data['_id']?.toString() ??
-          data['id']?.toString();
-
-      if (userId != null && userId.isNotEmpty) {
-        await StorageHelper.saveUserId(userId);
-      }
-
-      final role =
-          data['user']?['role']?.toString() ??
-          data['role']?.toString();
-
-      if (role != null && role.isNotEmpty) {
-        await StorageHelper.saveRole(role);
-      }
+      await _saveAuthData(data);
 
       return data;
     } catch (e) {
@@ -65,33 +43,24 @@ class AuthService {
   }
 
   // =========================
-  // REGISTER
+  // SIGNUP
   // Backend: POST /api/auth/signup
   // =========================
 
-  Future<Map<String, dynamic>> register({
-    required String fullName,
+  Future<Map<String, dynamic>> signup({
+    required String firstName,
+    required String lastName,
     required String email,
     required String phone,
     required String password,
     required String businessName,
   }) async {
     try {
-      final nameParts = fullName.trim().split(RegExp(r'\s+'));
-
-      final firstName = nameParts.isNotEmpty ? nameParts.first : fullName.trim();
-
-      final lastName = nameParts.length > 1
-          ? nameParts.sublist(1).join(' ')
-          : '';
-
       final response = await _apiService.post(
         '/auth/signup',
         body: {
-          'firstName': firstName,
-          'lastName': lastName,
-          'fullName': fullName.trim(),
-          'name': fullName.trim(),
+          'firstName': firstName.trim(),
+          'lastName': lastName.trim(),
           'email': email.trim(),
           'phone': phone.trim(),
           'password': password,
@@ -103,29 +72,39 @@ class AuthService {
 
       final Map<String, dynamic> data = _normalizeMap(response);
 
-      final token = data['token']?.toString();
-
-      if (token != null && token.isNotEmpty) {
-        await StorageHelper.saveToken(token);
-      }
-
-      final userId =
-          data['user']?['_id']?.toString() ??
-          data['user']?['id']?.toString() ??
-          data['_id']?.toString() ??
-          data['id']?.toString();
-
-      if (userId != null && userId.isNotEmpty) {
-        await StorageHelper.saveUserId(userId);
-      }
-
-      await StorageHelper.saveRole('provider');
+      await _saveAuthData(
+        data,
+        fallbackRole: 'provider',
+      );
 
       return data;
     } catch (e) {
-      log('Register Error: $e');
+      log('Signup Error: $e');
       rethrow;
     }
+  }
+
+  // =========================
+  // REGISTER WRAPPER
+  // Backward compatibility for older code
+  // =========================
+
+  Future<Map<String, dynamic>> register({
+    required String firstName,
+    required String lastName,
+    required String email,
+    required String phone,
+    required String password,
+    required String businessName,
+  }) async {
+    return signup(
+      firstName: firstName,
+      lastName: lastName,
+      email: email,
+      phone: phone,
+      password: password,
+      businessName: businessName,
+    );
   }
 
   // =========================
@@ -149,23 +128,10 @@ class AuthService {
 
       final Map<String, dynamic> data = _normalizeMap(response);
 
-      final token = data['token']?.toString();
-
-      if (token != null && token.isNotEmpty) {
-        await StorageHelper.saveToken(token);
-      }
-
-      final userId =
-          data['user']?['_id']?.toString() ??
-          data['user']?['id']?.toString() ??
-          data['_id']?.toString() ??
-          data['id']?.toString();
-
-      if (userId != null && userId.isNotEmpty) {
-        await StorageHelper.saveUserId(userId);
-      }
-
-      await StorageHelper.saveRole('provider');
+      await _saveAuthData(
+        data,
+        fallbackRole: 'provider',
+      );
 
       return data;
     } catch (e) {
@@ -176,9 +142,7 @@ class AuthService {
 
   // =========================
   // SEND OTP
-  // NOTE:
-  // Your current backend authRoutes.js does not expose this route yet.
-  // Keep this for future backend support.
+  // NOTE: Backend route must exist to use this.
   // =========================
 
   Future<Map<String, dynamic>> sendOtp({
@@ -201,9 +165,7 @@ class AuthService {
 
   // =========================
   // VERIFY OTP
-  // NOTE:
-  // Your current backend authRoutes.js does not expose this route yet.
-  // Keep this for future backend support.
+  // NOTE: Backend route must exist to use this.
   // =========================
 
   Future<Map<String, dynamic>> verifyOtp({
@@ -228,9 +190,7 @@ class AuthService {
 
   // =========================
   // FORGOT PASSWORD
-  // NOTE:
-  // Your current backend authRoutes.js does not expose this route yet.
-  // Keep this for future backend support.
+  // NOTE: Backend route must exist to use this.
   // =========================
 
   Future<Map<String, dynamic>> forgotPassword({
@@ -253,9 +213,7 @@ class AuthService {
 
   // =========================
   // RESET PASSWORD
-  // NOTE:
-  // Your current backend authRoutes.js does not expose this route yet.
-  // Keep this for future backend support.
+  // NOTE: Backend route must exist to use this.
   // =========================
 
   Future<Map<String, dynamic>> resetPassword({
@@ -319,9 +277,7 @@ class AuthService {
 
   // =========================
   // UPDATE PROFILE
-  // NOTE:
-  // This requires backend route.
-  // If not available, add PUT /api/auth/profile or provider profile route.
+  // NOTE: Backend route must exist to use this.
   // =========================
 
   Future<Map<String, dynamic>> updateProfile({
@@ -342,9 +298,7 @@ class AuthService {
 
   // =========================
   // CHANGE PASSWORD
-  // NOTE:
-  // Your current backend authRoutes.js does not expose this route yet.
-  // Keep this for future backend support.
+  // NOTE: Backend route must exist to use this.
   // =========================
 
   Future<Map<String, dynamic>> changePassword({
@@ -369,8 +323,7 @@ class AuthService {
 
   // =========================
   // REFRESH TOKEN
-  // NOTE:
-  // Your current backend authRoutes.js does not expose this route yet.
+  // NOTE: Backend route must exist to use this.
   // =========================
 
   Future<String?> refreshToken() async {
@@ -414,8 +367,7 @@ class AuthService {
 
   // =========================
   // DELETE ACCOUNT
-  // NOTE:
-  // This requires backend route.
+  // NOTE: Backend route must exist to use this.
   // =========================
 
   Future<Map<String, dynamic>> deleteAccount() async {
@@ -449,6 +401,38 @@ class AuthService {
 
   Future<String?> getToken() async {
     return StorageHelper.getToken();
+  }
+
+  // =========================
+  // SAVE AUTH DATA
+  // =========================
+
+  Future<void> _saveAuthData(
+    Map<String, dynamic> data, {
+    String? fallbackRole,
+  }) async {
+    final token = data['token']?.toString();
+
+    if (token != null && token.isNotEmpty) {
+      await StorageHelper.saveToken(token);
+    }
+
+    final userId = data['user']?['_id']?.toString() ??
+        data['user']?['id']?.toString() ??
+        data['_id']?.toString() ??
+        data['id']?.toString();
+
+    if (userId != null && userId.isNotEmpty) {
+      await StorageHelper.saveUserId(userId);
+    }
+
+    final role = data['user']?['role']?.toString() ??
+        data['role']?.toString() ??
+        fallbackRole;
+
+    if (role != null && role.isNotEmpty) {
+      await StorageHelper.saveRole(role);
+    }
   }
 
   // =========================

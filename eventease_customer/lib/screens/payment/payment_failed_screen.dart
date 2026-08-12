@@ -10,8 +10,7 @@ class PaymentFailedScreen extends StatelessWidget {
   final String? errorCode;
 
   const PaymentFailedScreen({
-    super.key,
-    required this.bookingId,
+    required this.bookingId, super.key,
     this.errorMessage,
     this.errorCode,
   });
@@ -35,7 +34,7 @@ class PaymentFailedScreen extends StatelessWidget {
                 width: 130,
                 height: 130,
                 decoration: BoxDecoration(
-                  color: AppColors.error.withOpacity(0.1),
+                  color: AppColors.error.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
@@ -48,7 +47,7 @@ class PaymentFailedScreen extends StatelessWidget {
               const SizedBox(height: 24),
 
               const Text(
-                "Payment Failed",
+                'Payment Failed',
                 style: AppStyles.heading2,
                 textAlign: TextAlign.center,
               ),
@@ -57,7 +56,7 @@ class PaymentFailedScreen extends StatelessWidget {
 
               Text(
                 errorMessage ??
-                    "Your transaction could not be completed. Please try again.",
+                    'Your transaction could not be completed. Please try again.',
                 textAlign: TextAlign.center,
                 style: AppStyles.subtitle,
               ),
@@ -74,14 +73,14 @@ class PaymentFailedScreen extends StatelessWidget {
                 child: Column(
                   children: [
                     _detailRow(
-                      "Booking ID",
+                      'Booking ID',
                       bookingId,
                     ),
 
                     if (errorCode != null) ...[
                       const Divider(),
                       _detailRow(
-                        "Error Code",
+                        'Error Code',
                         errorCode!,
                       ),
                     ],
@@ -89,16 +88,16 @@ class PaymentFailedScreen extends StatelessWidget {
                     const Divider(),
 
                     _detailRow(
-                      "Status",
-                      "Failed",
+                      'Status',
+                      'Failed',
                       valueColor: AppColors.error,
                     ),
 
                     const Divider(),
 
                     _detailRow(
-                      "Date",
-                      "${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}",
+                      'Date',
+                      '${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}',
                     ),
                   ],
                 ),
@@ -109,7 +108,7 @@ class PaymentFailedScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.orange.withOpacity(0.1),
+                  color: Colors.orange.withValues(alpha: 0.1),
                   borderRadius:
                       BorderRadius.circular(12),
                 ),
@@ -144,7 +143,7 @@ class PaymentFailedScreen extends StatelessWidget {
                     Navigator.pop(context);
                   },
                   child: const Text(
-                    "Retry Payment",
+                    'Retry Payment',
                   ),
                 ),
               ),
@@ -168,7 +167,7 @@ class PaymentFailedScreen extends StatelessWidget {
                     );
                   },
                   child: const Text(
-                    "Back To Home",
+                    'Back To Home',
                   ),
                 ),
               ),

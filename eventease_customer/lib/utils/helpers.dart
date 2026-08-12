@@ -66,7 +66,7 @@ class Helpers {
 
   static void showLoading(
     BuildContext context, {
-    String message = "Loading...",
+    String message = 'Loading...',
   }) {
     showDialog(
       context: context,
@@ -105,8 +105,8 @@ class Helpers {
     BuildContext context, {
     required String title,
     required String message,
-    String confirmText = "Yes",
-    String cancelText = "No",
+    String confirmText = 'Yes',
+    String cancelText = 'No',
   }) {
     return showDialog<bool>(
       context: context,
@@ -285,7 +285,7 @@ class Helpers {
     if (context.mounted) {
       showSuccessSnackBar(
         context,
-        "Copied to clipboard",
+        'Copied to clipboard',
       );
     }
   }

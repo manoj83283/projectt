@@ -149,7 +149,7 @@ class BookingProvider extends ChangeNotifier {
       );
 
       _bookings =
-          (response as List)
+          (response)
               .map(
                 (e) =>
                     BookingModel.fromJson(

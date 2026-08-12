@@ -220,7 +220,7 @@ class _BookingDetailsScreenState
                       ),
                       child: Text(
                         booking.status
-                                ?.toUpperCase() ??
+                                .toUpperCase() ??
                             'PENDING',
                         style:
                             const TextStyle(

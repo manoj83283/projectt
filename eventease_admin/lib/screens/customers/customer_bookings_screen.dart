@@ -692,7 +692,7 @@ class _CustomerBookingsScreenState
               radius: 32,
               backgroundColor:
                   AppColors.primary
-                      .withOpacity(0.10),
+                      .withValues(alpha: 0.10),
               backgroundImage:
                   customer.profileImage != null &&
                           customer
@@ -932,12 +932,12 @@ class _SummaryCard extends StatelessWidget {
         AppDimensions.padding16,
       ),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
+        color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(
           AppDimensions.radius16,
         ),
         border: Border.all(
-          color: color.withOpacity(0.18),
+          color: color.withValues(alpha: 0.18),
         ),
       ),
       child: Row(
@@ -946,7 +946,7 @@ class _SummaryCard extends StatelessWidget {
             height: 42,
             width: 42,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.12),
+              color: color.withValues(alpha: 0.12),
               borderRadius:
                   BorderRadius.circular(
                 AppDimensions.radius12,
@@ -1019,12 +1019,12 @@ class _MiniMetric extends StatelessWidget {
         AppDimensions.padding12,
       ),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
+        color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(
           AppDimensions.radius12,
         ),
         border: Border.all(
-          color: color.withOpacity(0.18),
+          color: color.withValues(alpha: 0.18),
         ),
       ),
       child: Column(

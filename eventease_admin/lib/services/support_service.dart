@@ -29,9 +29,9 @@ class SupportService {
         query: {
           'page': page,
           'limit': limit,
-          if (status != null) 'status': status,
-          if (priority != null) 'priority': priority,
-          if (search != null) 'search': search,
+          'status': ?status,
+          'priority': ?priority,
+          'search': ?search,
         },
       );
 

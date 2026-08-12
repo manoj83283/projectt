@@ -104,7 +104,7 @@ class EmptyWidget extends StatelessWidget {
         width: imageHeight,
         decoration: BoxDecoration(
           color: AppColors.primary
-              .withOpacity(0.08),
+              .withValues(alpha: 0.08),
           shape: BoxShape.circle,
         ),
         child: Icon(

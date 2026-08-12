@@ -219,8 +219,8 @@ class _SearchScreenState
                     backgroundColor:
                         ThemeConfig
                             .primaryColor
-                            .withOpacity(
-                      0.08,
+                            .withValues(
+                      alpha: 0.08,
                     ),
                     label: Text(
                       search,
@@ -255,7 +255,7 @@ class _SearchScreenState
               decoration: BoxDecoration(
                 color: ThemeConfig
                     .primaryColor
-                    .withOpacity(0.1),
+                    .withValues(alpha: 0.1),
                 borderRadius:
                     BorderRadius.circular(
                   12,

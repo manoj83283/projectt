@@ -38,7 +38,7 @@ class CustomDropdown<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DropdownButtonFormField<T>(
-      value: value,
+      initialValue: value,
       isExpanded: isExpanded,
       validator: validator,
       onChanged: enabled ? onChanged : null,

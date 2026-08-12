@@ -1,21 +1,22 @@
 import 'package:flutter/material.dart';
 
+import '../../config/route_config.dart';
 import '../../config/theme_config.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({
+    super.key,
+  });
 
   @override
   State<HomeScreen> createState() =>
       _HomeScreenState();
 }
 
-class _HomeScreenState
-    extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> {
   int selectedIndex = 0;
 
-  final List<Map<String, dynamic>>
-      categories = [
+  final List<Map<String, dynamic>> categories = [
     {
       'name': 'Photographer',
       'icon': Icons.camera_alt,
@@ -42,22 +43,21 @@ class _HomeScreenState
     },
   ];
 
-  final List<Map<String, dynamic>>
-      featuredServices = [
+  final List<Map<String, dynamic>> featuredServices = [
     {
       'title': 'Wedding Photography',
       'rating': 4.8,
-      'price': '₹15,000'
+      'price': '₹15,000',
     },
     {
       'title': 'Premium Catering',
       'rating': 4.7,
-      'price': '₹25,000'
+      'price': '₹25,000',
     },
     {
       'title': 'Event Decoration',
       'rating': 4.9,
-      'price': '₹12,000'
+      'price': '₹12,000',
     },
   ];
 
@@ -67,41 +67,105 @@ class _HomeScreenState
     );
   }
 
+  void _openRoute(
+    String routeName, {
+    Object? arguments,
+  }) {
+    Navigator.pushNamed(
+      context,
+      routeName,
+      arguments: arguments,
+    );
+  }
+
+  void _onBottomNavigationTap(int index) {
+    setState(() {
+      selectedIndex = index;
+    });
+
+    switch (index) {
+      case 0:
+        // Already on home
+        break;
+
+      case 1:
+        _openRoute(
+          RouteConfig.search,
+        );
+        break;
+
+      case 2:
+        _openRoute(
+          RouteConfig.cart,
+        );
+        break;
+
+      case 3:
+        _openRoute(
+          RouteConfig.myOrders,
+        );
+        break;
+
+      case 4:
+        _openRoute(
+          RouteConfig.profile,
+        );
+        break;
+    }
+  }
+
+  void _openCategory(
+    Map<String, dynamic> category,
+  ) {
+    _openRoute(
+      RouteConfig.serviceList,
+      arguments: {
+        'category': category['name'],
+      },
+    );
+  }
+
+  void _openFeaturedService(
+    Map<String, dynamic> service,
+  ) {
+    _openRoute(
+      RouteConfig.serviceDetails,
+      arguments: {
+        'service': service,
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor:
-          const Color(0xFFF8F9FC),
+      backgroundColor: const Color(
+        0xFFF8F9FC,
+      ),
 
       body: RefreshIndicator(
         onRefresh: refreshData,
         child: SafeArea(
           child: SingleChildScrollView(
-            physics:
-                const AlwaysScrollableScrollPhysics(),
+            physics: const AlwaysScrollableScrollPhysics(),
             child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // =================================
                 // HEADER
                 // =================================
 
                 Container(
-                  padding:
-                      const EdgeInsets.all(20),
-                  decoration:
-                      const BoxDecoration(
-                    color: ThemeConfig
-                        .primaryColor,
-                    borderRadius:
-                        BorderRadius.only(
-                      bottomLeft:
-                          Radius.circular(
+                  padding: const EdgeInsets.all(
+                    20,
+                  ),
+                  decoration: const BoxDecoration(
+                    color: ThemeConfig.primaryColor,
+                    borderRadius: BorderRadius.only(
+                      bottomLeft: Radius.circular(
                         25,
                       ),
-                      bottomRight:
-                          Radius.circular(
+                      bottomRight: Radius.circular(
                         25,
                       ),
                     ),
@@ -112,8 +176,7 @@ class _HomeScreenState
                         children: [
                           const Icon(
                             Icons.location_on,
-                            color:
-                                Colors.white,
+                            color: Colors.white,
                           ),
 
                           const SizedBox(
@@ -123,27 +186,29 @@ class _HomeScreenState
                           const Expanded(
                             child: Text(
                               'Hyderabad, Telangana',
-                              style:
-                                  TextStyle(
-                                color: Colors
-                                    .white,
-                                fontSize:
-                                    16,
-                                fontWeight:
-                                    FontWeight
-                                        .w600,
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
                           ),
 
-                          CircleAvatar(
-                            backgroundColor:
-                                Colors.white,
-                            child: Icon(
-                              Icons.person,
-                              color:
-                                  ThemeConfig
-                                      .primaryColor,
+                          InkWell(
+                            borderRadius: BorderRadius.circular(
+                              40,
+                            ),
+                            onTap: () {
+                              _openRoute(
+                                RouteConfig.profile,
+                              );
+                            },
+                            child: const CircleAvatar(
+                              backgroundColor: Colors.white,
+                              child: Icon(
+                                Icons.person,
+                                color: ThemeConfig.primaryColor,
+                              ),
                             ),
                           ),
                         ],
@@ -155,34 +220,36 @@ class _HomeScreenState
 
                       // SEARCH
 
-                      Container(
-                        height: 52,
-                        decoration:
-                            BoxDecoration(
-                          color:
-                              Colors.white,
-                          borderRadius:
-                              BorderRadius
-                                  .circular(
-                            15,
-                          ),
+                      InkWell(
+                        borderRadius: BorderRadius.circular(
+                          15,
                         ),
-                        child: TextField(
-                          decoration:
-                              InputDecoration(
-                            hintText:
-                                'Search services...',
-                            prefixIcon:
-                                const Icon(
-                              Icons.search,
+                        onTap: () {
+                          _openRoute(
+                            RouteConfig.search,
+                          );
+                        },
+                        child: Container(
+                          height: 52,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(
+                              15,
                             ),
-                            border:
-                                InputBorder
-                                    .none,
-                            contentPadding:
-                                const EdgeInsets
-                                    .symmetric(
-                              vertical: 15,
+                          ),
+                          child: const IgnorePointer(
+                            child: TextField(
+                              decoration: InputDecoration(
+                                hintText: 'Search services...',
+                                prefixIcon: Icon(
+                                  Icons.search,
+                                ),
+                                border: InputBorder.none,
+                                contentPadding:
+                                    EdgeInsets.symmetric(
+                                  vertical: 15,
+                                ),
+                              ),
                             ),
                           ),
                         ),
@@ -191,162 +258,152 @@ class _HomeScreenState
                   ),
                 ),
 
-                const SizedBox(height: 20),
+                const SizedBox(
+                  height: 20,
+                ),
 
                 // =================================
                 // BANNER
                 // =================================
 
                 Padding(
-                  padding:
-                      const EdgeInsets.symmetric(
+                  padding: const EdgeInsets.symmetric(
                     horizontal: 16,
                   ),
-                  child: Container(
-                    height: 160,
-                    width: double.infinity,
-                    decoration:
-                        BoxDecoration(
-                      gradient:
-                          const LinearGradient(
-                        colors: [
-                          ThemeConfig
-                              .primaryColor,
-                          Color(
-                            0xFF42A5F5,
-                          ),
-                        ],
-                      ),
-                      borderRadius:
-                          BorderRadius
-                              .circular(
-                        18,
-                      ),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(
+                      18,
                     ),
-                    child: const Padding(
-                      padding:
-                          EdgeInsets.all(
-                        20,
+                    onTap: () {
+                      _openRoute(
+                        RouteConfig.serviceList,
+                      );
+                    },
+                    child: Container(
+                      height: 160,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [
+                            ThemeConfig.primaryColor,
+                            Color(
+                              0xFF42A5F5,
+                            ),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(
+                          18,
+                        ),
                       ),
-                      child: Column(
-                        crossAxisAlignment:
-                            CrossAxisAlignment
-                                .start,
-                        mainAxisAlignment:
-                            MainAxisAlignment
-                                .center,
-                        children: [
-                          Text(
-                            'Book Your Event Services',
-                            style:
-                                TextStyle(
-                              color: Colors
-                                  .white,
-                              fontSize:
-                                  24,
-                              fontWeight:
-                                  FontWeight
-                                      .bold,
+                      child: const Padding(
+                        padding: EdgeInsets.all(
+                          20,
+                        ),
+                        child: Column(
+                          crossAxisAlignment:
+                              CrossAxisAlignment.start,
+                          mainAxisAlignment:
+                              MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              'Book Your Event Services',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                          ),
-                          SizedBox(
-                            height: 10,
-                          ),
-                          Text(
-                            'Photographers • Catering • Decoration • Halls',
-                            style:
-                                TextStyle(
-                              color: Colors
-                                  .white,
+                            SizedBox(
+                              height: 10,
                             ),
-                          ),
-                        ],
+                            Text(
+                              'Photographers • Catering • Decoration • Halls',
+                              style: TextStyle(
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
                 ),
 
-                const SizedBox(height: 24),
+                const SizedBox(
+                  height: 24,
+                ),
 
                 // =================================
                 // CATEGORIES
                 // =================================
 
                 const Padding(
-                  padding:
-                      EdgeInsets.symmetric(
+                  padding: EdgeInsets.symmetric(
                     horizontal: 16,
                   ),
                   child: Text(
                     'Categories',
                     style: TextStyle(
                       fontSize: 20,
-                      fontWeight:
-                          FontWeight.bold,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
 
-                const SizedBox(height: 12),
+                const SizedBox(
+                  height: 12,
+                ),
 
                 Padding(
-                  padding:
-                      const EdgeInsets.symmetric(
+                  padding: const EdgeInsets.symmetric(
                     horizontal: 16,
                   ),
                   child: GridView.builder(
                     shrinkWrap: true,
                     physics:
                         const NeverScrollableScrollPhysics(),
-                    itemCount:
-                        categories.length,
+                    itemCount: categories.length,
                     gridDelegate:
                         const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 3,
                       crossAxisSpacing: 12,
                       mainAxisSpacing: 12,
-                      childAspectRatio:
-                          1.0,
+                      childAspectRatio: 1.0,
                     ),
-                    itemBuilder:
-                        (context, index) {
-                      final category =
-                          categories[index];
+                    itemBuilder: (
+                      context,
+                      index,
+                    ) {
+                      final category = categories[index];
 
                       return Card(
                         elevation: 2,
                         child: InkWell(
-                          borderRadius:
-                              BorderRadius
-                                  .circular(
+                          borderRadius: BorderRadius.circular(
                             12,
                           ),
-                          onTap: () {},
+                          onTap: () {
+                            _openCategory(
+                              category,
+                            );
+                          },
                           child: Column(
                             mainAxisAlignment:
-                                MainAxisAlignment
-                                    .center,
+                                MainAxisAlignment.center,
                             children: [
                               Icon(
                                 category['icon'],
-                                color:
-                                    ThemeConfig
-                                        .primaryColor,
+                                color: ThemeConfig.primaryColor,
                                 size: 30,
                               ),
                               const SizedBox(
                                 height: 8,
                               ),
                               Text(
-                                category[
-                                    'name'],
-                                textAlign:
-                                    TextAlign
-                                        .center,
-                                style:
-                                    const TextStyle(
-                                  fontSize:
-                                      12,
+                                category['name'],
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  fontSize: 12,
                                 ),
                               ),
                             ],
@@ -357,70 +414,86 @@ class _HomeScreenState
                   ),
                 ),
 
-                const SizedBox(height: 24),
+                const SizedBox(
+                  height: 24,
+                ),
 
                 // =================================
                 // FEATURED SERVICES
                 // =================================
 
-                const Padding(
-                  padding:
-                      EdgeInsets.symmetric(
-                    horizontal: 16,
-                  ),
-                  child: Text(
-                    'Featured Services',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight:
-                          FontWeight.bold,
+                Row(
+                  children: [
+                    const Expanded(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 16,
+                        ),
+                        child: Text(
+                          'Featured Services',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
+                    TextButton(
+                      onPressed: () {
+                        _openRoute(
+                          RouteConfig.serviceList,
+                        );
+                      },
+                      child: const Text(
+                        'View All',
+                      ),
+                    ),
+                    const SizedBox(
+                      width: 8,
+                    ),
+                  ],
                 ),
 
-                const SizedBox(height: 12),
+                const SizedBox(
+                  height: 12,
+                ),
 
                 ListView.builder(
                   shrinkWrap: true,
                   physics:
                       const NeverScrollableScrollPhysics(),
-                  itemCount:
-                      featuredServices.length,
-                  itemBuilder:
-                      (context, index) {
-                    final service =
-                        featuredServices[
-                            index];
+                  itemCount: featuredServices.length,
+                  itemBuilder: (
+                    context,
+                    index,
+                  ) {
+                    final service = featuredServices[index];
 
                     return Card(
-                      margin:
-                          const EdgeInsets.symmetric(
+                      margin: const EdgeInsets.symmetric(
                         horizontal: 16,
                         vertical: 8,
                       ),
                       child: ListTile(
-                        leading:
-                            Container(
+                        onTap: () {
+                          _openFeaturedService(
+                            service,
+                          );
+                        },
+                        leading: Container(
                           width: 55,
                           height: 55,
-                          decoration:
-                              BoxDecoration(
-                            color: ThemeConfig
-                                .primaryColor
-                                .withOpacity(
-                              0.1,
+                          decoration: BoxDecoration(
+                            color: ThemeConfig.primaryColor.withValues(
+                              alpha: 0.1,
                             ),
-                            borderRadius:
-                                BorderRadius
-                                    .circular(
+                            borderRadius: BorderRadius.circular(
                               12,
                             ),
                           ),
                           child: const Icon(
-                            Icons
-                                .business_center,
-                            color: ThemeConfig
-                                .primaryColor,
+                            Icons.business_center,
+                            color: ThemeConfig.primaryColor,
                           ),
                         ),
                         title: Text(
@@ -431,8 +504,7 @@ class _HomeScreenState
                             const Icon(
                               Icons.star,
                               size: 16,
-                              color: Colors
-                                  .orange,
+                              color: Colors.orange,
                             ),
                             Text(
                               ' ${service['rating']}',
@@ -441,13 +513,9 @@ class _HomeScreenState
                         ),
                         trailing: Text(
                           service['price'],
-                          style:
-                              const TextStyle(
-                            fontWeight:
-                                FontWeight
-                                    .bold,
-                            color:
-                                Colors.green,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green,
                           ),
                         ),
                       ),
@@ -455,7 +523,9 @@ class _HomeScreenState
                   },
                 ),
 
-                const SizedBox(height: 100),
+                const SizedBox(
+                  height: 100,
+                ),
               ],
             ),
           ),
@@ -466,21 +536,23 @@ class _HomeScreenState
       // BOTTOM NAVIGATION
       // =================================
 
-      bottomNavigationBar:
-          BottomNavigationBar(
+      bottomNavigationBar: BottomNavigationBar(
         currentIndex: selectedIndex,
-        onTap: (index) {
-          setState(() {
-            selectedIndex = index;
-          });
-        },
+        type: BottomNavigationBarType.fixed,
+        selectedItemColor: ThemeConfig.primaryColor,
+        unselectedItemColor: Colors.grey,
+        onTap: _onBottomNavigationTap,
         items: const [
           BottomNavigationBarItem(
-            icon: Icon(Icons.home),
+            icon: Icon(
+              Icons.home,
+            ),
             label: 'Home',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.search),
+            icon: Icon(
+              Icons.search,
+            ),
             label: 'Search',
           ),
           BottomNavigationBarItem(
@@ -490,11 +562,15 @@ class _HomeScreenState
             label: 'Cart',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.list_alt),
+            icon: Icon(
+              Icons.list_alt,
+            ),
             label: 'Orders',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.person),
+            icon: Icon(
+              Icons.person,
+            ),
             label: 'Profile',
           ),
         ],

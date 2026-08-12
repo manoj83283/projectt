@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'config/route_config.dart';
 
 import 'providers/auth_provider.dart';
+import 'providers/provider_provider.dart';
 import 'providers/booking_provider.dart';
 import 'providers/chat_provider.dart';
 import 'providers/language_provider.dart';
@@ -39,6 +40,10 @@ class EventEaseProviderApp extends StatelessWidget {
         ChangeNotifierProvider<AuthProvider>(
           create: (_) => AuthProvider(),
         ),
+        
+        ChangeNotifierProvider<ProviderProvider>(
+          create: (_) => ProviderProvider(),
+          ),
 
         ChangeNotifierProvider<ServiceProvider>(
           create: (_) => ServiceProvider(),

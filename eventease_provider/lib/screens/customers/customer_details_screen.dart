@@ -52,20 +52,16 @@ class CustomerDetailsScreen extends StatelessWidget {
                           Theme.of(context)
                               .primaryColor,
                       backgroundImage:
-                          customer.profileImage !=
-                                  null &&
-                              customer
-                                  .profileImage!
+                          customer
+                                  .profileImage
                                   .isNotEmpty
                           ? NetworkImage(
                               customer
-                                  .profileImage!,
+                                  .profileImage,
                             )
                           : null,
-                      child: customer.profileImage ==
-                                  null ||
-                              customer
-                                  .profileImage!
+                      child: customer
+                                  .profileImage
                                   .isEmpty
                           ? Text(
                               customer.fullName
@@ -118,8 +114,8 @@ class CustomerDetailsScreen extends StatelessWidget {
                                 customer
                                         .isActive ??
                                     true)
-                            .withOpacity(
-                                0.15),
+                            .withValues(
+                                alpha: 0.15),
                         borderRadius:
                             BorderRadius
                                 .circular(

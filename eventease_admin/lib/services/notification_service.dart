@@ -28,8 +28,8 @@ class NotificationService {
         query: {
           'page': page,
           'limit': limit,
-          if (type != null) 'type': type,
-          if (status != null) 'status': status,
+          'type': ?type,
+          'status': ?status,
         },
       );
 

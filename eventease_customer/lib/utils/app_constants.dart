@@ -1,6 +1,4 @@
-import 'package:flutter/material.dart';
 
-import 'app_colors.dart';
 class AppConstants {
   AppConstants._();
 
@@ -8,25 +6,25 @@ class AppConstants {
   // APP INFO
   // =====================================================
 
-  static const String appName = "EventEase";
+  static const String appName = 'EventEase';
 
-  static const String appVersion = "1.0.0";
+  static const String appVersion = '1.0.0';
 
   static const String packageName =
-      "com.eventease.customer";
+      'com.eventease.customer';
 
   static const String companyName =
-      "EventEase Technologies";
+      'EventEase Technologies';
 
   // =====================================================
   // API
   // =====================================================
 
   static const String baseUrl =
-      "https://api.eventease.com/api";
+      'https://api.eventease.com/api';
 
   static const String socketUrl =
-      "https://api.eventease.com";
+      'https://api.eventease.com';
 
   static const Duration apiTimeout =
       Duration(seconds: 30);
@@ -44,116 +42,116 @@ class AppConstants {
   // =====================================================
 
   static const String accessTokenKey =
-      "access_token";
+      'access_token';
 
   static const String refreshTokenKey =
-      "refresh_token";
+      'refresh_token';
 
-  static const String userKey = "user";
+  static const String userKey = 'user';
 
   static const String languageKey =
-      "language";
+      'language';
 
-  static const String themeKey = "theme";
+  static const String themeKey = 'theme';
 
   static const String onboardingKey =
-      "onboarding_completed";
+      'onboarding_completed';
 
   static const String locationKey =
-      "user_location";
+      'user_location';
 
   static const String cartKey =
-      "cart_data";
+      'cart_data';
 
   // =====================================================
   // USER ROLES
   // =====================================================
 
   static const String customerRole =
-      "customer";
+      'customer';
 
   static const String providerRole =
-      "provider";
+      'provider';
 
   static const String adminRole =
-      "admin";
+      'admin';
 
   // =====================================================
   // BOOKING STATUS
   // =====================================================
 
   static const String pending =
-      "pending";
+      'pending';
 
   static const String confirmed =
-      "confirmed";
+      'confirmed';
 
   static const String assigned =
-      "assigned";
+      'assigned';
 
   static const String inProgress =
-      "in_progress";
+      'in_progress';
 
   static const String completed =
-      "completed";
+      'completed';
 
   static const String cancelled =
-      "cancelled";
+      'cancelled';
 
   // =====================================================
   // PAYMENT STATUS
   // =====================================================
 
   static const String paymentPending =
-      "payment_pending";
+      'payment_pending';
 
   static const String paymentSuccess =
-      "payment_success";
+      'payment_success';
 
   static const String paymentFailed =
-      "payment_failed";
+      'payment_failed';
 
   static const String paymentRefunded =
-      "payment_refunded";
+      'payment_refunded';
 
   // =====================================================
   // PAYMENT METHODS
   // =====================================================
 
   static const String razorpay =
-      "razorpay";
+      'razorpay';
 
-  static const String upi = "upi";
+  static const String upi = 'upi';
 
   static const String creditCard =
-      "credit_card";
+      'credit_card';
 
   static const String debitCard =
-      "debit_card";
+      'debit_card';
 
-  static const String wallet = "wallet";
+  static const String wallet = 'wallet';
 
   static const String cash =
-      "cash";
+      'cash';
 
   // =====================================================
   // NOTIFICATIONS
   // =====================================================
 
   static const String bookingNotification =
-      "booking";
+      'booking';
 
   static const String paymentNotification =
-      "payment";
+      'payment';
 
   static const String chatNotification =
-      "chat";
+      'chat';
 
   static const String offerNotification =
-      "offer";
+      'offer';
 
   static const String systemNotification =
-      "system";
+      'system';
 
   // =====================================================
   // LANGUAGES
@@ -162,36 +160,36 @@ class AppConstants {
   static const List<Map<String, String>>
       supportedLanguages = [
     {
-      "name": "English",
-      "code": "en",
+      'name': 'English',
+      'code': 'en',
     },
     {
-      "name": "Hindi",
-      "code": "hi",
+      'name': 'Hindi',
+      'code': 'hi',
     },
     {
-      "name": "Telugu",
-      "code": "te",
+      'name': 'Telugu',
+      'code': 'te',
     },
     {
-      "name": "Tamil",
-      "code": "ta",
+      'name': 'Tamil',
+      'code': 'ta',
     },
     {
-      "name": "Kannada",
-      "code": "kn",
+      'name': 'Kannada',
+      'code': 'kn',
     },
     {
-      "name": "Malayalam",
-      "code": "ml",
+      'name': 'Malayalam',
+      'code': 'ml',
     },
     {
-      "name": "Marathi",
-      "code": "mr",
+      'name': 'Marathi',
+      'code': 'mr',
     },
     {
-      "name": "Bengali",
-      "code": "bn",
+      'name': 'Bengali',
+      'code': 'bn',
     },
   ];
 
@@ -245,29 +243,29 @@ class AppConstants {
   // =====================================================
 
   static const String bookingType =
-      "booking";
+      'booking';
 
   static const String groceryType =
-      "grocery";
+      'grocery';
 
   static const String livestockType =
-      "livestock";
+      'livestock';
 
   static const String eventType =
-      "event";
+      'event';
 
   // =====================================================
   // SOCIAL LINKS
   // =====================================================
 
   static const String supportEmail =
-      "support@eventease.com";
+      'support@eventease.com';
 
   static const String supportPhone =
-      "+91 1800000000";
+      '+91 1800000000';
 
   static const String website =
-      "https://eventease.com";
+      'https://eventease.com';
 
   // =====================================================
   // REGEX

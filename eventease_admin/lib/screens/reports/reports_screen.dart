@@ -227,7 +227,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   Row(
                     children: [
                       CircleAvatar(
-                        backgroundColor: AppColors.primary.withOpacity(0.1),
+                        backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                         child: const Icon(
                           Icons.assessment_outlined,
                           color: AppColors.primary,
@@ -565,7 +565,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.035),
+            color: Colors.black.withValues(alpha: 0.035),
             blurRadius: 18,
             offset: const Offset(0, 8),
           ),
@@ -685,10 +685,10 @@ class _ReportsScreenState extends State<ReportsScreen> {
                       margin: const EdgeInsets.only(bottom: 16),
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: AppColors.error.withOpacity(0.08),
+                        color: AppColors.error.withValues(alpha: 0.08),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: AppColors.error.withOpacity(0.25),
+                          color: AppColors.error.withValues(alpha: 0.25),
                         ),
                       ),
                       child: Text(
@@ -774,7 +774,7 @@ class ReportsTable extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.035),
+            color: Colors.black.withValues(alpha: 0.035),
             blurRadius: 18,
             offset: const Offset(0, 8),
           ),
@@ -1096,7 +1096,7 @@ class _GenerateReportDialogState extends State<_GenerateReportDialog> {
                 Row(
                   children: [
                     CircleAvatar(
-                      backgroundColor: AppColors.primary.withOpacity(0.1),
+                      backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                       child: const Icon(
                         Icons.add_chart_outlined,
                         color: AppColors.primary,
@@ -1223,7 +1223,7 @@ class _GenerateReportDialogState extends State<_GenerateReportDialog> {
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
                   value: _scheduleReport,
-                  activeColor: AppColors.primary,
+                  activeThumbColor: AppColors.primary,
                   title: const Text(
                     'Schedule Report',
                     style: TextStyle(
@@ -1337,7 +1337,7 @@ class _ReportInfoCell extends StatelessWidget {
         children: [
           CircleAvatar(
             radius: 19,
-            backgroundColor: _formatColor.withOpacity(0.1),
+            backgroundColor: _formatColor.withValues(alpha: 0.1),
             child: Icon(
               _formatIcon,
               color: _formatColor,
@@ -1560,7 +1560,7 @@ class _ReportSummaryCard extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.035),
+            color: Colors.black.withValues(alpha: 0.035),
             blurRadius: 18,
             offset: const Offset(0, 8),
           ),
@@ -1572,7 +1572,7 @@ class _ReportSummaryCard extends StatelessWidget {
             height: 46,
             width: 46,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.11),
+              color: color.withValues(alpha: 0.11),
               borderRadius: BorderRadius.circular(14),
             ),
             child: Icon(
@@ -1871,10 +1871,10 @@ class _StatusChip extends StatelessWidget {
         vertical: 7,
       ),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.11),
+        color: color.withValues(alpha: 0.11),
         borderRadius: BorderRadius.circular(999),
         border: Border.all(
-          color: color.withOpacity(0.24),
+          color: color.withValues(alpha: 0.24),
         ),
       ),
       child: Text(

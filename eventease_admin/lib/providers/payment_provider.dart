@@ -149,7 +149,7 @@ class PaymentProvider extends ChangeNotifier {
       );
 
       _payments =
-          (response as List)
+          (response)
               .map(
                 (e) =>
                     PaymentModel.fromJson(

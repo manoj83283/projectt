@@ -5,7 +5,7 @@ import '../screens/splash/splash_screen.dart';
 
 // Auth
 import '../screens/auth/login_screen.dart';
-import '../screens/auth/register_screen.dart';
+import '../screens/auth/signup_screen.dart';
 import '../screens/auth/otp_screen.dart';
 import '../screens/auth/forgot_password_screen.dart';
 import '../screens/auth/reset_password_screen.dart';
@@ -65,7 +65,7 @@ class AppRoutes {
 
   static const String login = '/login';
 
-  static const String register = '/register';
+  static const String signup = '/signup';
 
   static const String otp = '/otp';
 
@@ -175,7 +175,7 @@ class AppRoutes {
     // Auth
     login: (context) => const LoginScreen(),
 
-    register: (context) => const RegisterScreen(),
+    signup: (context) => const SignupScreen(),
 
     otp: (context) => const OtpScreen(),
 

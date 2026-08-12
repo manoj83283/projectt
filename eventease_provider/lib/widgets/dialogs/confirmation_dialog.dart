@@ -76,7 +76,7 @@ class ConfirmationDialog extends StatelessWidget {
           CircleAvatar(
             radius: 32,
             backgroundColor:
-                iconColor.withOpacity(0.1),
+                iconColor.withValues(alpha: 0.1),
             child: Icon(
               icon,
               size: 34,

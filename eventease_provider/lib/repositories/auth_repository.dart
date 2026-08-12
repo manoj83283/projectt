@@ -4,17 +4,15 @@ import '../services/auth_service.dart';
 class AuthRepository {
   AuthRepository._();
 
-  static final AuthRepository _instance =
-      AuthRepository._();
+  static final AuthRepository _instance = AuthRepository._();
 
-  static AuthRepository get instance =>
-      _instance;
+  static AuthRepository get instance => _instance;
 
-  final AuthService _authService =
-      AuthService.instance;
+  final AuthService _authService = AuthService.instance;
 
   // =========================
   // LOGIN
+  // Backend: /auth/signin
   // =========================
 
   Future<Map<String, dynamic>> login({
@@ -32,11 +30,13 @@ class AuthRepository {
   }
 
   // =========================
-  // REGISTER
+  // SIGNUP
+  // Backend: /auth/signup
   // =========================
 
   Future<Map<String, dynamic>> signup({
-    required String fullName,
+    required String firstName,
+    required String lastName,
     required String email,
     required String phone,
     required String password,
@@ -44,7 +44,35 @@ class AuthRepository {
   }) async {
     try {
       return await _authService.signup(
-        fullName: fullName,
+        firstName: firstName,
+        lastName: lastName,
+        email: email,
+        phone: phone,
+        password: password,
+        businessName: businessName,
+      );
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // =========================
+  // REGISTER WRAPPER
+  // Backward compatibility for old code
+  // =========================
+
+  Future<Map<String, dynamic>> register({
+    required String firstName,
+    required String lastName,
+    required String email,
+    required String phone,
+    required String password,
+    required String businessName,
+  }) async {
+    try {
+      return await signup(
+        firstName: firstName,
+        lastName: lastName,
         email: email,
         phone: phone,
         password: password,
@@ -93,13 +121,11 @@ class AuthRepository {
   // FORGOT PASSWORD
   // =========================
 
-  Future<Map<String, dynamic>>
-      forgotPassword({
+  Future<Map<String, dynamic>> forgotPassword({
     required String email,
   }) async {
     try {
-      return await _authService
-          .forgotPassword(
+      return await _authService.forgotPassword(
         email: email,
       );
     } catch (e) {
@@ -111,15 +137,13 @@ class AuthRepository {
   // RESET PASSWORD
   // =========================
 
-  Future<Map<String, dynamic>>
-      resetPassword({
+  Future<Map<String, dynamic>> resetPassword({
     required String email,
     required String otp,
     required String password,
   }) async {
     try {
-      return await _authService
-          .resetPassword(
+      return await _authService.resetPassword(
         email: email,
         otp: otp,
         password: password,
@@ -133,14 +157,12 @@ class AuthRepository {
   // CHANGE PASSWORD
   // =========================
 
-  Future<Map<String, dynamic>>
-      changePassword({
+  Future<Map<String, dynamic>> changePassword({
     required String oldPassword,
     required String newPassword,
   }) async {
     try {
-      return await _authService
-          .changePassword(
+      return await _authService.changePassword(
         oldPassword: oldPassword,
         newPassword: newPassword,
       );
@@ -150,14 +172,32 @@ class AuthRepository {
   }
 
   // =========================
-  // GET PROFILE
+  // GOOGLE LOGIN
+  // Backend: /auth/google
   // =========================
 
-  Future<ProviderModel>
-      getProfile() async {
+  Future<Map<String, dynamic>> googleLogin({
+    required String email,
+    required String name,
+  }) async {
     try {
-      return await _authService
-          .getProfile();
+      return await _authService.googleLogin(
+        email: email,
+        name: name,
+      );
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // =========================
+  // GET PROFILE
+  // Backend: /auth/profile
+  // =========================
+
+  Future<ProviderModel> getProfile() async {
+    try {
+      return await _authService.getProfile();
     } catch (e) {
       rethrow;
     }
@@ -167,14 +207,11 @@ class AuthRepository {
   // UPDATE PROFILE
   // =========================
 
-  Future<Map<String, dynamic>>
-      updateProfile({
-    required Map<String, dynamic>
-        data,
+  Future<Map<String, dynamic>> updateProfile({
+    required Map<String, dynamic> data,
   }) async {
     try {
-      return await _authService
-          .updateProfile(
+      return await _authService.updateProfile(
         data: data,
       );
     } catch (e) {
@@ -188,8 +225,7 @@ class AuthRepository {
 
   Future<String?> refreshToken() async {
     try {
-      return await _authService
-          .refreshToken();
+      return await _authService.refreshToken();
     } catch (e) {
       return null;
     }
@@ -201,8 +237,7 @@ class AuthRepository {
 
   Future<bool> isLoggedIn() async {
     try {
-      return await _authService
-          .isLoggedIn();
+      return await _authService.isLoggedIn();
     } catch (e) {
       return false;
     }
@@ -214,8 +249,7 @@ class AuthRepository {
 
   Future<String?> getToken() async {
     try {
-      return await _authService
-          .getToken();
+      return await _authService.getToken();
     } catch (e) {
       return null;
     }
@@ -237,11 +271,9 @@ class AuthRepository {
   // DELETE ACCOUNT
   // =========================
 
-  Future<Map<String, dynamic>>
-      deleteAccount() async {
+  Future<Map<String, dynamic>> deleteAccount() async {
     try {
-      return await _authService
-          .deleteAccount();
+      return await _authService.deleteAccount();
     } catch (e) {
       rethrow;
     }

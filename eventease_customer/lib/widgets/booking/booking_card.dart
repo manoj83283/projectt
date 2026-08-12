@@ -16,15 +16,7 @@ class BookingCard extends StatelessWidget {
   final VoidCallback? onViewDetails;
 
   const BookingCard({
-    super.key,
-    required this.bookingId,
-    required this.serviceName,
-    required this.providerName,
-    required this.imageUrl,
-    required this.bookingDate,
-    required this.eventDate,
-    required this.amount,
-    required this.status,
+    required this.bookingId, required this.serviceName, required this.providerName, required this.imageUrl, required this.bookingDate, required this.eventDate, required this.amount, required this.status, super.key,
     this.onTap,
     this.onTrack,
     this.onCancel,
@@ -33,19 +25,19 @@ class BookingCard extends StatelessWidget {
 
   Color getStatusColor() {
     switch (status.toLowerCase()) {
-      case "confirmed":
+      case 'confirmed':
         return Colors.green;
 
-      case "pending":
+      case 'pending':
         return Colors.orange;
 
-      case "completed":
+      case 'completed':
         return Colors.blue;
 
-      case "cancelled":
+      case 'cancelled':
         return Colors.red;
 
-      case "in progress":
+      case 'in progress':
         return Colors.purple;
 
       default:
@@ -54,7 +46,7 @@ class BookingCard extends StatelessWidget {
   }
 
   String formatDate(DateTime date) {
-    return "${date.day}/${date.month}/${date.year}";
+    return '${date.day}/${date.month}/${date.year}';
   }
 
   @override
@@ -81,7 +73,7 @@ class BookingCard extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      "Booking #$bookingId",
+                      'Booking #$bookingId',
                       style:
                           const TextStyle(
                         fontWeight:
@@ -100,8 +92,8 @@ class BookingCard extends StatelessWidget {
                     decoration:
                         BoxDecoration(
                       color: getStatusColor()
-                          .withOpacity(
-                        0.15,
+                          .withValues(
+                        alpha: 0.15,
                       ),
                       borderRadius:
                           BorderRadius.circular(
@@ -208,7 +200,7 @@ class BookingCard extends StatelessWidget {
                             ),
                             Expanded(
                               child: Text(
-                                "Event: ${formatDate(eventDate)}",
+                                'Event: ${formatDate(eventDate)}',
                                 style:
                                     const TextStyle(
                                   fontSize: 13,
@@ -234,7 +226,7 @@ class BookingCard extends StatelessWidget {
                               width: 4,
                             ),
                             Text(
-                              "₹${amount.toStringAsFixed(0)}",
+                              '₹${amount.toStringAsFixed(0)}',
                               style:
                                   const TextStyle(
                                 color:
@@ -277,7 +269,7 @@ class BookingCard extends StatelessWidget {
                       width: 6,
                     ),
                     Text(
-                      "Booked on ${formatDate(bookingDate)}",
+                      'Booked on ${formatDate(bookingDate)}',
                     ),
                   ],
                 ),
@@ -293,7 +285,7 @@ class BookingCard extends StatelessWidget {
                       onPressed:
                           onViewDetails,
                       child: const Text(
-                        "Details",
+                        'Details',
                       ),
                     ),
                   ),
@@ -306,7 +298,7 @@ class BookingCard extends StatelessWidget {
                       onPressed:
                           onTrack,
                       child: const Text(
-                        "Track",
+                        'Track',
                       ),
                     ),
                   ),
@@ -314,9 +306,9 @@ class BookingCard extends StatelessWidget {
               ),
 
               if (status.toLowerCase() !=
-                      "completed" &&
+                      'completed' &&
                   status.toLowerCase() !=
-                      "cancelled") ...[
+                      'cancelled') ...[
                 const SizedBox(height: 8),
 
                 SizedBox(
@@ -329,7 +321,7 @@ class BookingCard extends StatelessWidget {
                       color: Colors.red,
                     ),
                     label: const Text(
-                      "Cancel Booking",
+                      'Cancel Booking',
                       style: TextStyle(
                         color:
                             Colors.red,

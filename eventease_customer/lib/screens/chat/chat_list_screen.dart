@@ -18,40 +18,40 @@ class _ChatListScreenState
 
   final List<Map<String, dynamic>> chats = [
     {
-      "id": "1",
-      "name": "RK Photography",
-      "message":
-          "Sure, we can cover the complete wedding event.",
-      "time": "10:45 AM",
-      "unread": 2,
-      "online": true,
+      'id': '1',
+      'name': 'RK Photography',
+      'message':
+          'Sure, we can cover the complete wedding event.',
+      'time': '10:45 AM',
+      'unread': 2,
+      'online': true,
     },
     {
-      "id": "2",
-      "name": "Royal Decorators",
-      "message":
-          "Decoration setup will start tomorrow.",
-      "time": "09:20 AM",
-      "unread": 0,
-      "online": false,
+      'id': '2',
+      'name': 'Royal Decorators',
+      'message':
+          'Decoration setup will start tomorrow.',
+      'time': '09:20 AM',
+      'unread': 0,
+      'online': false,
     },
     {
-      "id": "3",
-      "name": "Tasty Catering",
-      "message":
-          "Menu list has been shared.",
-      "time": "Yesterday",
-      "unread": 5,
-      "online": true,
+      'id': '3',
+      'name': 'Tasty Catering',
+      'message':
+          'Menu list has been shared.',
+      'time': 'Yesterday',
+      'unread': 5,
+      'online': true,
     },
     {
-      "id": "4",
-      "name": "DJ Beats",
-      "message":
-          "Sound check completed successfully.",
-      "time": "Yesterday",
-      "unread": 0,
-      "online": false,
+      'id': '4',
+      'name': 'DJ Beats',
+      'message':
+          'Sound check completed successfully.',
+      'time': 'Yesterday',
+      'unread': 0,
+      'online': false,
     },
   ];
 

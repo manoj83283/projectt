@@ -91,9 +91,9 @@ class _SplashScreenState
                 // APP NAME
                 // ========================================
 
-                Text(
+                const Text(
                   AppConfig.appName,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: Colors.white,
                     fontSize: 34,
                     fontWeight:
@@ -108,10 +108,10 @@ class _SplashScreenState
                 // TAGLINE
                 // ========================================
 
-                Text(
+                const Text(
                   AppConfig.appTagLine,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: Colors.white70,
                     fontSize: 16,
                   ),
@@ -136,14 +136,14 @@ class _SplashScreenState
       // VERSION
       // ========================================
 
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.only(
+      bottomNavigationBar: const Padding(
+        padding: EdgeInsets.only(
           bottom: 24,
         ),
         child: Text(
           'Version ${AppConfig.appVersion}',
           textAlign: TextAlign.center,
-          style: const TextStyle(
+          style: TextStyle(
             color: Colors.white70,
             fontSize: 12,
           ),

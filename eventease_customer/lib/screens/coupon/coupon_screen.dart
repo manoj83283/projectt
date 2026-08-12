@@ -21,28 +21,28 @@ class _CouponScreenState
 
   final List<Map<String, dynamic>> coupons = [
     {
-      "code": "EVENT10",
-      "title": "Flat 10% OFF",
-      "description":
-          "Get 10% discount on all bookings.",
-      "discount": "10%",
-      "expiry": "31 Dec 2026",
+      'code': 'EVENT10',
+      'title': 'Flat 10% OFF',
+      'description':
+          'Get 10% discount on all bookings.',
+      'discount': '10%',
+      'expiry': '31 Dec 2026',
     },
     {
-      "code": "WELCOME500",
-      "title": "₹500 OFF",
-      "description":
-          "Flat ₹500 off for new customers.",
-      "discount": "₹500",
-      "expiry": "30 Nov 2026",
+      'code': 'WELCOME500',
+      'title': '₹500 OFF',
+      'description':
+          'Flat ₹500 off for new customers.',
+      'discount': '₹500',
+      'expiry': '30 Nov 2026',
     },
     {
-      "code": "FESTIVE20",
-      "title": "Festival Offer",
-      "description":
-          "Get up to 20% off on event services.",
-      "discount": "20%",
-      "expiry": "15 Jan 2027",
+      'code': 'FESTIVE20',
+      'title': 'Festival Offer',
+      'description':
+          'Get up to 20% off on event services.',
+      'discount': '20%',
+      'expiry': '15 Jan 2027',
     },
   ];
 
@@ -50,7 +50,7 @@ class _CouponScreenState
     Navigator.pop(
       context,
       {
-        "couponCode": code,
+        'couponCode': code,
       },
     );
   }
@@ -65,7 +65,7 @@ class _CouponScreenState
       ..showSnackBar(
         SnackBar(
           content: Text(
-            "$code copied",
+            '$code copied',
           ),
         ),
       );
@@ -85,7 +85,7 @@ class _CouponScreenState
 
       appBar: AppBar(
         title: const Text(
-          "Coupons & Offers",
+          'Coupons & Offers',
         ),
       ),
 
@@ -108,7 +108,7 @@ class _CouponScreenState
                     decoration:
                         const InputDecoration(
                       hintText:
-                          "Enter Coupon Code",
+                          'Enter Coupon Code',
                       border:
                           OutlineInputBorder(),
                     ),
@@ -131,7 +131,7 @@ class _CouponScreenState
                     }
                   },
                   child: const Text(
-                    "Apply",
+                    'Apply',
                   ),
                 ),
               ],
@@ -156,7 +156,7 @@ class _CouponScreenState
 
                 final isSelected =
                     selectedCoupon ==
-                        coupon["code"];
+                        coupon['code'];
 
                 return Container(
                   margin:
@@ -205,8 +205,8 @@ class _CouponScreenState
                                   BoxDecoration(
                                 color: AppColors
                                     .primary
-                                    .withOpacity(
-                                  0.1,
+                                    .withValues(
+                                  alpha: 0.1,
                                 ),
                                 borderRadius:
                                     BorderRadius.circular(
@@ -215,7 +215,7 @@ class _CouponScreenState
                               ),
                               child: Text(
                                 coupon[
-                                    "discount"],
+                                    'discount'],
                                 style:
                                     const TextStyle(
                                   color: AppColors
@@ -233,7 +233,7 @@ class _CouponScreenState
                               onPressed: () {
                                 _copyCoupon(
                                   coupon[
-                                      "code"],
+                                      'code'],
                                 );
                               },
                               icon:
@@ -249,7 +249,7 @@ class _CouponScreenState
                         ),
 
                         Text(
-                          coupon["title"],
+                          coupon['title'],
                           style:
                               AppStyles.title,
                         ),
@@ -260,7 +260,7 @@ class _CouponScreenState
 
                         Text(
                           coupon[
-                              "description"],
+                              'description'],
                           style:
                               AppStyles.bodyMedium,
                         ),
@@ -281,7 +281,7 @@ class _CouponScreenState
                                 width: 6),
 
                             Text(
-                              coupon["code"],
+                              coupon['code'],
                               style:
                                   const TextStyle(
                                 fontWeight:
@@ -330,17 +330,17 @@ class _CouponScreenState
                               setState(() {
                                 selectedCoupon =
                                     coupon[
-                                        "code"];
+                                        'code'];
                               });
 
                               _applyCoupon(
                                 coupon[
-                                    "code"],
+                                    'code'],
                               );
                             },
                             child:
                                 const Text(
-                              "Apply Coupon",
+                              'Apply Coupon',
                             ),
                           ),
                         ),

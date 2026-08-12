@@ -245,7 +245,7 @@ class _RevenueAnalyticsScreenState extends State<RevenueAnalyticsScreen> {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.035),
+            color: Colors.black.withValues(alpha: 0.035),
             blurRadius: 18,
             offset: const Offset(0, 8),
           ),
@@ -413,10 +413,10 @@ class _RevenueAnalyticsScreenState extends State<RevenueAnalyticsScreen> {
                       margin: const EdgeInsets.only(bottom: 16),
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: AppColors.error.withOpacity(0.08),
+                        color: AppColors.error.withValues(alpha: 0.08),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: AppColors.error.withOpacity(0.25),
+                          color: AppColors.error.withValues(alpha: 0.25),
                         ),
                       ),
                       child: Text(
@@ -473,7 +473,7 @@ class RevenueTransactionsTable extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.035),
+            color: Colors.black.withValues(alpha: 0.035),
             blurRadius: 18,
             offset: const Offset(0, 8),
           ),
@@ -705,7 +705,7 @@ class _RevenueTrendCard extends StatelessWidget {
                                   width: double.infinity,
                                   height: (220 * percentage).clamp(8, 220),
                                   decoration: BoxDecoration(
-                                    color: AppColors.primary.withOpacity(0.84),
+                                    color: AppColors.primary.withValues(alpha: 0.84),
                                     borderRadius: const BorderRadius.vertical(
                                       top: Radius.circular(10),
                                     ),
@@ -803,7 +803,7 @@ class _BreakdownRow extends StatelessWidget {
           children: [
             CircleAvatar(
               radius: 16,
-              backgroundColor: color.withOpacity(0.1),
+              backgroundColor: color.withValues(alpha: 0.1),
               child: Icon(
                 Icons.analytics_outlined,
                 color: color,
@@ -1030,7 +1030,7 @@ class _RevenueSummaryCard extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.035),
+            color: Colors.black.withValues(alpha: 0.035),
             blurRadius: 18,
             offset: const Offset(0, 8),
           ),
@@ -1042,7 +1042,7 @@ class _RevenueSummaryCard extends StatelessWidget {
             height: 46,
             width: 46,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.11),
+              color: color.withValues(alpha: 0.11),
               borderRadius: BorderRadius.circular(14),
             ),
             child: Icon(
@@ -1142,7 +1142,7 @@ class _AnalyticsCard extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.035),
+            color: Colors.black.withValues(alpha: 0.035),
             blurRadius: 18,
             offset: const Offset(0, 8),
           ),
@@ -1155,7 +1155,7 @@ class _AnalyticsCard extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 18,
-                backgroundColor: AppColors.primary.withOpacity(0.1),
+                backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                 child: Icon(
                   icon,
                   color: AppColors.primary,
@@ -1290,10 +1290,10 @@ class _StatusChip extends StatelessWidget {
         vertical: 7,
       ),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.11),
+        color: color.withValues(alpha: 0.11),
         borderRadius: BorderRadius.circular(999),
         border: Border.all(
-          color: color.withOpacity(0.24),
+          color: color.withValues(alpha: 0.24),
         ),
       ),
       child: Text(

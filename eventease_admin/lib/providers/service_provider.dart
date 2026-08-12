@@ -149,7 +149,7 @@ class ServiceProvider extends ChangeNotifier {
       );
 
       _services =
-          (response as List)
+          (response)
               .map(
                 (e) =>
                     ServiceModel.fromJson(

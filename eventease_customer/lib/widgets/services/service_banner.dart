@@ -11,12 +11,9 @@ class ServiceBanner extends StatelessWidget {
   final VoidCallback? onButtonPressed;
 
   const ServiceBanner({
-    super.key,
-    required this.title,
-    required this.subtitle,
-    required this.imageUrl,
+    required this.title, required this.subtitle, required this.imageUrl, super.key,
     this.offerText,
-    this.buttonText = "Explore",
+    this.buttonText = 'Explore',
     this.height = 200,
     this.onTap,
     this.onButtonPressed,
@@ -81,7 +78,7 @@ class ServiceBanner extends StatelessWidget {
                   colors: [
                     Colors.transparent,
                     Colors.black
-                        .withOpacity(0.8),
+                        .withValues(alpha: 0.8),
                   ],
                 ),
               ),

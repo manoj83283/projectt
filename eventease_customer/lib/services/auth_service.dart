@@ -128,12 +128,10 @@ class AuthService {
   // ==========================================
 
   Future<UserModel> register({
-    String? name,
+    required String email, required String password, String? name,
     String? fullName,
-    required String email,
     String? phone,
     String? mobile,
-    required String password,
   }) async {
     final String resolvedName = (name ?? fullName ?? '').trim();
     final String resolvedPhone = (phone ?? mobile ?? '').trim();
@@ -378,10 +376,9 @@ class AuthService {
   // ==========================================
 
   Future<UserModel> verifyOtp({
-    String? email,
+    required String otp, String? email,
     String? phone,
     String? mobile,
-    required String otp,
   }) async {
     final String resolvedPhone = (phone ?? mobile ?? '').trim();
 
@@ -421,10 +418,9 @@ class AuthService {
   // ==========================================
 
   Future<bool> verifyOtpStatus({
-    String? email,
+    required String otp, String? email,
     String? phone,
     String? mobile,
-    required String otp,
   }) async {
     await verifyOtp(
       email: email,

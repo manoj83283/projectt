@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimensions.dart';
-import '../../core/constants/app_strings.dart';
 
 class LoadingWidget extends StatelessWidget {
   final String? message;
@@ -122,8 +121,8 @@ class OverlayLoadingWidget
           Positioned.fill(
             child: Container(
               color:
-                  Colors.black.withOpacity(
-                0.4,
+                  Colors.black.withValues(
+                alpha: 0.4,
               ),
               child: Center(
                 child: Card(

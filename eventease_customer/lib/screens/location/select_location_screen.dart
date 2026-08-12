@@ -17,33 +17,33 @@ class _SelectLocationScreenState
   final TextEditingController _searchController =
       TextEditingController();
 
-  String selectedLocation = "Hyderabad";
+  String selectedLocation = 'Hyderabad';
 
   final List<String> popularLocations = [
-    "Hyderabad",
-    "Bangalore",
-    "Chennai",
-    "Mumbai",
-    "Delhi",
-    "Pune",
-    "Vijayawada",
-    "Warangal",
-    "Karimnagar",
-    "Nizamabad",
+    'Hyderabad',
+    'Bangalore',
+    'Chennai',
+    'Mumbai',
+    'Delhi',
+    'Pune',
+    'Vijayawada',
+    'Warangal',
+    'Karimnagar',
+    'Nizamabad',
   ];
 
   final List<String> recentLocations = [
-    "Madhapur",
-    "Gachibowli",
-    "Kondapur",
-    "Kukatpally",
+    'Madhapur',
+    'Gachibowli',
+    'Kondapur',
+    'Kukatpally',
   ];
 
   Future<void> _saveLocation(
     String location,
   ) async {
     await StorageHelper.setString(
-      "selected_location",
+      'selected_location',
       location,
     );
 
@@ -52,7 +52,7 @@ class _SelectLocationScreenState
           .showSnackBar(
         SnackBar(
           content: Text(
-            "$location selected",
+            '$location selected',
           ),
         ),
       );
@@ -65,7 +65,7 @@ class _SelectLocationScreenState
     // Replace with Geolocator implementation
 
     const currentLocation =
-        "Current GPS Location";
+        'Current GPS Location';
 
     setState(() {
       selectedLocation = currentLocation;
@@ -95,7 +95,7 @@ class _SelectLocationScreenState
 
       appBar: AppBar(
         title: const Text(
-          "Select Location",
+          'Select Location',
         ),
       ),
 
@@ -113,7 +113,7 @@ class _SelectLocationScreenState
               decoration:
                   AppStyles.inputDecoration(
                 hintText:
-                    "Search city or area",
+                    'Search city or area',
                 prefixIcon: const Icon(
                   Icons.search,
                 ),
@@ -138,10 +138,10 @@ class _SelectLocationScreenState
               ),
             ),
             title: const Text(
-              "Use Current Location",
+              'Use Current Location',
             ),
             subtitle: const Text(
-              "Detect using GPS",
+              'Detect using GPS',
             ),
             onTap: _useCurrentLocation,
           ),
@@ -162,7 +162,7 @@ class _SelectLocationScreenState
                 if (_searchController
                     .text.isEmpty) ...[
                   const Text(
-                    "Recent Locations",
+                    'Recent Locations',
                     style: AppStyles.title,
                   ),
 
@@ -195,7 +195,7 @@ class _SelectLocationScreenState
                 // ============================
 
                 const Text(
-                  "Popular Locations",
+                  'Popular Locations',
                   style: AppStyles.title,
                 ),
 
@@ -247,7 +247,7 @@ class _SelectLocationScreenState
                     Icons.map,
                   ),
                   label: const Text(
-                    "Select On Map",
+                    'Select On Map',
                   ),
                 ),
               ],

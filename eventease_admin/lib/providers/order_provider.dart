@@ -144,7 +144,7 @@ class OrderProvider extends ChangeNotifier {
       );
 
       _orders =
-          (response as List)
+          (response)
               .map(
                 (e) =>
                     OrderModel.fromJson(e),

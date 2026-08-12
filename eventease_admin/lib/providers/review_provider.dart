@@ -174,7 +174,7 @@ class ReviewProvider extends ChangeNotifier {
       );
 
       _reviews =
-          (response as List)
+          (response)
               .map(
                 (e) =>
                     ReviewModel.fromJson(

@@ -14,22 +14,22 @@ class _AddressScreenState
     extends State<AddressScreen> {
   List<Map<String, dynamic>> addresses = [
     {
-      "id": "1",
-      "type": "Home",
-      "name": "Manoj Kumar",
-      "phone": "+91 9876543210",
-      "address":
-          "Hitech City, Hyderabad, Telangana - 500081",
-      "default": true,
+      'id': '1',
+      'type': 'Home',
+      'name': 'Manoj Kumar',
+      'phone': '+91 9876543210',
+      'address':
+          'Hitech City, Hyderabad, Telangana - 500081',
+      'default': true,
     },
     {
-      "id": "2",
-      "type": "Work",
-      "name": "Manoj Kumar",
-      "phone": "+91 9876543210",
-      "address":
-          "Mindspace IT Park, Hyderabad, Telangana",
-      "default": false,
+      'id': '2',
+      'type': 'Work',
+      'name': 'Manoj Kumar',
+      'phone': '+91 9876543210',
+      'address':
+          'Mindspace IT Park, Hyderabad, Telangana',
+      'default': false,
     },
   ];
 
@@ -73,7 +73,7 @@ class _AddressScreenState
     final addressController =
         TextEditingController();
 
-    String selectedType = "Home";
+    String selectedType = 'Home';
 
     showDialog(
       context: context,
@@ -82,7 +82,7 @@ class _AddressScreenState
           builder: (context, setDialogState) {
             return AlertDialog(
               title:
-                  const Text("Add Address"),
+                  const Text('Add Address'),
               content:
                   SingleChildScrollView(
                 child: Column(
@@ -119,23 +119,23 @@ class _AddressScreenState
 
                     DropdownButtonFormField<
                         String>(
-                      value:
+                      initialValue:
                           selectedType,
                       items: const [
                         DropdownMenuItem(
-                          value: "Home",
+                          value: 'Home',
                           child:
-                              Text("Home"),
+                              Text('Home'),
                         ),
                         DropdownMenuItem(
-                          value: "Work",
+                          value: 'Work',
                           child:
-                              Text("Work"),
+                              Text('Work'),
                         ),
                         DropdownMenuItem(
-                          value: "Other",
+                          value: 'Other',
                           child:
-                              Text("Other"),
+                              Text('Other'),
                         ),
                       ],
                       onChanged:
@@ -172,7 +172,7 @@ class _AddressScreenState
                         context);
                   },
                   child:
-                      const Text("Cancel"),
+                      const Text('Cancel'),
                 ),
                 ElevatedButton(
                   onPressed: () {
@@ -190,21 +190,21 @@ class _AddressScreenState
 
                     setState(() {
                       addresses.add({
-                        "id": DateTime.now()
+                        'id': DateTime.now()
                             .millisecondsSinceEpoch
                             .toString(),
-                        "type":
+                        'type':
                             selectedType,
-                        "name":
+                        'name':
                             nameController
                                 .text,
-                        "phone":
+                        'phone':
                             phoneController
                                 .text,
-                        "address":
+                        'address':
                             addressController
                                 .text,
-                        "default":
+                        'default':
                             false,
                       });
                     });
@@ -213,7 +213,7 @@ class _AddressScreenState
                         context);
                   },
                   child:
-                      const Text("Save"),
+                      const Text('Save'),
                 ),
               ],
             );
@@ -227,10 +227,10 @@ class _AddressScreenState
     String type,
   ) {
     switch (type) {
-      case "Home":
+      case 'Home':
         return Colors.green;
 
-      case "Work":
+      case 'Work':
         return Colors.blue;
 
       default:
@@ -242,10 +242,10 @@ class _AddressScreenState
     String type,
   ) {
     switch (type) {
-      case "Home":
+      case 'Home':
         return Icons.home;
 
-      case "Work":
+      case 'Work':
         return Icons.work;
 
       default:
@@ -261,7 +261,7 @@ class _AddressScreenState
 
       appBar: AppBar(
         title: const Text(
-          "Saved Addresses",
+          'Saved Addresses',
         ),
       ),
 
@@ -309,8 +309,8 @@ class _AddressScreenState
                                   color: getTypeColor(
                                           address[
                                               'type'])
-                                      .withOpacity(
-                                    0.1,
+                                      .withValues(
+                                    alpha: 0.1,
                                   ),
                                   borderRadius:
                                       BorderRadius.circular(
@@ -364,8 +364,8 @@ class _AddressScreenState
                                       BoxDecoration(
                                     color: Colors
                                         .green
-                                        .withOpacity(
-                                      0.1,
+                                        .withValues(
+                                      alpha: 0.1,
                                     ),
                                     borderRadius:
                                         BorderRadius.circular(
@@ -374,7 +374,7 @@ class _AddressScreenState
                                   ),
                                   child:
                                       const Text(
-                                    "Default",
+                                    'Default',
                                     style:
                                         TextStyle(
                                       color: Colors
@@ -433,7 +433,7 @@ class _AddressScreenState
                                   },
                                   child:
                                       const Text(
-                                    "Set Default",
+                                    'Set Default',
                                   ),
                                 ),
 
@@ -485,7 +485,7 @@ class _AddressScreenState
           color: Colors.white,
         ),
         label: const Text(
-          "Add Address",
+          'Add Address',
           style: TextStyle(
             color: Colors.white,
           ),

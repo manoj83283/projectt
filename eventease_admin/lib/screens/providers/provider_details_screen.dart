@@ -603,7 +603,7 @@ class _ProviderDetailsScreenState
                   radius: 46,
                   backgroundColor:
                       AppColors.primary
-                          .withOpacity(0.10),
+                          .withValues(alpha: 0.10),
                   backgroundImage: hasImage
                       ? NetworkImage(
                           provider.profileImage!,
@@ -1246,7 +1246,7 @@ class _DetailsCard extends StatelessWidget {
                   ),
                 ),
 
-                if (action != null) action!,
+                ?action,
               ],
             ),
 
@@ -1351,8 +1351,8 @@ class _StatCard extends StatelessWidget {
               height: 48,
               width: 48,
               decoration: BoxDecoration(
-                color: color.withOpacity(
-                  0.10,
+                color: color.withValues(
+                  alpha: 0.10,
                 ),
                 borderRadius:
                     BorderRadius.circular(
@@ -1432,11 +1432,11 @@ class _StatusChip extends StatelessWidget {
         vertical: 7,
       ),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.10),
+        color: color.withValues(alpha: 0.10),
         borderRadius:
             BorderRadius.circular(30),
         border: Border.all(
-          color: color.withOpacity(0.25),
+          color: color.withValues(alpha: 0.25),
         ),
       ),
       child: Text(

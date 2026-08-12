@@ -1214,7 +1214,7 @@ class _RefundInfoCell extends StatelessWidget {
             height: 42,
             width: 42,
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.10),
+              color: AppColors.primary.withValues(alpha: 0.10),
               borderRadius: BorderRadius.circular(
                 AppDimensions.radius12,
               ),
@@ -1614,12 +1614,12 @@ class _RefundSummaryCard extends StatelessWidget {
         AppDimensions.padding16,
       ),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
+        color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(
           AppDimensions.radius16,
         ),
         border: Border.all(
-          color: color.withOpacity(0.18),
+          color: color.withValues(alpha: 0.18),
         ),
       ),
       child: Row(
@@ -1628,7 +1628,7 @@ class _RefundSummaryCard extends StatelessWidget {
             height: 42,
             width: 42,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.12),
+              color: color.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(
                 AppDimensions.radius12,
               ),
@@ -1684,10 +1684,10 @@ class _StatusChip extends StatelessWidget {
         vertical: 6,
       ),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.10),
+        color: color.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(30),
         border: Border.all(
-          color: color.withOpacity(0.25),
+          color: color.withValues(alpha: 0.25),
         ),
       ),
       child: Text(

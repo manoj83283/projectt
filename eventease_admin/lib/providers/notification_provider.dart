@@ -352,7 +352,7 @@ class NotificationProvider extends ChangeNotifier {
       );
 
       _notifications =
-          (response as List)
+          (response)
               .map(
                 (e) =>
                     NotificationModel

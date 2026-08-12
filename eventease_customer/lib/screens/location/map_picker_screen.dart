@@ -37,7 +37,7 @@ class _MapPickerScreenState
     _markers.add(
       Marker(
         markerId:
-            const MarkerId("selected"),
+            const MarkerId('selected'),
         position: _selectedLocation,
         draggable: true,
         onDragEnd: (position) {
@@ -58,7 +58,7 @@ class _MapPickerScreenState
           _selectedLocation.latitude,
       longitude:
           _selectedLocation.longitude,
-      address: "Selected From Map",
+      address: 'Selected From Map',
     );
 
     if (!mounted) return;
@@ -66,9 +66,9 @@ class _MapPickerScreenState
     Navigator.pop(
       context,
       {
-        "latitude":
+        'latitude':
             _selectedLocation.latitude,
-        "longitude":
+        'longitude':
             _selectedLocation.longitude,
       },
     );
@@ -82,7 +82,7 @@ class _MapPickerScreenState
 
       appBar: AppBar(
         title: const Text(
-          "Pick Location",
+          'Pick Location',
         ),
       ),
 
@@ -156,7 +156,7 @@ class _MapPickerScreenState
                           .start,
                   children: [
                     const Text(
-                      "Selected Location",
+                      'Selected Location',
                       style:
                           AppStyles.title,
                     ),
@@ -166,7 +166,7 @@ class _MapPickerScreenState
                     ),
 
                     Text(
-                      "Latitude : ${_selectedLocation.latitude.toStringAsFixed(6)}",
+                      'Latitude : ${_selectedLocation.latitude.toStringAsFixed(6)}',
                     ),
 
                     const SizedBox(
@@ -174,7 +174,7 @@ class _MapPickerScreenState
                     ),
 
                     Text(
-                      "Longitude : ${_selectedLocation.longitude.toStringAsFixed(6)}",
+                      'Longitude : ${_selectedLocation.longitude.toStringAsFixed(6)}',
                     ),
                   ],
                 ),
@@ -201,7 +201,7 @@ class _MapPickerScreenState
                   Icons.check_circle,
                 ),
                 label: const Text(
-                  "Confirm Location",
+                  'Confirm Location',
                 ),
               ),
             ),

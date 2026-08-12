@@ -5,7 +5,7 @@ import '../screens/splash/splash_screen.dart';
 
 // Auth
 import '../screens/auth/login_screen.dart';
-import '../screens/auth/register_screen.dart';
+import '../screens/auth/signup_screen.dart';
 import '../screens/auth/otp_screen.dart';
 import '../screens/auth/forgot_password_screen.dart';
 import '../screens/auth/reset_password_screen.dart';
@@ -68,7 +68,14 @@ class RouteConfig {
   // =====================================================
 
   static const String login = '/login';
+
+  /// New standard route
+  static const String signup = '/signup';
+
+  /// Backward-compatible alias.
+  /// Keep temporarily if some old code still uses /register.
   static const String register = '/register';
+
   static const String otp = '/otp';
   static const String forgotPassword = '/forgot-password';
   static const String resetPassword = '/reset-password';
@@ -166,6 +173,7 @@ class RouteConfig {
   static const List<String> authRoutes = [
     splash,
     login,
+    signup,
     register,
     otp,
     forgotPassword,
@@ -269,6 +277,7 @@ class RouteConfig {
   static const List<String> allRoutes = [
     splash,
     login,
+    signup,
     register,
     otp,
     forgotPassword,
@@ -321,10 +330,11 @@ class RouteConfig {
           const LoginScreen(),
         );
 
+      case signup:
       case register:
         return _route(
           routeSettings,
-          const RegisterScreen(),
+          const SignupScreen(),
         );
 
       case forgotPassword:

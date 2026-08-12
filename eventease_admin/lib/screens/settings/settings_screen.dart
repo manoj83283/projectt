@@ -594,10 +594,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             margin: const EdgeInsets.only(bottom: 16),
                             padding: const EdgeInsets.all(14),
                             decoration: BoxDecoration(
-                              color: AppColors.error.withOpacity(0.08),
+                              color: AppColors.error.withValues(alpha: 0.08),
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                color: AppColors.error.withOpacity(0.25),
+                                color: AppColors.error.withValues(alpha: 0.25),
                               ),
                             ),
                             child: Text(
@@ -621,7 +621,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                   if (_isLoading || provider.isLoading)
                     Container(
-                      color: Colors.black.withOpacity(0.04),
+                      color: Colors.black.withValues(alpha: 0.04),
                       child: const Center(
                         child: CircularProgressIndicator(),
                       ),
@@ -683,7 +683,7 @@ class _SettingsSectionCard extends StatelessWidget {
                 height: 48,
                 width: 48,
                 decoration: BoxDecoration(
-                  color: item.color.withOpacity(0.11),
+                  color: item.color.withValues(alpha: 0.11),
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: Icon(
@@ -760,7 +760,7 @@ class _SettingsSummaryCard extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.035),
+            color: Colors.black.withValues(alpha: 0.035),
             blurRadius: 18,
             offset: const Offset(0, 8),
           ),
@@ -772,7 +772,7 @@ class _SettingsSummaryCard extends StatelessWidget {
             height: 46,
             width: 46,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.11),
+              color: color.withValues(alpha: 0.11),
               borderRadius: BorderRadius.circular(14),
             ),
             child: Icon(
@@ -829,7 +829,7 @@ class _QuickActionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: color.withOpacity(0.08),
+      color: color.withValues(alpha: 0.08),
       borderRadius: BorderRadius.circular(AppDimensions.radius12),
       child: InkWell(
         onTap: onTap,
@@ -839,7 +839,7 @@ class _QuickActionButton extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(AppDimensions.radius12),
             border: Border.all(
-              color: color.withOpacity(0.22),
+              color: color.withValues(alpha: 0.22),
             ),
           ),
           child: Row(
@@ -884,17 +884,17 @@ class _HealthTile extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppDimensions.padding16),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
+        color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(AppDimensions.radius12),
         border: Border.all(
-          color: color.withOpacity(0.22),
+          color: color.withValues(alpha: 0.22),
         ),
       ),
       child: Row(
         children: [
           CircleAvatar(
             radius: 18,
-            backgroundColor: color.withOpacity(0.13),
+            backgroundColor: color.withValues(alpha: 0.13),
             child: Icon(
               icon,
               color: color,
@@ -959,7 +959,7 @@ class _SectionCard extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.035),
+            color: Colors.black.withValues(alpha: 0.035),
             blurRadius: 18,
             offset: const Offset(0, 8),
           ),
@@ -972,7 +972,7 @@ class _SectionCard extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 18,
-                backgroundColor: AppColors.primary.withOpacity(0.1),
+                backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                 child: Icon(
                   icon,
                   color: AppColors.primary,

@@ -41,7 +41,7 @@ class _ReviewsScreenState
 
     return reviews.where((review) {
       return review.rating
-              ?.toString() ==
+              .toString() ==
           _selectedFilter;
     }).toList();
   }
@@ -291,7 +291,7 @@ class _ReviewsScreenState
                                                   BoxDecoration(
                                                 color:
                                                     _ratingColor(
-                                                  review.rating?.toDouble() ??
+                                                  review.rating.toDouble() ??
                                                       0,
                                                 ),
                                                 borderRadius:
@@ -336,18 +336,15 @@ class _ReviewsScreenState
                                               12,
                                         ),
 
-                                        if (review
-                                                .serviceName !=
-                                            null)
-                                          Text(
-                                            review
-                                                .serviceName!,
-                                            style:
-                                                const TextStyle(
-                                              fontWeight:
-                                                  FontWeight.w600,
-                                            ),
+                                        Text(
+                                          review
+                                              .serviceName,
+                                          style:
+                                              const TextStyle(
+                                            fontWeight:
+                                                FontWeight.w600,
                                           ),
+                                        ),
 
                                         const SizedBox(
                                           height:
@@ -359,9 +356,7 @@ class _ReviewsScreenState
                                               '',
                                         ),
 
-                                        if (review.reply !=
-                                                null &&
-                                            review.reply!
+                                        if (review.reply
                                                 .isNotEmpty)
                                           Container(
                                             margin:
@@ -400,7 +395,7 @@ class _ReviewsScreenState
                                                       4,
                                                 ),
                                                 Text(
-                                                  review.reply!,
+                                                  review.reply,
                                                 ),
                                               ],
                                             ),
@@ -429,9 +424,7 @@ class _ReviewsScreenState
                                             ),
                                             label:
                                                 Text(
-                                              review.reply !=
-                                                          null &&
-                                                      review.reply!.isNotEmpty
+                                              review.reply.isNotEmpty
                                                   ? 'Edit Reply'
                                                   : 'Reply',
                                             ),

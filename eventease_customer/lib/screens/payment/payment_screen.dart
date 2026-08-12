@@ -12,9 +12,7 @@ class PaymentScreen extends StatefulWidget {
   final String bookingId;
 
   const PaymentScreen({
-    super.key,
-    required this.amount,
-    required this.bookingId,
+    required this.amount, required this.bookingId, super.key,
     this.gst = 0,
     this.discount = 0,
     this.serviceFee = 0,
@@ -27,7 +25,7 @@ class PaymentScreen extends StatefulWidget {
 
 class _PaymentScreenState
     extends State<PaymentScreen> {
-  String _selectedMethod = "razorpay";
+  String _selectedMethod = 'razorpay';
 
   double get totalAmount =>
       widget.amount +
@@ -40,7 +38,7 @@ class _PaymentScreenState
         .showSnackBar(
       SnackBar(
         content: Text(
-          "Processing payment via $_selectedMethod",
+          'Processing payment via $_selectedMethod',
         ),
       ),
     );
@@ -80,7 +78,7 @@ class _PaymentScreenState
 
       appBar: AppBar(
         title: const Text(
-          "Payment",
+          'Payment',
         ),
       ),
 
@@ -94,7 +92,7 @@ class _PaymentScreenState
             style: AppStyles.primaryButton,
             onPressed: _makePayment,
             child: Text(
-              "Pay ${CurrencyFormatter.format(totalAmount)}",
+              'Pay ${CurrencyFormatter.format(totalAmount)}',
             ),
           ),
         ),
@@ -124,14 +122,14 @@ class _PaymentScreenState
                         .start,
                 children: [
                   const Text(
-                    "Booking Details",
+                    'Booking Details',
                     style: AppStyles.title,
                   ),
                   const SizedBox(
                     height: 10,
                   ),
                   Text(
-                    "Booking ID : ${widget.bookingId}",
+                    'Booking ID : ${widget.bookingId}',
                   ),
                 ],
               ),
@@ -144,7 +142,7 @@ class _PaymentScreenState
             // ===================
 
             const Text(
-              "Select Payment Method",
+              'Select Payment Method',
               style: AppStyles.heading3,
             ),
 
@@ -154,39 +152,39 @@ class _PaymentScreenState
               child: Column(
                 children: [
                   _paymentTile(
-                    title: "Razorpay",
-                    value: "razorpay",
+                    title: 'Razorpay',
+                    value: 'razorpay',
                     icon:
                         Icons.account_balance_wallet,
                   ),
                   _paymentTile(
-                    title: "UPI",
-                    value: "upi",
+                    title: 'UPI',
+                    value: 'upi',
                     icon: Icons.qr_code,
                   ),
                   _paymentTile(
                     title:
-                        "Google Pay",
-                    value: "gpay",
+                        'Google Pay',
+                    value: 'gpay',
                     icon:
                         Icons.payment,
                   ),
                   _paymentTile(
-                    title: "PhonePe",
-                    value: "phonepe",
+                    title: 'PhonePe',
+                    value: 'phonepe',
                     icon:
                         Icons.phone_android,
                   ),
                   _paymentTile(
-                    title: "Paytm",
-                    value: "paytm",
+                    title: 'Paytm',
+                    value: 'paytm',
                     icon:
                         Icons.wallet,
                   ),
                   _paymentTile(
                     title:
-                        "Cash On Service",
-                    value: "cash",
+                        'Cash On Service',
+                    value: 'cash',
                     icon:
                         Icons.money,
                   ),
@@ -214,7 +212,7 @@ class _PaymentScreenState
                         Alignment
                             .centerLeft,
                     child: Text(
-                      "Price Summary",
+                      'Price Summary',
                       style:
                           AppStyles.title,
                     ),
@@ -224,7 +222,7 @@ class _PaymentScreenState
                   ),
 
                   _priceRow(
-                    "Service Amount",
+                    'Service Amount',
                     CurrencyFormatter
                         .format(
                       widget.amount,
@@ -232,7 +230,7 @@ class _PaymentScreenState
                   ),
 
                   _priceRow(
-                    "GST",
+                    'GST',
                     CurrencyFormatter
                         .format(
                       widget.gst,
@@ -240,7 +238,7 @@ class _PaymentScreenState
                   ),
 
                   _priceRow(
-                    "Service Fee",
+                    'Service Fee',
                     CurrencyFormatter
                         .format(
                       widget.serviceFee,
@@ -248,8 +246,8 @@ class _PaymentScreenState
                   ),
 
                   _priceRow(
-                    "Discount",
-                    "-${CurrencyFormatter.format(widget.discount)}",
+                    'Discount',
+                    '-${CurrencyFormatter.format(widget.discount)}',
                     color:
                         Colors.green,
                   ),
@@ -257,7 +255,7 @@ class _PaymentScreenState
                   const Divider(),
 
                   _priceRow(
-                    "Total Amount",
+                    'Total Amount',
                     CurrencyFormatter
                         .format(
                       totalAmount,
@@ -277,7 +275,7 @@ class _PaymentScreenState
               ),
               decoration: BoxDecoration(
                 color: Colors.blue
-                    .withOpacity(0.1),
+                    .withValues(alpha: 0.1),
                 borderRadius:
                     BorderRadius.circular(
                   12,
@@ -292,7 +290,7 @@ class _PaymentScreenState
                   SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      "100% Secure Payments. All transactions are encrypted.",
+                      '100% Secure Payments. All transactions are encrypted.',
                     ),
                   ),
                 ],

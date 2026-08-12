@@ -45,9 +45,8 @@ class FeaturedServicesWidget extends StatelessWidget {
       onBookNow;
 
   const FeaturedServicesWidget({
-    super.key,
-    this.title = "Featured Services",
-    required this.services,
+    required this.services, super.key,
+    this.title = 'Featured Services',
     this.isLoading = false,
     this.onSeeAll,
     this.onServiceTap,
@@ -84,7 +83,7 @@ class FeaturedServicesWidget extends StatelessWidget {
               TextButton(
                 onPressed: onSeeAll,
                 child: const Text(
-                  "See All",
+                  'See All',
                 ),
               ),
             ],
@@ -138,7 +137,7 @@ class FeaturedServicesWidget extends StatelessWidget {
               vertical: 30,
             ),
             child: Text(
-              "No Featured Services Available",
+              'No Featured Services Available',
             ),
           )
 

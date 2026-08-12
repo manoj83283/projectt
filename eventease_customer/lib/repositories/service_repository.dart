@@ -10,33 +10,39 @@ class ServiceRepository {
   final ServiceService _serviceService =
       ServiceService.instance;
 
-  // ==========================================
+  // =====================================================
   // GET ALL SERVICES
-  // ==========================================
+  // =====================================================
 
   Future<List<ServiceModel>> getServices({
     int page = 1,
     int limit = 20,
-    String? categoryId,
+    String? category,
     String? search,
+    double? minPrice,
+    double? maxPrice,
     double? latitude,
     double? longitude,
     double? radius,
+    String? sort,
   }) async {
     return await _serviceService.getServices(
       page: page,
       limit: limit,
-      categoryId: categoryId,
+      category: category,
       search: search,
+      minPrice: minPrice,
+      maxPrice: maxPrice,
       latitude: latitude,
       longitude: longitude,
       radius: radius,
+      sort: sort,
     );
   }
 
-  // ==========================================
+  // =====================================================
   // GET SERVICE BY ID
-  // ==========================================
+  // =====================================================
 
   Future<ServiceModel> getServiceById(
     String serviceId,
@@ -46,9 +52,9 @@ class ServiceRepository {
     );
   }
 
-  // ==========================================
+  // =====================================================
   // FEATURED SERVICES
-  // ==========================================
+  // =====================================================
 
   Future<List<ServiceModel>>
       getFeaturedServices() async {
@@ -56,9 +62,9 @@ class ServiceRepository {
         .getFeaturedServices();
   }
 
-  // ==========================================
+  // =====================================================
   // POPULAR SERVICES
-  // ==========================================
+  // =====================================================
 
   Future<List<ServiceModel>>
       getPopularServices() async {
@@ -66,53 +72,102 @@ class ServiceRepository {
         .getPopularServices();
   }
 
-  // ==========================================
+  // =====================================================
+  // RECOMMENDED SERVICES
+  // =====================================================
+
+  Future<List<ServiceModel>>
+      getRecommendedServices() async {
+    return await _serviceService
+        .getRecommendedServices();
+  }
+
+  // =====================================================
+  // HOME SERVICES
+  // =====================================================
+
+  Future<List<ServiceModel>>
+      getHomeServices() async {
+    return await _serviceService
+        .getHomeServices();
+  }
+
+  // =====================================================
+  // TOP RATED SERVICES
+  // =====================================================
+
+  Future<List<ServiceModel>>
+      getTopRatedServices() async {
+    return await _serviceService
+        .getTopRatedServices();
+  }
+
+  // =====================================================
+  // SEARCH SERVICES
+  // =====================================================
+
+  Future<List<ServiceModel>>
+      searchServices(
+    String keyword,
+  ) async {
+    return await _serviceService.searchServices(
+      keyword,
+    );
+  }
+
+  // =====================================================
+  // SEARCH SERVICES WITH CATEGORY
+  // =====================================================
+
+  Future<List<ServiceModel>>
+      searchServicesByKeyword({
+    required String keyword,
+    String? category,
+  }) async {
+    return await _serviceService
+        .searchServicesByKeyword(
+      keyword: keyword,
+      category: category,
+    );
+  }
+
+  // =====================================================
+  // SERVICES BY CATEGORY
+  // =====================================================
+
+  Future<List<ServiceModel>>
+      getServicesByCategory(
+    String category,
+  ) async {
+    return await _serviceService
+        .getServicesByCategory(
+      category,
+    );
+  }
+
+  // =====================================================
   // NEARBY SERVICES
-  // ==========================================
+  // =====================================================
 
   Future<List<ServiceModel>>
       getNearbyServices({
     required double latitude,
     required double longitude,
-    double radius = 20,
+    double radius = 30000,
+    String? category,
   }) async {
     return await _serviceService
         .getNearbyServices(
       latitude: latitude,
       longitude: longitude,
       radius: radius,
+      category: category,
     );
   }
 
-  // ==========================================
-  // SEARCH SERVICES
-  // ==========================================
-
-  Future<List<ServiceModel>>
-      searchServices(
-    String keyword,
-  ) async {
-    return await _serviceService
-        .searchServices(keyword);
-  }
-
-  // ==========================================
-  // CATEGORY SERVICES
-  // ==========================================
-
-  Future<List<ServiceModel>>
-      getServicesByCategory(
-    String categoryId,
-  ) async {
-    return await _serviceService
-        .getServicesByCategory(
-      categoryId,
-    );
-  }
-
-  // ==========================================
+  // =====================================================
   // PROVIDER SERVICES
-  // ==========================================
+  // =====================================================
 
   Future<List<ServiceModel>>
       getProviderServices(
@@ -124,9 +179,9 @@ class ServiceRepository {
     );
   }
 
-  // ==========================================
+  // =====================================================
   // SERVICE AVAILABILITY
-  // ==========================================
+  // =====================================================
 
   Future<Map<String, dynamic>>
       checkAvailability({
@@ -140,72 +195,22 @@ class ServiceRepository {
     );
   }
 
-  // ==========================================
-  // CREATE SERVICE
-  // PROVIDER
-  // ==========================================
-
-  Future<ServiceModel> createService({
-    required String title,
-    required String categoryId,
-    required String description,
-    required double price,
-    List<String>? images,
-  }) async {
-    return await _serviceService
-        .createService(
-      title: title,
-      categoryId: categoryId,
-      description: description,
-      price: price,
-      images: images,
-    );
-  }
-
-  // ==========================================
-  // UPDATE SERVICE
-  // PROVIDER
-  // ==========================================
-
-  Future<ServiceModel> updateService({
-    required String serviceId,
-    required Map<String, dynamic> data,
-  }) async {
-    return await _serviceService
-        .updateService(
-      serviceId: serviceId,
-      data: data,
-    );
-  }
-
-  // ==========================================
-  // DELETE SERVICE
-  // PROVIDER
-  // ==========================================
-
-  Future<bool> deleteService(
-    String serviceId,
-  ) async {
-    return await _serviceService
-        .deleteService(serviceId);
-  }
-
-  // ==========================================
+  // =====================================================
   // SERVICE REVIEWS
-  // ==========================================
+  // =====================================================
 
-  Future<Map<String, dynamic>>
-      getServiceReviews(
+  Future<dynamic> getServiceReviews(
     String serviceId,
   ) async {
     return await _serviceService
-        .getServiceReviews(serviceId);
+        .getServiceReviews(
+      serviceId,
+    );
   }
 
-  // ==========================================
+  // =====================================================
   // SERVICE ANALYTICS
-  // PROVIDER
-  // ==========================================
+  // =====================================================
 
   Future<Map<String, dynamic>>
       getServiceAnalytics(
@@ -214,6 +219,19 @@ class ServiceRepository {
     return await _serviceService
         .getServiceAnalytics(
       serviceId,
+    );
+  }
+
+  // =====================================================
+  // REFRESH SERVICES
+  // =====================================================
+
+  Future<List<ServiceModel>>
+      refreshServices() async {
+    return await _serviceService.getServices(
+      page: 1,
+      limit: 100,
+      sort: 'newest',
     );
   }
 }

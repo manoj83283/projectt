@@ -237,11 +237,11 @@ class _ServiceFilterScreenState
               },
             ),
 
-            Row(
+            const Row(
               mainAxisAlignment:
                   MainAxisAlignment
                       .spaceBetween,
-              children: const [
+              children: [
                 Text('0'),
                 Text('5 Stars'),
               ],

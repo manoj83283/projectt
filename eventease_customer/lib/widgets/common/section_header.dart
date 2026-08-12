@@ -10,8 +10,7 @@ class SectionHeader extends StatelessWidget {
   final EdgeInsetsGeometry? padding;
 
   const SectionHeader({
-    super.key,
-    required this.title,
+    required this.title, super.key,
     this.actionText,
     this.onTap,
     this.padding,

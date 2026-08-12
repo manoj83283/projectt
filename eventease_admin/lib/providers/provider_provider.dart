@@ -145,7 +145,7 @@ class ProviderProvider extends ChangeNotifier {
       );
 
       _providers =
-          (response as List)
+          (response)
               .map(
                 (e) => ProviderModel.fromJson(
                   e,

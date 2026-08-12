@@ -262,7 +262,7 @@ class _OrderList extends StatelessWidget {
                         ),
                         child: Text(
                           order.status
-                                  ?.toUpperCase() ??
+                                  .toUpperCase() ??
                               'PENDING',
                           style:
                               const TextStyle(

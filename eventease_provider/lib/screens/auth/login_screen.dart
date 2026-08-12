@@ -4,26 +4,24 @@ import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../dashboard/dashboard_screen.dart';
 import 'forgot_password_screen.dart';
-import 'register_screen.dart';
+import 'signup_screen.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+  const LoginScreen({
+    super.key,
+  });
 
   @override
-  State<LoginScreen> createState() =>
-      _LoginScreenState();
+  State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState
-    extends State<LoginScreen> {
-  final _formKey = GlobalKey<FormState>();
+class _LoginScreenState extends State<LoginScreen> {
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
-  final TextEditingController
-      _emailController =
+  final TextEditingController _emailController =
       TextEditingController();
 
-  final TextEditingController
-      _passwordController =
+  final TextEditingController _passwordController =
       TextEditingController();
 
   bool _obscurePassword = true;
@@ -32,6 +30,7 @@ class _LoginScreenState
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+
     super.dispose();
   }
 
@@ -40,15 +39,11 @@ class _LoginScreenState
       return;
     }
 
-    final authProvider =
-        context.read<AuthProvider>();
+    final authProvider = context.read<AuthProvider>();
 
-    final success =
-        await authProvider.login(
-      email: _emailController.text
-          .trim(),
-      password:
-          _passwordController.text.trim(),
+    final success = await authProvider.login(
+      email: _emailController.text.trim(),
+      password: _passwordController.text.trim(),
     );
 
     if (!mounted) return;
@@ -57,22 +52,58 @@ class _LoginScreenState
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(
-          builder: (_) =>
-              const DashboardScreen(),
+          builder: (_) => const DashboardScreen(),
         ),
         (route) => false,
       );
     } else {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            authProvider.errorMessage ??
-                'Login failed',
+            authProvider.errorMessage ?? 'Login failed',
           ),
         ),
       );
     }
+  }
+
+  void _goToSignup() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const SignupScreen(),
+      ),
+    );
+  }
+
+  String? _emailValidator(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Email is required';
+    }
+
+    final email = value.trim();
+
+    final isValidEmail = RegExp(
+      r'^[^@]+@[^@]+\.[^@]+',
+    ).hasMatch(email);
+
+    if (!isValidEmail) {
+      return 'Enter valid email';
+    }
+
+    return null;
+  }
+
+  String? _passwordValidator(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Password is required';
+    }
+
+    if (value.trim().length < 6) {
+      return 'Minimum 6 characters required';
+    }
+
+    return null;
   }
 
   @override
@@ -88,40 +119,33 @@ class _LoginScreenState
             child,
           ) {
             return SingleChildScrollView(
-              padding:
-                  const EdgeInsets.all(24),
+              padding: const EdgeInsets.all(24),
               child: Form(
                 key: _formKey,
                 child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment
-                          .stretch,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     const SizedBox(
                       height: 40,
                     ),
 
+                    // =========================
                     // LOGO
+                    // =========================
 
                     Center(
                       child: Container(
                         height: 110,
                         width: 110,
-                        decoration:
-                            BoxDecoration(
-                          color:
-                              theme.primaryColor,
-                          borderRadius:
-                              BorderRadius
-                                  .circular(
+                        decoration: BoxDecoration(
+                          color: theme.primaryColor,
+                          borderRadius: BorderRadius.circular(
                             24,
                           ),
                         ),
                         child: const Icon(
-                          Icons
-                              .event_available,
-                          color:
-                              Colors.white,
+                          Icons.event_available,
+                          color: Colors.white,
                           size: 55,
                         ),
                       ),
@@ -133,82 +157,61 @@ class _LoginScreenState
 
                     Text(
                       'Welcome Back',
-                      textAlign:
-                          TextAlign.center,
-                      style: theme
-                          .textTheme
-                          .headlineMedium
-                          ?.copyWith(
-                        fontWeight:
-                            FontWeight.bold,
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
 
-                    const SizedBox(height: 8),
+                    const SizedBox(
+                      height: 8,
+                    ),
 
                     Text(
                       'Login to manage your EventEase business',
-                      textAlign:
-                          TextAlign.center,
-                      style: theme
-                          .textTheme
-                          .bodyMedium,
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.bodyMedium,
                     ),
 
                     const SizedBox(
                       height: 36,
                     ),
 
+                    // =========================
                     // EMAIL
+                    // =========================
 
                     TextFormField(
-                      controller:
-                          _emailController,
-                      keyboardType:
-                          TextInputType
-                              .emailAddress,
-                      decoration:
-                          const InputDecoration(
-                        labelText:
-                            'Email Address',
-                        prefixIcon:
-                            Icon(Icons.email),
+                      controller: _emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      textInputAction: TextInputAction.next,
+                      decoration: const InputDecoration(
+                        labelText: 'Email Address',
+                        prefixIcon: Icon(
+                          Icons.email,
+                        ),
                       ),
-                      validator: (
-                        value,
-                      ) {
-                        if (value == null ||
-                            value
-                                .trim()
-                                .isEmpty) {
-                          return 'Email is required';
-                        }
-
-                        return null;
-                      },
+                      validator: _emailValidator,
                     ),
 
                     const SizedBox(
                       height: 16,
                     ),
 
+                    // =========================
                     // PASSWORD
+                    // =========================
 
                     TextFormField(
-                      controller:
-                          _passwordController,
-                      obscureText:
-                          _obscurePassword,
-                      decoration:
-                          InputDecoration(
-                        labelText:
-                            'Password',
-                        prefixIcon:
-                            const Icon(
+                      controller: _passwordController,
+                      obscureText: _obscurePassword,
+                      textInputAction: TextInputAction.done,
+                      decoration: InputDecoration(
+                        labelText: 'Password',
+                        prefixIcon: const Icon(
                           Icons.lock,
                         ),
-                        suffixIcon:
-                            IconButton(
+                        suffixIcon: IconButton(
                           onPressed: () {
                             setState(() {
                               _obscurePassword =
@@ -217,28 +220,16 @@ class _LoginScreenState
                           },
                           icon: Icon(
                             _obscurePassword
-                                ? Icons
-                                    .visibility
-                                : Icons
-                                    .visibility_off,
+                                ? Icons.visibility
+                                : Icons.visibility_off,
                           ),
                         ),
                       ),
-                      validator: (
-                        value,
-                      ) {
-                        if (value == null ||
-                            value
-                                .trim()
-                                .isEmpty) {
-                          return 'Password is required';
+                      validator: _passwordValidator,
+                      onFieldSubmitted: (_) {
+                        if (!authProvider.isLoading) {
+                          _login();
                         }
-
-                        if (value.length < 6) {
-                          return 'Minimum 6 characters required';
-                        }
-
-                        return null;
                       },
                     ),
 
@@ -247,9 +238,7 @@ class _LoginScreenState
                     ),
 
                     Align(
-                      alignment:
-                          Alignment
-                              .centerRight,
+                      alignment: Alignment.centerRight,
                       child: TextButton(
                         onPressed: () {
                           Navigator.push(
@@ -270,35 +259,28 @@ class _LoginScreenState
                       height: 16,
                     ),
 
+                    // =========================
                     // LOGIN BUTTON
+                    // =========================
 
                     SizedBox(
                       height: 56,
                       child: ElevatedButton(
-                        onPressed:
-                            authProvider
-                                    .isLoading
-                                ? null
-                                : _login,
-                        child:
-                            authProvider
-                                    .isLoading
-                                ? const SizedBox(
-                                    height:
-                                        22,
-                                    width:
-                                        22,
-                                    child:
-                                        CircularProgressIndicator(
-                                      strokeWidth:
-                                          2,
-                                      color:
-                                          Colors.white,
-                                    ),
-                                  )
-                                : const Text(
-                                    'LOGIN',
-                                  ),
+                        onPressed: authProvider.isLoading
+                            ? null
+                            : _login,
+                        child: authProvider.isLoading
+                            ? const SizedBox(
+                                height: 22,
+                                width: 22,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Text(
+                                'LOGIN',
+                              ),
                       ),
                     ),
 
@@ -306,26 +288,20 @@ class _LoginScreenState
                       height: 20,
                     ),
 
+                    // =========================
+                    // SIGN UP LINK
+                    // =========================
+
                     Row(
-                      mainAxisAlignment:
-                          MainAxisAlignment
-                              .center,
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         const Text(
                           "Don't have an account?",
                         ),
                         TextButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) =>
-                                    const RegisterScreen(),
-                              ),
-                            );
-                          },
+                          onPressed: _goToSignup,
                           child: const Text(
-                            'Register',
+                            'Sign Up',
                           ),
                         ),
                       ],

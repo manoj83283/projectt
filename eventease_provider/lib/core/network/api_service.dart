@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
 
+import '../../config/api_config.dart';
 import '../storage/storage_helper.dart';
 
 class ApiService {
@@ -8,36 +8,23 @@ class ApiService {
 
   static final ApiService instance = ApiService._internal();
 
-  static String get baseUrl {
-    if (kIsWeb) {
-      return 'http://localhost:5000/api';
-    }
+  // =============================================================
+  // BASE URL
+  // =============================================================
 
-    switch (defaultTargetPlatform) {
-      case TargetPlatform.android:
-        return 'http://10.0.2.2:5000/api';
+  static String get baseUrl => ApiConfig.baseUrl;
 
-      case TargetPlatform.iOS:
-        return 'http://127.0.0.1:5000/api';
-
-      case TargetPlatform.windows:
-      case TargetPlatform.macOS:
-      case TargetPlatform.linux:
-      case TargetPlatform.fuchsia:
-        return 'http://192.168.1.40:5000/api';
-    }
-  }
+  // =============================================================
+  // DIO INSTANCE
+  // =============================================================
 
   late final Dio _dio = Dio(
     BaseOptions(
       baseUrl: baseUrl,
-      connectTimeout: const Duration(seconds: 30),
-      receiveTimeout: const Duration(seconds: 30),
-      sendTimeout: const Duration(seconds: 30),
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
+      connectTimeout: ApiConfig.connectTimeout,
+      receiveTimeout: ApiConfig.receiveTimeout,
+      sendTimeout: ApiConfig.sendTimeout,
+      headers: ApiConfig.defaultHeaders,
     ),
   )..interceptors.add(
       InterceptorsWrapper(
@@ -48,9 +35,52 @@ class ApiService {
             options.headers['Authorization'] = 'Bearer $token';
           }
 
+          if (ApiConfig.enableApiLogs) {
+            final fullUrl = '${options.baseUrl}${options.path}';
+
+            // ignore: avoid_print
+            print('➡️ API REQUEST: ${options.method} $fullUrl');
+
+            if (options.queryParameters.isNotEmpty) {
+              // ignore: avoid_print
+              print('➡️ QUERY: ${options.queryParameters}');
+            }
+
+            if (options.data != null) {
+              // ignore: avoid_print
+              print('➡️ BODY: ${options.data}');
+            }
+          }
+
           return handler.next(options);
         },
+        onResponse: (response, handler) {
+          if (ApiConfig.enableApiLogs) {
+            // ignore: avoid_print
+            print(
+              '✅ API RESPONSE: ${response.statusCode} ${response.requestOptions.path}',
+            );
+
+            // ignore: avoid_print
+            print('✅ DATA: ${response.data}');
+          }
+
+          return handler.next(response);
+        },
         onError: (error, handler) {
+          if (ApiConfig.enableApiLogs) {
+            // ignore: avoid_print
+            print(
+              '❌ API ERROR: ${error.response?.statusCode} ${error.requestOptions.path}',
+            );
+
+            // ignore: avoid_print
+            print('❌ ERROR DATA: ${error.response?.data}');
+
+            // ignore: avoid_print
+            print('❌ ERROR MESSAGE: ${error.message}');
+          }
+
           return handler.next(error);
         },
       ),
@@ -59,8 +89,9 @@ class ApiService {
   Dio get dio => _dio;
 
   // =============================================================
-  // ✅ NORMALIZE RESPONSE
+  // NORMALIZE RESPONSE
   // =============================================================
+
   dynamic _normalizeResponse(Response response) {
     final data = response.data;
 
@@ -72,8 +103,9 @@ class ApiService {
   }
 
   // =============================================================
-  // ✅ GET
+  // GET
   // =============================================================
+
   Future<dynamic> get(
     String path, {
     Map<String, dynamic>? queryParameters,
@@ -93,8 +125,9 @@ class ApiService {
   }
 
   // =============================================================
-  // ✅ POST
+  // POST
   // =============================================================
+
   Future<dynamic> post(
     String path, {
     dynamic body,
@@ -117,8 +150,9 @@ class ApiService {
   }
 
   // =============================================================
-  // ✅ PUT
+  // PUT
   // =============================================================
+
   Future<dynamic> put(
     String path, {
     dynamic body,
@@ -141,8 +175,9 @@ class ApiService {
   }
 
   // =============================================================
-  // ✅ PATCH
+  // PATCH
   // =============================================================
+
   Future<dynamic> patch(
     String path, {
     dynamic body,
@@ -165,8 +200,9 @@ class ApiService {
   }
 
   // =============================================================
-  // ✅ DELETE
+  // DELETE
   // =============================================================
+
   Future<dynamic> delete(
     String path, {
     dynamic body,
@@ -189,8 +225,9 @@ class ApiService {
   }
 
   // =============================================================
-  // ✅ UPLOAD SINGLE FILE
+  // UPLOAD SINGLE FILE
   // =============================================================
+
   Future<dynamic> uploadFile({
     required String path,
     required String filePath,
@@ -212,7 +249,10 @@ class ApiService {
 
       for (final entry in fields.entries) {
         formData.fields.add(
-          MapEntry(entry.key, entry.value.toString()),
+          MapEntry(
+            entry.key,
+            entry.value.toString(),
+          ),
         );
       }
 
@@ -231,8 +271,9 @@ class ApiService {
   }
 
   // =============================================================
-  // ✅ UPLOAD MULTIPLE FILES
+  // UPLOAD MULTIPLE FILES
   // =============================================================
+
   Future<dynamic> uploadFiles({
     required String path,
     required List<String> filePaths,
@@ -256,7 +297,10 @@ class ApiService {
 
       for (final entry in fields.entries) {
         formData.fields.add(
-          MapEntry(entry.key, entry.value.toString()),
+          MapEntry(
+            entry.key,
+            entry.value.toString(),
+          ),
         );
       }
 
@@ -275,8 +319,9 @@ class ApiService {
   }
 
   // =============================================================
-  // ✅ ERROR HANDLER
+  // ERROR HANDLER
   // =============================================================
+
   String _handleDioError(DioException error) {
     if (error.response?.data is Map) {
       final data = error.response?.data as Map;
@@ -310,6 +355,9 @@ class ApiService {
 
       case DioExceptionType.unknown:
         return error.message ?? 'Unknown network error';
+
+      case DioExceptionType.transformTimeout:
+        return 'Transform timeout';
 
       default:
         return error.message ?? 'Network error';

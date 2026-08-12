@@ -112,15 +112,15 @@ class DateHelper {
         today.difference(target).inDays;
 
     if (difference == 0) {
-      return "Today";
+      return 'Today';
     }
 
     if (difference == 1) {
-      return "Yesterday";
+      return 'Yesterday';
     }
 
     if (difference < 7) {
-      return "$difference days ago";
+      return '$difference days ago';
     }
 
     return formatDate(date);
@@ -137,30 +137,30 @@ class DateHelper {
         DateTime.now().difference(dateTime);
 
     if (difference.inSeconds < 60) {
-      return "Just now";
+      return 'Just now';
     }
 
     if (difference.inMinutes < 60) {
-      return "${difference.inMinutes} min ago";
+      return '${difference.inMinutes} min ago';
     }
 
     if (difference.inHours < 24) {
-      return "${difference.inHours} hrs ago";
+      return '${difference.inHours} hrs ago';
     }
 
     if (difference.inDays < 7) {
-      return "${difference.inDays} days ago";
+      return '${difference.inDays} days ago';
     }
 
     if (difference.inDays < 30) {
-      return "${(difference.inDays / 7).floor()} weeks ago";
+      return '${(difference.inDays / 7).floor()} weeks ago';
     }
 
     if (difference.inDays < 365) {
-      return "${(difference.inDays / 30).floor()} months ago";
+      return '${(difference.inDays / 30).floor()} months ago';
     }
 
-    return "${(difference.inDays / 365).floor()} years ago";
+    return '${(difference.inDays / 365).floor()} years ago';
   }
 
   // =====================================================
@@ -175,19 +175,19 @@ class DateHelper {
         now.difference(dateTime);
 
     if (difference.inMinutes < 1) {
-      return "Just now";
+      return 'Just now';
     }
 
     if (difference.inHours < 1) {
-      return "${difference.inMinutes} min";
+      return '${difference.inMinutes} min';
     }
 
     if (difference.inHours < 24) {
-      return "${difference.inHours} hr";
+      return '${difference.inHours} hr';
     }
 
     if (difference.inDays < 7) {
-      return "${difference.inDays} day";
+      return '${difference.inDays} day';
     }
 
     return formatDate(dateTime);
@@ -269,18 +269,18 @@ class DateHelper {
     ).inDays;
 
     if (days < 0) {
-      return "Event Completed";
+      return 'Event Completed';
     }
 
     if (days == 0) {
-      return "Today";
+      return 'Today';
     }
 
     if (days == 1) {
-      return "Tomorrow";
+      return 'Tomorrow';
     }
 
-    return "$days days left";
+    return '$days days left';
   }
 
   // =====================================================

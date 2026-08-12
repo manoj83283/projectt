@@ -7,7 +7,7 @@ class LoadingWidget extends StatelessWidget {
 
   const LoadingWidget({
     super.key,
-    this.message = "Loading...",
+    this.message = 'Loading...',
     this.size = 40,
     this.color,
   });
@@ -56,7 +56,7 @@ class FullScreenLoader
 
   const FullScreenLoader({
     super.key,
-    this.message = "Please wait...",
+    this.message = 'Please wait...',
   });
 
   @override
@@ -78,10 +78,8 @@ class LoadingOverlay extends StatelessWidget {
   final String message;
 
   const LoadingOverlay({
-    super.key,
-    required this.isLoading,
-    required this.child,
-    this.message = "Loading...",
+    required this.isLoading, required this.child, super.key,
+    this.message = 'Loading...',
   });
 
   @override
@@ -92,8 +90,8 @@ class LoadingOverlay extends StatelessWidget {
 
         if (isLoading)
           Container(
-            color: Colors.black.withOpacity(
-              0.4,
+            color: Colors.black.withValues(
+              alpha: 0.4,
             ),
             child: Center(
               child: Card(

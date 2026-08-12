@@ -29,11 +29,9 @@ class CouponService {
         query: {
           'page': page,
           'limit': limit,
-          if (search != null) 'search': search,
-          if (isActive != null)
-            'isActive': isActive,
-          if (couponType != null)
-            'couponType': couponType,
+          'search': ?search,
+          'isActive': ?isActive,
+          'couponType': ?couponType,
         },
       );
 
@@ -132,28 +130,21 @@ class CouponService {
       final response = await _api.put(
         '/admin/coupons/$couponId',
         data: {
-          if (title != null)
-            'title': title,
-          if (description != null)
-            'description': description,
-          if (discountValue != null)
-            'discountValue': discountValue,
+          'title': ?title,
+          'description': ?description,
+          'discountValue': ?discountValue,
           if (startDate != null)
             'startDate':
                 startDate.toIso8601String(),
           if (endDate != null)
             'endDate':
                 endDate.toIso8601String(),
-          if (minimumOrderAmount != null)
-            'minimumOrderAmount':
-                minimumOrderAmount,
-          if (maximumDiscountAmount != null)
-            'maximumDiscountAmount':
-                maximumDiscountAmount,
-          if (usageLimit != null)
-            'usageLimit': usageLimit,
-          if (isActive != null)
-            'isActive': isActive,
+          'minimumOrderAmount':
+                ?minimumOrderAmount,
+          'maximumDiscountAmount':
+                ?maximumDiscountAmount,
+          'usageLimit': ?usageLimit,
+          'isActive': ?isActive,
         },
       );
 

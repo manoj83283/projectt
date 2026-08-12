@@ -3,15 +3,9 @@ import 'package:provider/provider.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimensions.dart';
-import '../../core/constants/app_strings.dart';
 import '../../core/utils/formatters.dart';
 import '../../providers/coupon_provider.dart';
-import '../../routes/app_routes.dart';
-import '../../routes/navigation_service.dart';
-import '../../widgets/common/custom_button.dart';
 import '../../widgets/common/custom_dropdown.dart';
-import '../../widgets/common/error_widget.dart';
-import '../../widgets/common/loading_widget.dart';
 
 class AddCouponScreen extends StatefulWidget {
   const AddCouponScreen({
@@ -251,7 +245,7 @@ class _AddCouponScreenState extends State<AddCouponScreen> {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.035),
+            color: Colors.black.withValues(alpha: 0.035),
             blurRadius: 18,
             offset: const Offset(0, 8),
           ),
@@ -263,7 +257,7 @@ class _AddCouponScreenState extends State<AddCouponScreen> {
             height: 52,
             width: 52,
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
+              color: AppColors.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(16),
             ),
             child: const Icon(
@@ -806,10 +800,10 @@ class _AddCouponScreenState extends State<AddCouponScreen> {
                         margin: const EdgeInsets.only(bottom: 16),
                         padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
-                          color: AppColors.error.withOpacity(0.08),
+                          color: AppColors.error.withValues(alpha: 0.08),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: AppColors.error.withOpacity(0.25),
+                            color: AppColors.error.withValues(alpha: 0.25),
                           ),
                         ),
                         child: Text(
@@ -864,7 +858,7 @@ class _SectionCard extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.025),
+            color: Colors.black.withValues(alpha: 0.025),
             blurRadius: 14,
             offset: const Offset(0, 7),
           ),

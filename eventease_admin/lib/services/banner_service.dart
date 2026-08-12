@@ -29,11 +29,9 @@ class BannerService {
         query: {
           'page': page,
           'limit': limit,
-          if (search != null) 'search': search,
-          if (isActive != null)
-            'isActive': isActive,
-          if (bannerType != null)
-            'bannerType': bannerType,
+          'search': ?search,
+          'isActive': ?isActive,
+          'bannerType': ?bannerType,
         },
       );
 
@@ -132,24 +130,15 @@ class BannerService {
       final response = await _api.put(
         '/admin/banners/$bannerId',
         data: {
-          if (title != null)
-            'title': title,
-          if (image != null)
-            'image': image,
-          if (description != null)
-            'description': description,
-          if (redirectUrl != null)
-            'redirectUrl': redirectUrl,
-          if (categoryId != null)
-            'categoryId': categoryId,
-          if (serviceId != null)
-            'serviceId': serviceId,
-          if (bannerType != null)
-            'bannerType': bannerType,
-          if (priority != null)
-            'priority': priority,
-          if (isActive != null)
-            'isActive': isActive,
+          'title': ?title,
+          'image': ?image,
+          'description': ?description,
+          'redirectUrl': ?redirectUrl,
+          'categoryId': ?categoryId,
+          'serviceId': ?serviceId,
+          'bannerType': ?bannerType,
+          'priority': ?priority,
+          'isActive': ?isActive,
           if (startDate != null)
             'startDate':
                 startDate.toIso8601String(),

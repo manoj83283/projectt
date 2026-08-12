@@ -276,8 +276,8 @@ class _SummaryCard
       ),
       decoration: BoxDecoration(
         color:
-            AppColors.primary.withOpacity(
-          0.08,
+            AppColors.primary.withValues(
+          alpha: 0.08,
         ),
         borderRadius:
             BorderRadius.circular(12),

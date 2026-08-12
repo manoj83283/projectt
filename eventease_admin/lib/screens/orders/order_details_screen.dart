@@ -724,7 +724,7 @@ class _OrderDetailsScreenState
               width: isMobile ? 96 : 112,
               decoration: BoxDecoration(
                 color: AppColors.primary
-                    .withOpacity(0.10),
+                    .withValues(alpha: 0.10),
                 borderRadius:
                     BorderRadius.circular(
                   AppDimensions.radius20,
@@ -1176,7 +1176,7 @@ class _OrderDetailsScreenState
                 physics:
                     const NeverScrollableScrollPhysics(),
                 itemCount: order.items.length,
-                separatorBuilder: (_, __) {
+                separatorBuilder: (_, _) {
                   return const Divider(
                     color: AppColors.border,
                   );
@@ -1520,7 +1520,7 @@ class _OrderItemTile extends StatelessWidget {
           width: 54,
           decoration: BoxDecoration(
             color: AppColors.primary
-                .withOpacity(0.10),
+                .withValues(alpha: 0.10),
             borderRadius: BorderRadius.circular(
               AppDimensions.radius12,
             ),
@@ -1726,7 +1726,7 @@ class _DetailsCard extends StatelessWidget {
                         ),
                   ),
                 ),
-                if (action != null) action!,
+                ?action,
               ],
             ),
 
@@ -1832,7 +1832,7 @@ class _StatCard extends StatelessWidget {
               width: 48,
               decoration: BoxDecoration(
                 color:
-                    color.withOpacity(0.10),
+                    color.withValues(alpha: 0.10),
                 borderRadius:
                     BorderRadius.circular(
                   AppDimensions.radius12,
@@ -1914,12 +1914,12 @@ class _MiniInfoBox extends StatelessWidget {
         AppDimensions.padding14,
       ),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
+        color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(
           AppDimensions.radius14,
         ),
         border: Border.all(
-          color: color.withOpacity(0.18),
+          color: color.withValues(alpha: 0.18),
         ),
       ),
       child: Row(
@@ -1982,11 +1982,11 @@ class _StatusChip extends StatelessWidget {
         vertical: 7,
       ),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.10),
+        color: color.withValues(alpha: 0.10),
         borderRadius:
             BorderRadius.circular(30),
         border: Border.all(
-          color: color.withOpacity(0.25),
+          color: color.withValues(alpha: 0.25),
         ),
       ),
       child: Text(

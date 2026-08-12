@@ -2,7 +2,6 @@ import 'package:socket_io_client/socket_io_client.dart'
     as io;
 
 import '../config/api_config.dart';
-import 'api_service.dart';
 
 class SocketService {
   SocketService._();

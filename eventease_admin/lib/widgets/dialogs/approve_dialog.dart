@@ -64,7 +64,7 @@ class ApproveDialog extends StatelessWidget {
                 decoration: BoxDecoration(
                   color:
                       AppColors.success
-                          .withOpacity(0.10),
+                          .withValues(alpha: 0.10),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -122,7 +122,7 @@ class ApproveDialog extends StatelessWidget {
                 decoration: BoxDecoration(
                   color:
                       AppColors.success
-                          .withOpacity(0.08),
+                          .withValues(alpha: 0.08),
                   borderRadius:
                       BorderRadius.circular(
                     AppDimensions.radius12,

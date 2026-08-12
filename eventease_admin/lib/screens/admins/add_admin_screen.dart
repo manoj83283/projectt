@@ -372,8 +372,8 @@ class _AddAdminScreenState
           width: 54,
           decoration: BoxDecoration(
             color:
-                AppColors.primary.withOpacity(
-              0.10,
+                AppColors.primary.withValues(
+              alpha: 0.10,
             ),
             borderRadius: BorderRadius.circular(
               AppDimensions.radius16,
@@ -587,8 +587,8 @@ class _AddAdminScreenState
               AppDimensions.padding12,
             ),
             decoration: BoxDecoration(
-              color: AppColors.info.withOpacity(
-                0.08,
+              color: AppColors.info.withValues(
+                alpha: 0.08,
               ),
               borderRadius:
                   BorderRadius.circular(
@@ -596,7 +596,7 @@ class _AddAdminScreenState
               ),
               border: Border.all(
                 color: AppColors.info
-                    .withOpacity(0.18),
+                    .withValues(alpha: 0.18),
               ),
             ),
             child: const Row(
@@ -720,7 +720,7 @@ class _AddAdminScreenState
                   ),
                   selected: selected,
                   selectedColor: AppColors.primary
-                      .withOpacity(0.16),
+                      .withValues(alpha: 0.16),
                   checkmarkColor:
                       AppColors.primary,
                   onSelected: (value) {

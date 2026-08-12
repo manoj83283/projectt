@@ -87,6 +87,7 @@ app.use("/api/admin", adminRoutes);
 
 // Optional routes
 app.use("/api/users", userRoutes);
+app.use("/api/provider", providerRoutes);
 app.use("/api/providers", providerRoutes);
 
 // =====================================================

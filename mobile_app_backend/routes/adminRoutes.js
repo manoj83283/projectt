@@ -37,6 +37,12 @@ router.get("/providers", getAllProviders);
 router.get("/services", getAllServices);
 router.get("/bookings", getAllBookings);
 router.get("/orders", getAllOrders);
+router.get(
+  "/users",
+  protect,
+  adminOnly,
+  getAllUsers
+);
 
 router.put(
   "/service/:id/approve",

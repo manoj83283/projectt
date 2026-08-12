@@ -758,7 +758,7 @@ class _DisputesScreenState extends State<DisputesScreen> {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.035),
+            color: Colors.black.withValues(alpha: 0.035),
             blurRadius: 18,
             offset: const Offset(0, 8),
           ),
@@ -893,10 +893,10 @@ class _DisputesScreenState extends State<DisputesScreen> {
                       margin: const EdgeInsets.only(bottom: 16),
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: AppColors.error.withOpacity(0.08),
+                        color: AppColors.error.withValues(alpha: 0.08),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: AppColors.error.withOpacity(0.25),
+                          color: AppColors.error.withValues(alpha: 0.25),
                         ),
                       ),
                       child: Text(
@@ -994,7 +994,7 @@ class DisputesTable extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.035),
+            color: Colors.black.withValues(alpha: 0.035),
             blurRadius: 18,
             offset: const Offset(0, 8),
           ),
@@ -1160,7 +1160,7 @@ class _DisputeInfoCell extends StatelessWidget {
         children: [
           CircleAvatar(
             radius: 19,
-            backgroundColor: AppColors.primary.withOpacity(0.1),
+            backgroundColor: AppColors.primary.withValues(alpha: 0.1),
             child: const Icon(
               Icons.gavel_outlined,
               color: AppColors.primary,
@@ -1220,7 +1220,7 @@ class _UserCell extends StatelessWidget {
         children: [
           CircleAvatar(
             radius: 17,
-            backgroundColor: _userTypeColor(dispute.userType).withOpacity(0.1),
+            backgroundColor: _userTypeColor(dispute.userType).withValues(alpha: 0.1),
             child: Text(
               userName[0].toUpperCase(),
               style: TextStyle(
@@ -1295,7 +1295,7 @@ class _AgainstCell extends StatelessWidget {
         children: [
           CircleAvatar(
             radius: 17,
-            backgroundColor: AppColors.warning.withOpacity(0.1),
+            backgroundColor: AppColors.warning.withValues(alpha: 0.1),
             child: const Icon(
               Icons.person_search_outlined,
               color: AppColors.warning,
@@ -1358,8 +1358,8 @@ class _AssigneeCell extends StatelessWidget {
           CircleAvatar(
             radius: 16,
             backgroundColor: assigned
-                ? AppColors.success.withOpacity(0.1)
-                : AppColors.warning.withOpacity(0.1),
+                ? AppColors.success.withValues(alpha: 0.1)
+                : AppColors.warning.withValues(alpha: 0.1),
             child: Icon(
               assigned ? Icons.person_outline : Icons.person_off_outlined,
               color: assigned ? AppColors.success : AppColors.warning,
@@ -1730,7 +1730,7 @@ class _DisputeSummaryCard extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.035),
+            color: Colors.black.withValues(alpha: 0.035),
             blurRadius: 18,
             offset: const Offset(0, 8),
           ),
@@ -1742,7 +1742,7 @@ class _DisputeSummaryCard extends StatelessWidget {
             height: 46,
             width: 46,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.11),
+              color: color.withValues(alpha: 0.11),
               borderRadius: BorderRadius.circular(14),
             ),
             child: Icon(
@@ -1881,10 +1881,10 @@ class _StatusChip extends StatelessWidget {
         vertical: 7,
       ),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.11),
+        color: color.withValues(alpha: 0.11),
         borderRadius: BorderRadius.circular(999),
         border: Border.all(
-          color: color.withOpacity(0.24),
+          color: color.withValues(alpha: 0.24),
         ),
       ),
       child: Text(

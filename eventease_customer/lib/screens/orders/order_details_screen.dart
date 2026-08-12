@@ -78,7 +78,7 @@ class OrderDetailsScreen extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: _getStatusColor(
                           status,
-                        ).withOpacity(0.1),
+                        ).withValues(alpha: 0.1),
                         borderRadius:
                             BorderRadius.circular(
                           25,
@@ -148,8 +148,8 @@ class OrderDetailsScreen extends StatelessWidget {
                             BoxDecoration(
                           color: ThemeConfig
                               .primaryColor
-                              .withOpacity(
-                            0.1,
+                              .withValues(
+                            alpha: 0.1,
                           ),
                           borderRadius:
                               BorderRadius.circular(

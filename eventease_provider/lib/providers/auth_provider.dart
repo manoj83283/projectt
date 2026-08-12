@@ -4,8 +4,7 @@ import '../models/provider_model.dart';
 import '../repositories/auth_repository.dart';
 
 class AuthProvider extends ChangeNotifier {
-  final AuthRepository _repository =
-      AuthRepository.instance;
+  final AuthRepository _repository = AuthRepository.instance;
 
   // =========================
   // STATES
@@ -29,11 +28,15 @@ class AuthProvider extends ChangeNotifier {
 
   String? get token => _token;
 
-  String? get errorMessage =>
-      _errorMessage;
+  String? get errorMessage => _errorMessage;
 
-  ProviderModel? get provider =>
-      _provider;
+  ProviderModel? get provider => _provider;
+
+  bool get hasError {
+    return _errorMessage != null && _errorMessage!.isNotEmpty;
+  }
+
+  bool get hasProvider => _provider != null;
 
   // =========================
   // SET LOADING
@@ -45,16 +48,31 @@ class AuthProvider extends ChangeNotifier {
   }
 
   // =========================
-  // CLEAR ERROR
+  // SET ERROR
   // =========================
 
-  void clearError() {
-    _errorMessage = null;
+  void _setError(Object error) {
+    _errorMessage = error.toString();
     notifyListeners();
   }
 
   // =========================
+  // CLEAR ERROR
+  // =========================
+
+  void clearError({
+    bool notify = true,
+  }) {
+    _errorMessage = null;
+
+    if (notify) {
+      notifyListeners();
+    }
+  }
+
+  // =========================
   // LOGIN
+  // Backend: /auth/signin
   // =========================
 
   Future<bool> login({
@@ -63,24 +81,27 @@ class AuthProvider extends ChangeNotifier {
   }) async {
     try {
       _setLoading(true);
-      clearError();
+      clearError(notify: false);
 
-      final response =
-          await _repository.login(
+      final response = await _repository.login(
         email: email,
         password: password,
       );
 
-      _token =
-          response['token']?.toString();
+      _token = response['token']?.toString();
 
-      _isLoggedIn = true;
+      _isLoggedIn = _token != null && _token!.isNotEmpty;
 
-      await getProfile();
+      if (_isLoggedIn) {
+        await getProfile(notifyError: false);
+      }
 
-      return true;
+      notifyListeners();
+
+      return _isLoggedIn;
     } catch (e) {
-      _errorMessage = e.toString();
+      _isLoggedIn = false;
+      _setError(e);
       return false;
     } finally {
       _setLoading(false);
@@ -88,11 +109,14 @@ class AuthProvider extends ChangeNotifier {
   }
 
   // =========================
-  // REGISTER
+  // SIGNUP
+  // Standard method going forward
+  // Backend: /auth/signup
   // =========================
 
-  Future<bool> register({
-    required String fullName,
+  Future<bool> signup({
+    required String firstName,
+    required String lastName,
     required String email,
     required String phone,
     required String password,
@@ -100,22 +124,61 @@ class AuthProvider extends ChangeNotifier {
   }) async {
     try {
       _setLoading(true);
+      clearError(notify: false);
 
-      await _repository.register(
-        fullName: fullName,
+      final response = await _repository.signup(
+        firstName: firstName,
+        lastName: lastName,
         email: email,
         phone: phone,
         password: password,
         businessName: businessName,
       );
 
+      _token = response['token']?.toString();
+
+      if (_token != null && _token!.isNotEmpty) {
+        _isLoggedIn = true;
+
+        try {
+          await getProfile(notifyError: false);
+        } catch (_) {
+          // Sign up succeeded even if profile fetch fails temporarily.
+        }
+      }
+
+      notifyListeners();
+
       return true;
     } catch (e) {
-      _errorMessage = e.toString();
+      _setError(e);
       return false;
     } finally {
       _setLoading(false);
     }
+  }
+
+  // =========================
+  // REGISTER WRAPPER
+  // Backward compatibility for older screen/provider calls
+  // =========================
+
+  Future<bool> register({
+    required String firstName,
+    required String lastName,
+    required String email,
+    required String phone,
+    required String password,
+    required String businessName,
+  }) async {
+    return signup(
+      firstName: firstName,
+      lastName: lastName,
+      email: email,
+      phone: phone,
+      password: password,
+      businessName: businessName,
+    );
   }
 
   // =========================
@@ -127,6 +190,7 @@ class AuthProvider extends ChangeNotifier {
   }) async {
     try {
       _setLoading(true);
+      clearError(notify: false);
 
       await _repository.sendOtp(
         phone: phone,
@@ -134,7 +198,7 @@ class AuthProvider extends ChangeNotifier {
 
       return true;
     } catch (e) {
-      _errorMessage = e.toString();
+      _setError(e);
       return false;
     } finally {
       _setLoading(false);
@@ -151,6 +215,7 @@ class AuthProvider extends ChangeNotifier {
   }) async {
     try {
       _setLoading(true);
+      clearError(notify: false);
 
       await _repository.verifyOtp(
         phone: phone,
@@ -159,7 +224,7 @@ class AuthProvider extends ChangeNotifier {
 
       return true;
     } catch (e) {
-      _errorMessage = e.toString();
+      _setError(e);
       return false;
     } finally {
       _setLoading(false);
@@ -175,6 +240,7 @@ class AuthProvider extends ChangeNotifier {
   }) async {
     try {
       _setLoading(true);
+      clearError(notify: false);
 
       await _repository.forgotPassword(
         email: email,
@@ -182,7 +248,7 @@ class AuthProvider extends ChangeNotifier {
 
       return true;
     } catch (e) {
-      _errorMessage = e.toString();
+      _setError(e);
       return false;
     } finally {
       _setLoading(false);
@@ -200,6 +266,7 @@ class AuthProvider extends ChangeNotifier {
   }) async {
     try {
       _setLoading(true);
+      clearError(notify: false);
 
       await _repository.resetPassword(
         email: email,
@@ -209,7 +276,7 @@ class AuthProvider extends ChangeNotifier {
 
       return true;
     } catch (e) {
-      _errorMessage = e.toString();
+      _setError(e);
       return false;
     } finally {
       _setLoading(false);
@@ -226,6 +293,7 @@ class AuthProvider extends ChangeNotifier {
   }) async {
     try {
       _setLoading(true);
+      clearError(notify: false);
 
       await _repository.changePassword(
         oldPassword: oldPassword,
@@ -234,7 +302,44 @@ class AuthProvider extends ChangeNotifier {
 
       return true;
     } catch (e) {
-      _errorMessage = e.toString();
+      _setError(e);
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  // =========================
+  // GOOGLE LOGIN
+  // =========================
+
+  Future<bool> googleLogin({
+    required String email,
+    required String name,
+  }) async {
+    try {
+      _setLoading(true);
+      clearError(notify: false);
+
+      final response = await _repository.googleLogin(
+        email: email,
+        name: name,
+      );
+
+      _token = response['token']?.toString();
+
+      _isLoggedIn = _token != null && _token!.isNotEmpty;
+
+      if (_isLoggedIn) {
+        await getProfile(notifyError: false);
+      }
+
+      notifyListeners();
+
+      return _isLoggedIn;
+    } catch (e) {
+      _isLoggedIn = false;
+      _setError(e);
       return false;
     } finally {
       _setLoading(false);
@@ -245,14 +350,21 @@ class AuthProvider extends ChangeNotifier {
   // GET PROFILE
   // =========================
 
-  Future<void> getProfile() async {
+  Future<void> getProfile({
+    bool notifyError = true,
+  }) async {
     try {
-      _provider =
-          await _repository.getProfile();
+      clearError(notify: false);
+
+      _provider = await _repository.getProfile();
 
       notifyListeners();
     } catch (e) {
-      _errorMessage = e.toString();
+      if (notifyError) {
+        _setError(e);
+      } else {
+        _errorMessage = e.toString();
+      }
     }
   }
 
@@ -265,16 +377,17 @@ class AuthProvider extends ChangeNotifier {
   }) async {
     try {
       _setLoading(true);
+      clearError(notify: false);
 
       await _repository.updateProfile(
         data: data,
       );
 
-      await getProfile();
+      await getProfile(notifyError: false);
 
       return true;
     } catch (e) {
-      _errorMessage = e.toString();
+      _setError(e);
       return false;
     } finally {
       _setLoading(false);
@@ -287,28 +400,48 @@ class AuthProvider extends ChangeNotifier {
 
   Future<void> refreshToken() async {
     try {
-      _token =
-          await _repository.refreshToken();
+      clearError(notify: false);
+
+      _token = await _repository.refreshToken();
+
+      _isLoggedIn = _token != null && _token!.isNotEmpty;
 
       notifyListeners();
-    } catch (_) {}
+    } catch (_) {
+      // Ignore refresh failure silently.
+    }
   }
 
   // =========================
   // CHECK LOGIN
+  // Important:
+  // Do not call clearError() with notifyListeners during splash/build.
   // =========================
 
   Future<void> checkLoginStatus() async {
     try {
-      _isLoggedIn =
-          await _repository.isLoggedIn();
+      _errorMessage = null;
+
+      _isLoggedIn = await _repository.isLoggedIn();
 
       if (_isLoggedIn) {
-        await getProfile();
+        _token = await _repository.getToken();
+
+        try {
+          await getProfile(notifyError: false);
+        } catch (_) {
+          // Ignore profile loading issue during startup.
+        }
       }
 
       notifyListeners();
-    } catch (_) {}
+    } catch (_) {
+      _isLoggedIn = false;
+      _token = null;
+      _provider = null;
+
+      notifyListeners();
+    }
   }
 
   // =========================
@@ -339,21 +472,37 @@ class AuthProvider extends ChangeNotifier {
   Future<bool> deleteAccount() async {
     try {
       _setLoading(true);
+      clearError(notify: false);
 
       await _repository.deleteAccount();
 
       _provider = null;
       _token = null;
       _isLoggedIn = false;
+      _errorMessage = null;
 
       notifyListeners();
 
       return true;
     } catch (e) {
-      _errorMessage = e.toString();
+      _setError(e);
       return false;
     } finally {
       _setLoading(false);
     }
+  }
+
+  // =========================
+  // RESET LOCAL STATE
+  // =========================
+
+  void reset() {
+    _isLoading = false;
+    _isLoggedIn = false;
+    _token = null;
+    _errorMessage = null;
+    _provider = null;
+
+    notifyListeners();
   }
 }

@@ -13,7 +13,6 @@ import '../../providers/dashboard_provider.dart';
 import '../../routes/app_routes.dart';
 import '../../routes/navigation_service.dart';
 import '../../widgets/charts/booking_chart.dart';
-import '../../widgets/charts/customer_chart.dart';
 import '../../widgets/charts/order_chart.dart';
 import '../../widgets/charts/provider_chart.dart';
 import '../../widgets/charts/revenue_chart.dart';
@@ -268,7 +267,7 @@ class _DashboardHeader extends StatelessWidget {
               width: 160,
               child:
                   DropdownButtonFormField<String>(
-                value: selectedRange,
+                initialValue: selectedRange,
                 decoration:
                     const InputDecoration(
                   contentPadding:
@@ -373,7 +372,7 @@ class _DashboardHeader extends StatelessWidget {
                 radius: 20,
                 backgroundColor: AppColors
                     .primary
-                    .withOpacity(0.10),
+                    .withValues(alpha: 0.10),
                 child: Text(
                   AppFormatters.getInitials(
                     authProvider.adminName
@@ -615,7 +614,7 @@ class _KpiCard extends StatelessWidget {
                     width: 46,
                     decoration: BoxDecoration(
                       color: data.color
-                          .withOpacity(0.12),
+                          .withValues(alpha: 0.12),
                       borderRadius:
                           BorderRadius.circular(
                         AppDimensions.radius12,
@@ -634,7 +633,7 @@ class _KpiCard extends StatelessWidget {
                     size: 14,
                     color: AppColors
                         .textSecondary
-                        .withOpacity(0.7),
+                        .withValues(alpha: 0.7),
                   ),
                 ],
               ),
@@ -964,7 +963,7 @@ class _TopListCard extends StatelessWidget {
             )
           : ListView.separated(
               itemCount: items.length,
-              separatorBuilder: (_, __) {
+              separatorBuilder: (_, _) {
                 return const Divider(
                   color: AppColors.border,
                 );
@@ -978,7 +977,7 @@ class _TopListCard extends StatelessWidget {
                       radius: 18,
                       backgroundColor: AppColors
                           .primary
-                          .withOpacity(0.10),
+                          .withValues(alpha: 0.10),
                       child: Text(
                         '${index + 1}',
                         style: const TextStyle(
@@ -1059,7 +1058,7 @@ class _RecentListCard extends StatelessWidget {
             )
           : ListView.separated(
               itemCount: items.length,
-              separatorBuilder: (_, __) {
+              separatorBuilder: (_, _) {
                 return const Divider(
                   color: AppColors.border,
                 );
@@ -1074,7 +1073,7 @@ class _RecentListCard extends StatelessWidget {
                       width: 38,
                       decoration: BoxDecoration(
                         color: AppColors.info
-                            .withOpacity(0.10),
+                            .withValues(alpha: 0.10),
                         borderRadius:
                             BorderRadius.circular(
                           AppDimensions.radius12,
@@ -1195,7 +1194,7 @@ class _DashboardCard extends StatelessWidget {
                   ),
                 ),
 
-                if (action != null) action!,
+                ?action,
               ],
             ),
 
@@ -1413,7 +1412,7 @@ class _SidebarFooter extends StatelessWidget {
         'v${AppConfig.appVersion} • ${AppConfig.environmentName}',
         textAlign: TextAlign.center,
         style: TextStyle(
-          color: Colors.white.withOpacity(0.65),
+          color: Colors.white.withValues(alpha: 0.65),
           fontSize: 12,
         ),
       ),

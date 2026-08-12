@@ -16,15 +16,7 @@ class ServiceCard extends StatelessWidget {
   final VoidCallback? onBookNow;
 
   const ServiceCard({
-    super.key,
-    required this.id,
-    required this.title,
-    required this.category,
-    required this.providerName,
-    required this.imageUrl,
-    required this.rating,
-    required this.reviewCount,
-    required this.price,
+    required this.id, required this.title, required this.category, required this.providerName, required this.imageUrl, required this.rating, required this.reviewCount, required this.price, super.key,
     this.originalPrice,
     this.isFavorite = false,
     this.onTap,
@@ -119,7 +111,7 @@ class ServiceCard extends StatelessWidget {
                         ),
                       ),
                       child: Text(
-                        "$discountPercent% OFF",
+                        '$discountPercent% OFF',
                         style:
                             const TextStyle(
                           color:
@@ -237,7 +229,7 @@ class ServiceCard extends StatelessWidget {
                       ),
                       const SizedBox(width: 6),
                       Text(
-                        "($reviewCount Reviews)",
+                        '($reviewCount Reviews)',
                         style: TextStyle(
                           color: Colors
                               .grey.shade600,
@@ -256,7 +248,7 @@ class ServiceCard extends StatelessWidget {
                                 .start,
                         children: [
                           Text(
-                            "₹${price.toStringAsFixed(0)}",
+                            '₹${price.toStringAsFixed(0)}',
                             style:
                                 const TextStyle(
                               fontSize: 20,
@@ -270,7 +262,7 @@ class ServiceCard extends StatelessWidget {
 
                           if (hasDiscount)
                             Text(
-                              "₹${originalPrice!.toStringAsFixed(0)}",
+                              '₹${originalPrice!.toStringAsFixed(0)}',
                               style:
                                   const TextStyle(
                                 decoration:
@@ -289,7 +281,7 @@ class ServiceCard extends StatelessWidget {
                         onPressed:
                             onBookNow,
                         child: const Text(
-                          "Book Now",
+                          'Book Now',
                         ),
                       ),
                     ],

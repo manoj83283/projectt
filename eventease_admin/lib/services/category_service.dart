@@ -31,8 +31,7 @@ class CategoryService {
           if (search != null &&
               search.isNotEmpty)
             'search': search,
-          if (isActive != null)
-            'isActive': isActive,
+          'isActive': ?isActive,
         },
       );
 
@@ -111,16 +110,11 @@ class CategoryService {
       final response = await _api.put(
         '/admin/categories/$categoryId',
         data: {
-          if (name != null)
-            'name': name,
-          if (description != null)
-            'description': description,
-          if (image != null)
-            'image': image,
-          if (icon != null)
-            'icon': icon,
-          if (isActive != null)
-            'isActive': isActive,
+          'name': ?name,
+          'description': ?description,
+          'image': ?image,
+          'icon': ?icon,
+          'isActive': ?isActive,
         },
       );
 

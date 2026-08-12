@@ -31,8 +31,8 @@ class CustomerService {
           'limit': limit,
           if (search != null && search.isNotEmpty)
             'search': search,
-          if (status != null) 'status': status,
-          if (sortBy != null) 'sortBy': sortBy,
+          'status': ?status,
+          'sortBy': ?sortBy,
         },
       );
 

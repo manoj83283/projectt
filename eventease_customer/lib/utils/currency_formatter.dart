@@ -41,18 +41,18 @@ class CurrencyFormatter {
     num amount,
   ) {
     if (amount >= 10000000) {
-      return "₹${(amount / 10000000).toStringAsFixed(2)} Cr";
+      return '₹${(amount / 10000000).toStringAsFixed(2)} Cr';
     }
 
     if (amount >= 100000) {
-      return "₹${(amount / 100000).toStringAsFixed(2)} L";
+      return '₹${(amount / 100000).toStringAsFixed(2)} L';
     }
 
     if (amount >= 1000) {
-      return "₹${(amount / 1000).toStringAsFixed(1)} K";
+      return '₹${(amount / 1000).toStringAsFixed(1)} K';
     }
 
-    return "₹${amount.toStringAsFixed(0)}";
+    return '₹${amount.toStringAsFixed(0)}';
   }
 
   // =====================================================
@@ -63,18 +63,18 @@ class CurrencyFormatter {
     num amount,
   ) {
     if (amount >= 10000000) {
-      return "₹${(amount / 10000000).toStringAsFixed(2)} Crore";
+      return '₹${(amount / 10000000).toStringAsFixed(2)} Crore';
     }
 
     if (amount >= 100000) {
-      return "₹${(amount / 100000).toStringAsFixed(2)} Lakh";
+      return '₹${(amount / 100000).toStringAsFixed(2)} Lakh';
     }
 
     if (amount >= 1000) {
-      return "₹${(amount / 1000).toStringAsFixed(2)} Thousand";
+      return '₹${(amount / 1000).toStringAsFixed(2)} Thousand';
     }
 
-    return "₹${amount.toStringAsFixed(0)}";
+    return '₹${amount.toStringAsFixed(0)}';
   }
 
   // =====================================================
@@ -113,7 +113,7 @@ class CurrencyFormatter {
   static String percentage(
     num value,
   ) {
-    return "${value.toStringAsFixed(0)}%";
+    return '${value.toStringAsFixed(0)}%';
   }
 
   // =====================================================
@@ -185,7 +185,7 @@ class CurrencyFormatter {
     num amount,
   ) {
     return amount <= 0
-        ? "FREE"
+        ? 'FREE'
         : format(amount);
   }
 }

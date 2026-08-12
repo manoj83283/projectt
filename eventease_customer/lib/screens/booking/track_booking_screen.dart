@@ -135,8 +135,8 @@ class _TrackBookingScreenState
                             BoxDecoration(
                           color:
                               Colors.orange
-                                  .withOpacity(
-                            0.1,
+                                  .withValues(
+                            alpha: 0.1,
                           ),
                           borderRadius:
                               BorderRadius.circular(
@@ -222,8 +222,8 @@ class _TrackBookingScreenState
                             BoxDecoration(
                           color: Colors
                               .green
-                              .withOpacity(
-                            0.1,
+                              .withValues(
+                            alpha: 0.1,
                           ),
                           borderRadius:
                               BorderRadius.circular(
@@ -249,8 +249,8 @@ class _TrackBookingScreenState
                             BoxDecoration(
                           color: ThemeConfig
                               .primaryColor
-                              .withOpacity(
-                            0.1,
+                              .withValues(
+                            alpha: 0.1,
                           ),
                           borderRadius:
                               BorderRadius.circular(

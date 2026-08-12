@@ -66,138 +66,138 @@ class TermsConditionsScreen
                 const SizedBox(height: 30),
 
                 _sectionTitle(
-                  "1. Acceptance of Terms",
+                  '1. Acceptance of Terms',
                 ),
                 const Text(
-                  "By accessing and using EventEase, you agree to comply with and be bound by these Terms & Conditions. If you do not agree, please discontinue use of the platform.",
+                  'By accessing and using EventEase, you agree to comply with and be bound by these Terms & Conditions. If you do not agree, please discontinue use of the platform.',
                 ),
 
                 const SizedBox(height: 20),
 
                 _sectionTitle(
-                  "2. User Eligibility",
+                  '2. User Eligibility',
                 ),
                 const Text(
-                  "Users must provide accurate information during registration and maintain the confidentiality of account credentials.",
+                  'Users must provide accurate information during registration and maintain the confidentiality of account credentials.',
                 ),
 
                 const SizedBox(height: 20),
 
                 _sectionTitle(
-                  "3. Service Bookings",
+                  '3. Service Bookings',
                 ),
                 const Text(
-                  "Users may browse, book, and purchase services from verified providers. Booking confirmation is subject to provider availability and successful payment processing.",
+                  'Users may browse, book, and purchase services from verified providers. Booking confirmation is subject to provider availability and successful payment processing.',
                 ),
 
                 const SizedBox(height: 20),
 
                 _sectionTitle(
-                  "4. Payments",
+                  '4. Payments',
                 ),
                 const Text(
-                  "Payments must be completed through approved payment methods. EventEase may use secure third-party payment gateways for transaction processing.",
+                  'Payments must be completed through approved payment methods. EventEase may use secure third-party payment gateways for transaction processing.',
                 ),
 
                 const SizedBox(height: 20),
 
                 _sectionTitle(
-                  "5. Cancellation & Refunds",
+                  '5. Cancellation & Refunds',
                 ),
                 const Text(
-                  "Cancellation and refund policies may vary depending on service providers, booking type, timing, and applicable platform policies.",
+                  'Cancellation and refund policies may vary depending on service providers, booking type, timing, and applicable platform policies.',
                 ),
 
                 const SizedBox(height: 20),
 
                 _sectionTitle(
-                  "6. Provider Responsibilities",
+                  '6. Provider Responsibilities',
                 ),
                 const Text(
-                  "Service providers are responsible for delivering booked services accurately, professionally, and within the agreed schedule.",
+                  'Service providers are responsible for delivering booked services accurately, professionally, and within the agreed schedule.',
                 ),
 
                 const SizedBox(height: 20),
 
                 _sectionTitle(
-                  "7. User Responsibilities",
+                  '7. User Responsibilities',
                 ),
                 const Text(
-                  "Users must provide accurate booking details, respect providers, avoid misuse of platform services, and comply with applicable laws.",
+                  'Users must provide accurate booking details, respect providers, avoid misuse of platform services, and comply with applicable laws.',
                 ),
 
                 const SizedBox(height: 20),
 
                 _sectionTitle(
-                  "8. Reviews & Ratings",
+                  '8. Reviews & Ratings',
                 ),
                 const Text(
-                  "Users may submit reviews and ratings based on genuine experiences. EventEase reserves the right to remove misleading, abusive, or inappropriate content.",
+                  'Users may submit reviews and ratings based on genuine experiences. EventEase reserves the right to remove misleading, abusive, or inappropriate content.',
                 ),
 
                 const SizedBox(height: 20),
 
                 _sectionTitle(
-                  "9. Prohibited Activities",
+                  '9. Prohibited Activities',
                 ),
                 const Text(
-                  "Users must not engage in fraudulent transactions, unauthorized access, abuse of platform functionality, spam, or activities that harm the platform or its users.",
+                  'Users must not engage in fraudulent transactions, unauthorized access, abuse of platform functionality, spam, or activities that harm the platform or its users.',
                 ),
 
                 const SizedBox(height: 20),
 
                 _sectionTitle(
-                  "10. Intellectual Property",
+                  '10. Intellectual Property',
                 ),
                 const Text(
-                  "All platform content including logos, images, software, branding, and design elements remain the property of EventEase or respective licensors.",
+                  'All platform content including logos, images, software, branding, and design elements remain the property of EventEase or respective licensors.',
                 ),
 
                 const SizedBox(height: 20),
 
                 _sectionTitle(
-                  "11. Limitation of Liability",
+                  '11. Limitation of Liability',
                 ),
                 const Text(
-                  "EventEase acts as a marketplace platform connecting customers and providers. Liability is limited to the extent permitted by applicable law.",
+                  'EventEase acts as a marketplace platform connecting customers and providers. Liability is limited to the extent permitted by applicable law.',
                 ),
 
                 const SizedBox(height: 20),
 
                 _sectionTitle(
-                  "12. Account Suspension",
+                  '12. Account Suspension',
                 ),
                 const Text(
-                  "EventEase reserves the right to suspend or terminate accounts that violate platform policies, legal requirements, or community standards.",
+                  'EventEase reserves the right to suspend or terminate accounts that violate platform policies, legal requirements, or community standards.',
                 ),
 
                 const SizedBox(height: 20),
 
                 _sectionTitle(
-                  "13. Privacy Policy",
+                  '13. Privacy Policy',
                 ),
                 const Text(
-                  "Your use of the platform is also governed by our Privacy Policy, which explains how information is collected, stored, and processed.",
+                  'Your use of the platform is also governed by our Privacy Policy, which explains how information is collected, stored, and processed.',
                 ),
 
                 const SizedBox(height: 20),
 
                 _sectionTitle(
-                  "14. Changes to Terms",
+                  '14. Changes to Terms',
                 ),
                 const Text(
-                  "EventEase may update these Terms & Conditions from time to time. Continued use of the platform constitutes acceptance of updated terms.",
+                  'EventEase may update these Terms & Conditions from time to time. Continued use of the platform constitutes acceptance of updated terms.',
                 ),
 
                 const SizedBox(height: 20),
 
                 _sectionTitle(
-                  "15. Contact Information",
+                  '15. Contact Information',
                 ),
                 const Text(
-                  "Email: support@eventease.com\n"
-                  "Website: www.eventease.com\n"
-                  "Customer Support: 24/7",
+                  'Email: support@eventease.com\n'
+                  'Website: www.eventease.com\n'
+                  'Customer Support: 24/7',
                 ),
 
                 const SizedBox(height: 25),
@@ -211,14 +211,14 @@ class TermsConditionsScreen
                   decoration:
                       BoxDecoration(
                     color: Colors.blue
-                        .withOpacity(0.1),
+                        .withValues(alpha: 0.1),
                     borderRadius:
                         BorderRadius.circular(
                       12,
                     ),
                   ),
                   child: const Text(
-                    "By continuing to use EventEase, you acknowledge that you have read, understood, and agreed to these Terms & Conditions.",
+                    'By continuing to use EventEase, you acknowledge that you have read, understood, and agreed to these Terms & Conditions.',
                     textAlign:
                         TextAlign.center,
                     style: TextStyle(

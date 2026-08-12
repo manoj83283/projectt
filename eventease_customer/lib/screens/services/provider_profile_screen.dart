@@ -97,11 +97,11 @@ class _ProviderProfileScreenState
 
                   const SizedBox(height: 6),
 
-                  Row(
+                  const Row(
                     mainAxisAlignment:
                         MainAxisAlignment
                             .center,
-                    children: const [
+                    children: [
                       Icon(
                         Icons.verified,
                         color: Colors.white,
@@ -362,8 +362,8 @@ class _ProviderProfileScreenState
                                 BoxDecoration(
                               color: ThemeConfig
                                   .primaryColor
-                                  .withOpacity(
-                                0.1,
+                                  .withValues(
+                                alpha: 0.1,
                               ),
                               borderRadius:
                                   BorderRadius.circular(

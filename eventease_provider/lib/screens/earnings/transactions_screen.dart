@@ -205,8 +205,8 @@ class _TransactionsScreenState
                                           children: [
                                             CircleAvatar(
                                               backgroundColor:
-                                                  _statusColor(payment.status).withOpacity(
-                                                0.12,
+                                                  _statusColor(payment.status).withValues(
+                                                alpha: 0.12,
                                               ),
                                               child:
                                                   Icon(

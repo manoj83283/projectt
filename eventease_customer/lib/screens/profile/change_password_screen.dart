@@ -93,7 +93,7 @@ class _ChangePasswordScreenState
 
       appBar: AppBar(
         title: const Text(
-          "Change Password",
+          'Change Password',
         ),
       ),
 
@@ -121,7 +121,7 @@ class _ChangePasswordScreenState
                       const SizedBox(height: 16),
 
                       const Text(
-                        "Update Your Password",
+                        'Update Your Password',
                         style: TextStyle(
                           fontSize: 22,
                           fontWeight:
@@ -132,7 +132,7 @@ class _ChangePasswordScreenState
                       const SizedBox(height: 8),
 
                       Text(
-                        "Use a strong password to keep your account secure.",
+                        'Use a strong password to keep your account secure.',
                         textAlign:
                             TextAlign.center,
                         style: TextStyle(
@@ -152,7 +152,7 @@ class _ChangePasswordScreenState
                         decoration:
                             InputDecoration(
                           labelText:
-                              "Current Password",
+                              'Current Password',
                           prefixIcon:
                               const Icon(
                             Icons.lock_outline,
@@ -175,7 +175,7 @@ class _ChangePasswordScreenState
                         validator: (value) {
                           if (value == null ||
                               value.isEmpty) {
-                            return "Enter current password";
+                            return 'Enter current password';
                           }
                           return null;
                         },
@@ -193,7 +193,7 @@ class _ChangePasswordScreenState
                         decoration:
                             InputDecoration(
                           labelText:
-                              "New Password",
+                              'New Password',
                           prefixIcon:
                               const Icon(
                             Icons.lock,
@@ -216,11 +216,11 @@ class _ChangePasswordScreenState
                         validator: (value) {
                           if (value == null ||
                               value.isEmpty) {
-                            return "Enter new password";
+                            return 'Enter new password';
                           }
 
                           if (value.length < 8) {
-                            return "Password must be at least 8 characters";
+                            return 'Password must be at least 8 characters';
                           }
 
                           return null;
@@ -239,7 +239,7 @@ class _ChangePasswordScreenState
                         decoration:
                             InputDecoration(
                           labelText:
-                              "Confirm Password",
+                              'Confirm Password',
                           prefixIcon:
                               const Icon(
                             Icons.password,
@@ -262,12 +262,12 @@ class _ChangePasswordScreenState
                         validator: (value) {
                           if (value == null ||
                               value.isEmpty) {
-                            return "Confirm your password";
+                            return 'Confirm your password';
                           }
 
                           if (value !=
                               newPasswordController.text) {
-                            return "Passwords do not match";
+                            return 'Passwords do not match';
                           }
 
                           return null;
@@ -280,18 +280,18 @@ class _ChangePasswordScreenState
 
               const SizedBox(height: 20),
 
-              Card(
+              const Card(
                 child: Padding(
                   padding:
-                      const EdgeInsets.all(
+                      EdgeInsets.all(
                     16,
                   ),
                   child: Column(
                     crossAxisAlignment:
                         CrossAxisAlignment.start,
-                    children: const [
+                    children: [
                       Text(
-                        "Password Requirements",
+                        'Password Requirements',
                         style: TextStyle(
                           fontWeight:
                               FontWeight.bold,
@@ -299,15 +299,15 @@ class _ChangePasswordScreenState
                       ),
                       SizedBox(height: 10),
                       Text(
-                          "• At least 8 characters"),
+                          '• At least 8 characters'),
                       Text(
-                          "• One uppercase letter"),
+                          '• One uppercase letter'),
                       Text(
-                          "• One lowercase letter"),
+                          '• One lowercase letter'),
                       Text(
-                          "• One number"),
+                          '• One number'),
                       Text(
-                          "• One special character"),
+                          '• One special character'),
                     ],
                   ),
                 ),
@@ -339,8 +339,8 @@ class _ChangePasswordScreenState
                         ),
                   label: Text(
                     isLoading
-                        ? "Updating..."
-                        : "Change Password",
+                        ? 'Updating...'
+                        : 'Change Password',
                   ),
                 ),
               ),

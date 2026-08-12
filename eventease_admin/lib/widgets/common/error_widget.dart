@@ -38,7 +38,7 @@ class AppErrorWidget extends StatelessWidget {
               width: 110,
               decoration: BoxDecoration(
                 color: AppColors.error
-                    .withOpacity(0.1),
+                    .withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -281,7 +281,7 @@ class ErrorCard extends StatelessWidget {
     return Card(
       elevation: 0,
       color: AppColors.error
-          .withOpacity(0.08),
+          .withValues(alpha: 0.08),
       shape: RoundedRectangleBorder(
         borderRadius:
             BorderRadius.circular(
@@ -345,8 +345,8 @@ class InlineErrorWidget
       ),
       decoration: BoxDecoration(
         color:
-            AppColors.error.withOpacity(
-          0.08,
+            AppColors.error.withValues(
+          alpha: 0.08,
         ),
         borderRadius:
             BorderRadius.circular(
@@ -354,8 +354,8 @@ class InlineErrorWidget
         ),
         border: Border.all(
           color:
-              AppColors.error.withOpacity(
-            0.25,
+              AppColors.error.withValues(
+            alpha: 0.25,
           ),
         ),
       ),

@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 
-import 'utils/app_constants.dart';
-import 'utils/app_styles.dart';
-
 // Screens
-import 'screens/auth/login_screen.dart';
-import 'screens/home/home_screen.dart';
-import 'screens/splash/splash_screen.dart';
+import '../screens/auth/login_screen.dart';
+import '../screens/home/home_screen.dart';
+import '../screens/splash/splash_screen.dart';
+import '../utils/app_constants.dart';
+import '../utils/app_styles.dart';
 
 class EventEaseApp extends StatelessWidget {
   const EventEaseApp({super.key});

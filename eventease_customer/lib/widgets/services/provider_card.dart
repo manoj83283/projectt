@@ -20,15 +20,7 @@ class ProviderCard extends StatelessWidget {
   final VoidCallback? onBook;
 
   const ProviderCard({
-    super.key,
-    required this.providerId,
-    required this.providerName,
-    required this.category,
-    required this.imageUrl,
-    required this.rating,
-    required this.reviewCount,
-    required this.experienceYears,
-    required this.startingPrice,
+    required this.providerId, required this.providerName, required this.category, required this.imageUrl, required this.rating, required this.reviewCount, required this.experienceYears, required this.startingPrice, super.key,
     this.isVerified = false,
     this.isOnline = false,
     this.isFavorite = false,
@@ -249,7 +241,7 @@ class ProviderCard extends StatelessWidget {
                       icon:
                           const Icon(Icons.call),
                       label:
-                          const Text("Call"),
+                          const Text('Call'),
                     ),
                   ),
 
@@ -262,7 +254,7 @@ class ProviderCard extends StatelessWidget {
                       icon:
                           const Icon(Icons.chat),
                       label:
-                          const Text("Chat"),
+                          const Text('Chat'),
                     ),
                   ),
 
@@ -272,7 +264,7 @@ class ProviderCard extends StatelessWidget {
                     child: ElevatedButton(
                       onPressed: onBook,
                       child: const Text(
-                        "Book",
+                        'Book',
                       ),
                     ),
                   ),

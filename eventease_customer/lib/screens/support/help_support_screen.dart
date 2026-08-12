@@ -17,34 +17,34 @@ class _HelpSupportScreenState
 
   final List<Map<String, String>> faqs = [
     {
-      "question":
-          "How do I book a service?",
-      "answer":
-          "Search a service, open details, choose date & time, and complete payment."
+      'question':
+          'How do I book a service?',
+      'answer':
+          'Search a service, open details, choose date & time, and complete payment.'
     },
     {
-      "question":
-          "How can I cancel my booking?",
-      "answer":
-          "Open My Bookings, select booking details and click Cancel Booking."
+      'question':
+          'How can I cancel my booking?',
+      'answer':
+          'Open My Bookings, select booking details and click Cancel Booking.'
     },
     {
-      "question":
-          "How do I track my order?",
-      "answer":
-          "Go to My Orders and tap Track Order."
+      'question':
+          'How do I track my order?',
+      'answer':
+          'Go to My Orders and tap Track Order.'
     },
     {
-      "question":
-          "How do I change my password?",
-      "answer":
-          "Navigate to Profile → Settings → Change Password."
+      'question':
+          'How do I change my password?',
+      'answer':
+          'Navigate to Profile → Settings → Change Password.'
     },
     {
-      "question":
-          "How can I contact support?",
-      "answer":
-          "Use Call, Email, Live Chat or Support Ticket options below."
+      'question':
+          'How can I contact support?',
+      'answer':
+          'Use Call, Email, Live Chat or Support Ticket options below.'
     },
   ];
 
@@ -125,14 +125,14 @@ class _HelpSupportScreenState
             // HEADER
             // ==================
 
-            Card(
+            const Card(
               child: Padding(
                 padding:
-                    const EdgeInsets.all(
+                    EdgeInsets.all(
                   20,
                 ),
                 child: Column(
-                  children: const [
+                  children: [
                     Icon(
                       Icons.support_agent,
                       size: 80,
@@ -171,9 +171,9 @@ class _HelpSupportScreenState
 
             buildSupportCard(
               icon: Icons.chat,
-              title: "Live Chat",
+              title: 'Live Chat',
               subtitle:
-                  "Chat with support team",
+                  'Chat with support team',
               onTap: () {
                 Navigator.pushNamed(
                   context,
@@ -184,17 +184,17 @@ class _HelpSupportScreenState
 
             buildSupportCard(
               icon: Icons.phone,
-              title: "Call Support",
+              title: 'Call Support',
               subtitle:
-                  "+91 1800-000-0000",
+                  '+91 1800-000-0000',
               onTap: () {},
             ),
 
             buildSupportCard(
               icon: Icons.email,
-              title: "Email Support",
+              title: 'Email Support',
               subtitle:
-                  "support@eventease.com",
+                  'support@eventease.com',
               onTap: () {},
             ),
 
@@ -302,14 +302,14 @@ class _HelpSupportScreenState
             // APP INFO
             // ==================
 
-            Card(
+            const Card(
               child: Padding(
                 padding:
-                    const EdgeInsets.all(
+                    EdgeInsets.all(
                   16,
                 ),
                 child: Column(
-                  children: const [
+                  children: [
                     ListTile(
                       leading:
                           Icon(Icons.info),

@@ -31,14 +31,11 @@ class PaymentService {
         query: {
           'page': page,
           'limit': limit,
-          if (search != null) 'search': search,
-          if (status != null) 'status': status,
-          if (paymentMethod != null)
-            'paymentMethod': paymentMethod,
-          if (startDate != null)
-            'startDate': startDate,
-          if (endDate != null)
-            'endDate': endDate,
+          'search': ?search,
+          'status': ?status,
+          'paymentMethod': ?paymentMethod,
+          'startDate': ?startDate,
+          'endDate': ?endDate,
         },
       );
 
@@ -193,7 +190,7 @@ class PaymentService {
         query: {
           'page': page,
           'limit': limit,
-          if (status != null) 'status': status,
+          'status': ?status,
         },
       );
 
@@ -255,10 +252,8 @@ class PaymentService {
       final response = await _api.get(
         '/admin/payments/revenue-report',
         query: {
-          if (startDate != null)
-            'startDate': startDate,
-          if (endDate != null)
-            'endDate': endDate,
+          'startDate': ?startDate,
+          'endDate': ?endDate,
         },
       );
 

@@ -131,18 +131,18 @@ class ProfileScreen extends StatelessWidget {
             // ======================================
 
             _buildSection(
-              title: "Account",
+              title: 'Account',
               children: [
                 _menuTile(
                   context,
                   Icons.edit,
-                  "Edit Profile",
+                  'Edit Profile',
                   () {},
                 ),
                 _menuTile(
                   context,
                   Icons.event,
-                  "My Bookings",
+                  'My Bookings',
                   () {
                     Navigator.pushNamed(
                       context,
@@ -153,7 +153,7 @@ class ProfileScreen extends StatelessWidget {
                 _menuTile(
                   context,
                   Icons.shopping_bag,
-                  "My Orders",
+                  'My Orders',
                   () {
                     Navigator.pushNamed(
                       context,
@@ -164,7 +164,7 @@ class ProfileScreen extends StatelessWidget {
                 _menuTile(
                   context,
                   Icons.star,
-                  "My Reviews",
+                  'My Reviews',
                   () {
                     Navigator.pushNamed(
                       context,
@@ -175,19 +175,19 @@ class ProfileScreen extends StatelessWidget {
                 _menuTile(
                   context,
                   Icons.location_on,
-                  "Saved Addresses",
+                  'Saved Addresses',
                   () {},
                 ),
               ],
             ),
 
             _buildSection(
-              title: "Preferences",
+              title: 'Preferences',
               children: [
                 _menuTile(
                   context,
                   Icons.notifications,
-                  "Notifications",
+                  'Notifications',
                   () {
                     Navigator.pushNamed(
                       context,
@@ -198,31 +198,31 @@ class ProfileScreen extends StatelessWidget {
                 _menuTile(
                   context,
                   Icons.language,
-                  "Language",
+                  'Language',
                   () {},
                 ),
                 _menuTile(
                   context,
                   Icons.security,
-                  "Privacy & Security",
+                  'Privacy & Security',
                   () {},
                 ),
               ],
             ),
 
             _buildSection(
-              title: "Support",
+              title: 'Support',
               children: [
                 _menuTile(
                   context,
                   Icons.help,
-                  "Help & Support",
+                  'Help & Support',
                   () {},
                 ),
                 _menuTile(
                   context,
                   Icons.info,
-                  "About App",
+                  'About App',
                   () {},
                 ),
               ],
@@ -286,7 +286,7 @@ class ProfileScreen extends StatelessWidget {
                     color: Colors.white,
                   ),
                   label: const Text(
-                    "Logout",
+                    'Logout',
                     style: TextStyle(
                       color: Colors.white,
                     ),

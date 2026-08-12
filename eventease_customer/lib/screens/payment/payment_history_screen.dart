@@ -25,27 +25,27 @@ class _PaymentHistoryScreenState
 
   final List<Map<String, dynamic>> payments = [
     {
-      "paymentId": "PAY123456",
-      "bookingId": "BOOK1001",
-      "amount": 15000,
-      "status": "success",
-      "date": DateTime.now(),
+      'paymentId': 'PAY123456',
+      'bookingId': 'BOOK1001',
+      'amount': 15000,
+      'status': 'success',
+      'date': DateTime.now(),
     },
     {
-      "paymentId": "PAY123457",
-      "bookingId": "BOOK1002",
-      "amount": 8500,
-      "status": "failed",
-      "date": DateTime.now().subtract(
+      'paymentId': 'PAY123457',
+      'bookingId': 'BOOK1002',
+      'amount': 8500,
+      'status': 'failed',
+      'date': DateTime.now().subtract(
         const Duration(days: 1),
       ),
     },
     {
-      "paymentId": "PAY123458",
-      "bookingId": "BOOK1003",
-      "amount": 22000,
-      "status": "pending",
-      "date": DateTime.now().subtract(
+      'paymentId': 'PAY123458',
+      'bookingId': 'BOOK1003',
+      'amount': 22000,
+      'status': 'pending',
+      'date': DateTime.now().subtract(
         const Duration(days: 2),
       ),
     },
@@ -90,7 +90,7 @@ class _PaymentHistoryScreenState
           AppColors.background,
       appBar: AppBar(
         title: const Text(
-          "Payment History",
+          'Payment History',
         ),
       ),
       body: RefreshIndicator(
@@ -98,7 +98,7 @@ class _PaymentHistoryScreenState
         child: payments.isEmpty
             ? const Center(
                 child: Text(
-                  "No payment history found",
+                  'No payment history found',
                 ),
               )
             : ListView.builder(
@@ -130,19 +130,19 @@ class _PaymentHistoryScreenState
                       leading: CircleAvatar(
                         backgroundColor:
                             _statusColor(
-                          payment["status"],
-                        ).withOpacity(
-                          0.1,
+                          payment['status'],
+                        ).withValues(
+                          alpha: 0.1,
                         ),
                         child: Icon(
                           _statusIcon(
                             payment[
-                                "status"],
+                                'status'],
                           ),
                           color:
                               _statusColor(
                             payment[
-                                "status"],
+                                'status'],
                           ),
                         ),
                       ),
@@ -151,7 +151,7 @@ class _PaymentHistoryScreenState
                         CurrencyFormatter
                             .format(
                           payment[
-                              "amount"],
+                              'amount'],
                         ),
                         style: const TextStyle(
                           fontWeight:
@@ -185,7 +185,7 @@ class _PaymentHistoryScreenState
                             DateHelper
                                 .formatDateTime(
                               payment[
-                                  "date"],
+                                  'date'],
                             ),
                           ),
                         ],
@@ -202,9 +202,9 @@ class _PaymentHistoryScreenState
                           color:
                               _statusColor(
                             payment[
-                                "status"],
-                          ).withOpacity(
-                            0.1,
+                                'status'],
+                          ).withValues(
+                            alpha: 0.1,
                           ),
                           borderRadius:
                               BorderRadius.circular(
@@ -212,7 +212,7 @@ class _PaymentHistoryScreenState
                           ),
                         ),
                         child: Text(
-                          payment["status"]
+                          payment['status']
                               .toString()
                               .toUpperCase(),
                           style: TextStyle(
@@ -221,7 +221,7 @@ class _PaymentHistoryScreenState
                             color:
                                 _statusColor(
                               payment[
-                                  "status"],
+                                  'status'],
                             ),
                           ),
                         ),
@@ -260,8 +260,8 @@ class _PaymentHistoryScreenState
             mainAxisSize:
                 MainAxisSize.min,
             children: [
-              Text(
-                "Payment Details",
+              const Text(
+                'Payment Details',
                 style:
                     AppStyles.heading3,
               ),
@@ -271,35 +271,35 @@ class _PaymentHistoryScreenState
               ),
 
               _detailRow(
-                "Payment ID",
-                payment["paymentId"],
+                'Payment ID',
+                payment['paymentId'],
               ),
 
               _detailRow(
-                "Booking ID",
-                payment["bookingId"],
+                'Booking ID',
+                payment['bookingId'],
               ),
 
               _detailRow(
-                "Amount",
+                'Amount',
                 CurrencyFormatter
                     .format(
-                  payment["amount"],
+                  payment['amount'],
                 ),
               ),
 
               _detailRow(
-                "Status",
-                payment["status"]
+                'Status',
+                payment['status']
                     .toString()
                     .toUpperCase(),
               ),
 
               _detailRow(
-                "Date",
+                'Date',
                 DateHelper
                     .formatDateTime(
-                  payment["date"],
+                  payment['date'],
                 ),
               ),
 

@@ -1,5 +1,6 @@
 import Chat from "../models/chat.js";
 import Message from "../models/Message.js";
+import Notification from "../models/Notification.js";
 import { sendNotification } from "../utils/notification.js";
 //import Message from "../models/messageModel.js"; //  NEW MODEL
 

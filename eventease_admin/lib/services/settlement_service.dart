@@ -30,13 +30,10 @@ class SettlementService {
         query: {
           'page': page,
           'limit': limit,
-          if (status != null) 'status': status,
-          if (providerId != null)
-            'providerId': providerId,
-          if (startDate != null)
-            'startDate': startDate,
-          if (endDate != null)
-            'endDate': endDate,
+          'status': ?status,
+          'providerId': ?providerId,
+          'startDate': ?startDate,
+          'endDate': ?endDate,
         },
       );
 

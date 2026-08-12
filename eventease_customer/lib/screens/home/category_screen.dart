@@ -260,8 +260,8 @@ class _CategoryScreenState
                                   BoxDecoration(
                                 color: ThemeConfig
                                     .primaryColor
-                                    .withOpacity(
-                                  0.1,
+                                    .withValues(
+                                  alpha: 0.1,
                                 ),
                                 borderRadius:
                                     BorderRadius.circular(

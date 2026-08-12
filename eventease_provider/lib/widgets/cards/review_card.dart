@@ -132,7 +132,7 @@ class ReviewCard extends StatelessWidget {
                     decoration:
                         BoxDecoration(
                       color: Colors.amber
-                          .withOpacity(0.15),
+                          .withValues(alpha: 0.15),
                       borderRadius:
                           BorderRadius.circular(
                         20,

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../../routes/app_routes.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/app_styles.dart';
 import '../../utils/currency_formatter.dart';
-import '../../routes/app_routes.dart';
 
 class PaymentSuccessScreen extends StatelessWidget {
   final String bookingId;
@@ -11,10 +11,7 @@ class PaymentSuccessScreen extends StatelessWidget {
   final double amount;
 
   const PaymentSuccessScreen({
-    super.key,
-    required this.bookingId,
-    required this.paymentId,
-    required this.amount,
+    required this.bookingId, required this.paymentId, required this.amount, super.key,
   });
 
   @override
@@ -50,15 +47,15 @@ class PaymentSuccessScreen extends StatelessWidget {
               const SizedBox(height: 24),
 
               const Text(
-                "Payment Successful",
+                'Payment Successful',
                 style: AppStyles.heading2,
                 textAlign: TextAlign.center,
               ),
 
               const SizedBox(height: 8),
 
-              Text(
-                "Your booking has been confirmed successfully.",
+              const Text(
+                'Your booking has been confirmed successfully.',
                 textAlign: TextAlign.center,
                 style: AppStyles.subtitle,
               ),
@@ -75,21 +72,21 @@ class PaymentSuccessScreen extends StatelessWidget {
                 child: Column(
                   children: [
                     _detailRow(
-                      "Booking ID",
+                      'Booking ID',
                       bookingId,
                     ),
 
                     const Divider(),
 
                     _detailRow(
-                      "Payment ID",
+                      'Payment ID',
                       paymentId,
                     ),
 
                     const Divider(),
 
                     _detailRow(
-                      "Amount Paid",
+                      'Amount Paid',
                       CurrencyFormatter.format(
                         amount,
                       ),
@@ -100,8 +97,8 @@ class PaymentSuccessScreen extends StatelessWidget {
                     const Divider(),
 
                     _detailRow(
-                      "Date",
-                      "${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}",
+                      'Date',
+                      '${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}',
                     ),
                   ],
                 ),
@@ -125,7 +122,7 @@ class PaymentSuccessScreen extends StatelessWidget {
                     );
                   },
                   child: const Text(
-                    "View Booking",
+                    'View Booking',
                   ),
                 ),
               ),
@@ -149,7 +146,7 @@ class PaymentSuccessScreen extends StatelessWidget {
                     );
                   },
                   child: const Text(
-                    "Back To Home",
+                    'Back To Home',
                   ),
                 ),
               ),

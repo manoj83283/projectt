@@ -303,7 +303,7 @@ class _BookingReportScreenState extends State<BookingReportScreen> {
                   Row(
                     children: [
                       CircleAvatar(
-                        backgroundColor: AppColors.primary.withOpacity(0.1),
+                        backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                         child: const Icon(
                           Icons.event_available_outlined,
                           color: AppColors.primary,
@@ -708,7 +708,7 @@ class _BookingReportScreenState extends State<BookingReportScreen> {
       icon: Icons.schedule_outlined,
       child: SwitchListTile(
         value: _scheduleReport,
-        activeColor: AppColors.primary,
+        activeThumbColor: AppColors.primary,
         contentPadding: EdgeInsets.zero,
         title: const Text(
           'Schedule Report',
@@ -827,10 +827,10 @@ class _BookingReportScreenState extends State<BookingReportScreen> {
                             margin: const EdgeInsets.only(bottom: 16),
                             padding: const EdgeInsets.all(14),
                             decoration: BoxDecoration(
-                              color: AppColors.error.withOpacity(0.08),
+                              color: AppColors.error.withValues(alpha: 0.08),
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                color: AppColors.error.withOpacity(0.25),
+                                color: AppColors.error.withValues(alpha: 0.25),
                               ),
                             ),
                             child: Text(
@@ -859,7 +859,7 @@ class _BookingReportScreenState extends State<BookingReportScreen> {
                 ),
                 if (_isGenerating)
                   Container(
-                    color: Colors.black.withOpacity(0.06),
+                    color: Colors.black.withValues(alpha: 0.06),
                     child: const Center(
                       child: CircularProgressIndicator(),
                     ),
@@ -964,7 +964,7 @@ class _SwitchOptionTile extends StatelessWidget {
     return SwitchListTile(
       contentPadding: EdgeInsets.zero,
       value: value,
-      activeColor: color,
+      activeThumbColor: color,
       title: Text(
         title,
         style: const TextStyle(
@@ -1045,10 +1045,10 @@ class _StatusChip extends StatelessWidget {
         vertical: 7,
       ),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.11),
+        color: color.withValues(alpha: 0.11),
         borderRadius: BorderRadius.circular(999),
         border: Border.all(
-          color: color.withOpacity(0.24),
+          color: color.withValues(alpha: 0.24),
         ),
       ),
       child: Text(
@@ -1087,7 +1087,7 @@ class _SectionCard extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.035),
+            color: Colors.black.withValues(alpha: 0.035),
             blurRadius: 18,
             offset: const Offset(0, 8),
           ),
@@ -1100,7 +1100,7 @@ class _SectionCard extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 18,
-                backgroundColor: AppColors.primary.withOpacity(0.1),
+                backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                 child: Icon(
                   icon,
                   color: AppColors.primary,

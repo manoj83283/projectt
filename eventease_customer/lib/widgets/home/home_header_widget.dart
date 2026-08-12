@@ -12,9 +12,7 @@ class HomeHeaderWidget extends StatelessWidget {
   final ValueChanged<String>? onSearch;
 
   const HomeHeaderWidget({
-    super.key,
-    required this.userName,
-    required this.location,
+    required this.userName, required this.location, super.key,
     this.profileImage,
     this.onProfileTap,
     this.onNotificationTap,
@@ -80,8 +78,8 @@ class HomeHeaderWidget extends StatelessWidget {
                   crossAxisAlignment:
                       CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      "Hello 👋",
+                    const Text(
+                      'Hello 👋',
                       style: TextStyle(
                         color:
                             Colors.white70,
@@ -143,7 +141,7 @@ class HomeHeaderWidget extends StatelessWidget {
               ),
               decoration: BoxDecoration(
                 color: Colors.white
-                    .withOpacity(0.15),
+                    .withValues(alpha: 0.15),
                 borderRadius:
                     BorderRadius.circular(
                   12,
@@ -205,7 +203,7 @@ class HomeHeaderWidget extends StatelessWidget {
               decoration:
                   const InputDecoration(
                 hintText:
-                    "Search services, venues, photography...",
+                    'Search services, venues, photography...',
                 prefixIcon:
                     Icon(Icons.search),
                 border: InputBorder.none,

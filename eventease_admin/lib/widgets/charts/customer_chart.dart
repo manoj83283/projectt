@@ -178,8 +178,8 @@ class CustomerChart extends StatelessWidget {
 
           belowBarData: BarAreaData(
             show: true,
-            color: chartColor.withOpacity(
-              0.15,
+            color: chartColor.withValues(
+              alpha: 0.15,
             ),
           ),
 
@@ -307,16 +307,16 @@ class _StatCard extends StatelessWidget {
         AppDimensions.padding12,
       ),
       decoration: BoxDecoration(
-        color: color.withOpacity(
-          0.08,
+        color: color.withValues(
+          alpha: 0.08,
         ),
         borderRadius:
             BorderRadius.circular(
           AppDimensions.radius12,
         ),
         border: Border.all(
-          color: color.withOpacity(
-            0.20,
+          color: color.withValues(
+            alpha: 0.20,
           ),
         ),
       ),

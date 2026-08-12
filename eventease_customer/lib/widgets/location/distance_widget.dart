@@ -9,8 +9,7 @@ class DistanceWidget extends StatelessWidget {
   final Color? color;
 
   const DistanceWidget({
-    super.key,
-    required this.distanceKm,
+    required this.distanceKm, super.key,
     this.travelTime,
     this.showIcon = true,
     this.showTravelTime = true,
@@ -29,9 +28,9 @@ class DistanceWidget extends StatelessWidget {
 
   String getDistanceText() {
     if (distanceKm < 1) {
-      return "${(distanceKm * 1000).round()} m";
+      return '${(distanceKm * 1000).round()} m';
     }
-    return "${distanceKm.toStringAsFixed(1)} km";
+    return '${distanceKm.toStringAsFixed(1)} km';
   }
 
   @override
@@ -70,12 +69,12 @@ class DistanceWidget extends StatelessWidget {
         vertical: 8,
       ),
       decoration: BoxDecoration(
-        color: distanceColor.withOpacity(0.1),
+        color: distanceColor.withValues(alpha: 0.1),
         borderRadius:
             BorderRadius.circular(12),
         border: Border.all(
           color:
-              distanceColor.withOpacity(0.3),
+              distanceColor.withValues(alpha: 0.3),
         ),
       ),
       child: Row(
@@ -138,8 +137,7 @@ class NearbyBadge extends StatelessWidget {
   final double distanceKm;
 
   const NearbyBadge({
-    super.key,
-    required this.distanceKm,
+    required this.distanceKm, super.key,
   });
 
   @override
@@ -159,7 +157,7 @@ class NearbyBadge extends StatelessWidget {
             BorderRadius.circular(20),
       ),
       child: const Text(
-        "Nearby",
+        'Nearby',
         style: TextStyle(
           color: Colors.white,
           fontSize: 11,

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../config/route_config.dart';
-import '../../config/theme_config.dart';
 
 class OrderSuccessScreen extends StatelessWidget {
   const OrderSuccessScreen({
@@ -31,7 +30,7 @@ class OrderSuccessScreen extends StatelessWidget {
                 height: 140,
                 decoration: BoxDecoration(
                   color: Colors.green
-                      .withOpacity(0.1),
+                      .withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(

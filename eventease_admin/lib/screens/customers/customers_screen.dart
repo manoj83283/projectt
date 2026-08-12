@@ -650,12 +650,12 @@ class _CustomerSummaryCard extends StatelessWidget {
         AppDimensions.padding16,
       ),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
+        color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(
           AppDimensions.radius16,
         ),
         border: Border.all(
-          color: color.withOpacity(0.18),
+          color: color.withValues(alpha: 0.18),
         ),
       ),
       child: Row(
@@ -664,7 +664,7 @@ class _CustomerSummaryCard extends StatelessWidget {
             height: 42,
             width: 42,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.12),
+              color: color.withValues(alpha: 0.12),
               borderRadius:
                   BorderRadius.circular(
                 AppDimensions.radius12,

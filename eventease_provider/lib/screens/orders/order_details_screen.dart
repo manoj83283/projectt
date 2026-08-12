@@ -225,7 +225,7 @@ class _OrderDetailsScreenState
                       ),
                       child: Text(
                         order.status
-                                ?.toUpperCase() ??
+                                .toUpperCase() ??
                             'PENDING',
                         style:
                             const TextStyle(

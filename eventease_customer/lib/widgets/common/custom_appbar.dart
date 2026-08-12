@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../utils/app_colors.dart';
 
 class CustomAppBar extends StatelessWidget
     implements PreferredSizeWidget {
@@ -14,8 +13,7 @@ class CustomAppBar extends StatelessWidget
   final VoidCallback? onBackPressed;
 
   const CustomAppBar({
-    super.key,
-    required this.title,
+    required this.title, super.key,
     this.showBackButton = true,
     this.centerTitle = false,
     this.actions,

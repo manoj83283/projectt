@@ -598,7 +598,7 @@ class _BookingsScreenState extends State<BookingsScreen> {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.035),
+            color: Colors.black.withValues(alpha: 0.035),
             blurRadius: 18,
             offset: const Offset(0, 8),
           ),
@@ -651,7 +651,7 @@ class _BookingsScreenState extends State<BookingsScreen> {
 
   Widget _buildStatusDropdown() {
     return DropdownButtonFormField<String>(
-      value: _bookingStatus,
+      initialValue: _bookingStatus,
       decoration: const InputDecoration(
         labelText: 'Booking Status',
         border: OutlineInputBorder(),
@@ -674,7 +674,7 @@ class _BookingsScreenState extends State<BookingsScreen> {
 
   Widget _buildPaymentDropdown() {
     return DropdownButtonFormField<String>(
-      value: _paymentStatus,
+      initialValue: _paymentStatus,
       decoration: const InputDecoration(
         labelText: 'Payment Status',
         border: OutlineInputBorder(),
@@ -863,7 +863,7 @@ class BookingsTable extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.035),
+            color: Colors.black.withValues(alpha: 0.035),
             blurRadius: 18,
             offset: const Offset(0, 8),
           ),
@@ -1367,7 +1367,7 @@ class _BookingSummaryCard extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.035),
+            color: Colors.black.withValues(alpha: 0.035),
             blurRadius: 18,
             offset: const Offset(0, 8),
           ),
@@ -1379,7 +1379,7 @@ class _BookingSummaryCard extends StatelessWidget {
             height: 46,
             width: 46,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.11),
+              color: color.withValues(alpha: 0.11),
               borderRadius: BorderRadius.circular(14),
             ),
             child: Icon(
@@ -1518,10 +1518,10 @@ class _StatusChip extends StatelessWidget {
         vertical: 7,
       ),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.11),
+        color: color.withValues(alpha: 0.11),
         borderRadius: BorderRadius.circular(999),
         border: Border.all(
-          color: color.withOpacity(0.24),
+          color: color.withValues(alpha: 0.24),
         ),
       ),
       child: Text(

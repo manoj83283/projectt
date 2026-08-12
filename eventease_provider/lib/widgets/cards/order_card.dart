@@ -139,8 +139,8 @@ class OrderCard extends StatelessWidget {
                     decoration:
                         BoxDecoration(
                       color: statusColor
-                          .withOpacity(
-                        0.12,
+                          .withValues(
+                        alpha: 0.12,
                       ),
                       borderRadius:
                           BorderRadius.circular(

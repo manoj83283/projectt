@@ -52,7 +52,7 @@ class ThemeConfig {
 
     cardColor: cardColor,
 
-    colorScheme: ColorScheme.light(
+    colorScheme: const ColorScheme.light(
       primary: primaryColor,
       secondary: secondaryColor,
       error: errorColor,
@@ -160,7 +160,7 @@ class ThemeConfig {
 
     primaryColor: primaryColor,
 
-    colorScheme: ColorScheme.dark(
+    colorScheme: const ColorScheme.dark(
       primary: primaryColor,
       secondary: secondaryColor,
       error: errorColor,

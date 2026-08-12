@@ -15,8 +15,7 @@ class BookingStatusWidget extends StatelessWidget {
   final EdgeInsetsGeometry padding;
 
   const BookingStatusWidget({
-    super.key,
-    required this.currentStatus,
+    required this.currentStatus, super.key,
     this.showTitle = true,
     this.padding =
         const EdgeInsets.all(16),
@@ -46,24 +45,24 @@ class BookingStatusWidget extends StatelessWidget {
 
   List<Map<String, dynamic>> get statuses => [
         {
-          "title": "Booking Placed",
-          "icon": Icons.receipt_long,
+          'title': 'Booking Placed',
+          'icon': Icons.receipt_long,
         },
         {
-          "title": "Confirmed",
-          "icon": Icons.verified,
+          'title': 'Confirmed',
+          'icon': Icons.verified,
         },
         {
-          "title": "Provider Assigned",
-          "icon": Icons.person_pin,
+          'title': 'Provider Assigned',
+          'icon': Icons.person_pin,
         },
         {
-          "title": "Service Started",
-          "icon": Icons.play_circle_fill,
+          'title': 'Service Started',
+          'icon': Icons.play_circle_fill,
         },
         {
-          "title": "Completed",
-          "icon": Icons.check_circle,
+          'title': 'Completed',
+          'icon': Icons.check_circle,
         },
       ];
 
@@ -92,22 +91,22 @@ class BookingStatusWidget extends StatelessWidget {
   String getStatusText() {
     switch (currentStatus) {
       case BookingStatus.pending:
-        return "Pending";
+        return 'Pending';
 
       case BookingStatus.confirmed:
-        return "Confirmed";
+        return 'Confirmed';
 
       case BookingStatus.assigned:
-        return "Provider Assigned";
+        return 'Provider Assigned';
 
       case BookingStatus.inProgress:
-        return "In Progress";
+        return 'In Progress';
 
       case BookingStatus.completed:
-        return "Completed";
+        return 'Completed';
 
       case BookingStatus.cancelled:
-        return "Cancelled";
+        return 'Cancelled';
     }
   }
 
@@ -131,7 +130,7 @@ class BookingStatusWidget extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               const Text(
-                "Booking Cancelled",
+                'Booking Cancelled',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight:
@@ -141,7 +140,7 @@ class BookingStatusWidget extends StatelessWidget {
               ),
               const SizedBox(height: 6),
               Text(
-                "This booking has been cancelled.",
+                'This booking has been cancelled.',
                 style: TextStyle(
                   color:
                       Colors.grey.shade600,
@@ -175,7 +174,7 @@ class BookingStatusWidget extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   const Text(
-                    "Booking Status",
+                    'Booking Status',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight:
@@ -196,7 +195,7 @@ class BookingStatusWidget extends StatelessWidget {
               ),
               decoration: BoxDecoration(
                 color: getStatusColor()
-                    .withOpacity(0.1),
+                    .withValues(alpha: 0.1),
                 borderRadius:
                     BorderRadius.circular(
                   20,
@@ -250,7 +249,7 @@ class BookingStatusWidget extends StatelessWidget {
                                       .shade300,
                             ),
                             child: Icon(
-                              item["icon"],
+                              item['icon'],
                               size: 18,
                               color:
                                   Colors
@@ -287,7 +286,7 @@ class BookingStatusWidget extends StatelessWidget {
                             top: 6,
                           ),
                           child: Text(
-                            item["title"],
+                            item['title'],
                             style:
                                 TextStyle(
                               fontSize: 15,

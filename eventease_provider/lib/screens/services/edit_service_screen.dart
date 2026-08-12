@@ -293,7 +293,7 @@ class _EditServiceScreenState
 
                   DropdownButtonFormField<
                       String>(
-                    value:
+                    initialValue:
                         _selectedCategory,
                     decoration:
                         const InputDecoration(

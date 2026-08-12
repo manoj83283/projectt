@@ -619,7 +619,7 @@ class _ServiceDetailsScreenState
               width: isMobile ? double.infinity : 240,
               decoration: BoxDecoration(
                 color: AppColors.primary
-                    .withOpacity(0.08),
+                    .withValues(alpha: 0.08),
                 borderRadius:
                     BorderRadius.circular(
                   AppDimensions.radius16,
@@ -1345,7 +1345,7 @@ class _StatCard extends StatelessWidget {
               width: 48,
               decoration: BoxDecoration(
                 color:
-                    color.withOpacity(0.10),
+                    color.withValues(alpha: 0.10),
                 borderRadius:
                     BorderRadius.circular(
                   AppDimensions.radius12,
@@ -1432,14 +1432,14 @@ class _MiniInfoBox extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         color:
-            color.withOpacity(0.08),
+            color.withValues(alpha: 0.08),
         borderRadius:
             BorderRadius.circular(
           AppDimensions.radius14,
         ),
         border: Border.all(
           color:
-              color.withOpacity(0.18),
+              color.withValues(alpha: 0.18),
         ),
       ),
       child: Row(
@@ -1506,12 +1506,12 @@ class _RatingChip extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         color: AppColors.warning
-            .withOpacity(0.10),
+            .withValues(alpha: 0.10),
         borderRadius:
             BorderRadius.circular(30),
         border: Border.all(
           color: AppColors.warning
-              .withOpacity(0.25),
+              .withValues(alpha: 0.25),
         ),
       ),
       child: Row(
@@ -1562,11 +1562,11 @@ class _StatusChip extends StatelessWidget {
         vertical: 7,
       ),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.10),
+        color: color.withValues(alpha: 0.10),
         borderRadius:
             BorderRadius.circular(30),
         border: Border.all(
-          color: color.withOpacity(0.25),
+          color: color.withValues(alpha: 0.25),
         ),
       ),
       child: Text(

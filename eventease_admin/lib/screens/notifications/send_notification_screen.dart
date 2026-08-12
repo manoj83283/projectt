@@ -235,7 +235,7 @@ class _SendNotificationScreenState extends State<SendNotificationScreen> {
                   Row(
                     children: [
                       CircleAvatar(
-                        backgroundColor: AppColors.primary.withOpacity(0.1),
+                        backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                         child: const Icon(
                           Icons.notifications_active_outlined,
                           color: AppColors.primary,
@@ -476,7 +476,7 @@ class _SendNotificationScreenState extends State<SendNotificationScreen> {
               ),
             ),
             value: _sendImmediately,
-            activeColor: AppColors.success,
+            activeThumbColor: AppColors.success,
             contentPadding: EdgeInsets.zero,
             secondary: Icon(
               _sendImmediately
@@ -500,7 +500,7 @@ class _SendNotificationScreenState extends State<SendNotificationScreen> {
             ListTile(
               contentPadding: EdgeInsets.zero,
               leading: CircleAvatar(
-                backgroundColor: AppColors.primary.withOpacity(0.1),
+                backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                 child: const Icon(
                   Icons.schedule_outlined,
                   color: AppColors.primary,
@@ -560,7 +560,7 @@ class _SendNotificationScreenState extends State<SendNotificationScreen> {
       child: SwitchListTile(
         contentPadding: EdgeInsets.zero,
         value: _saveAsDraft,
-        activeColor: AppColors.primary,
+        activeThumbColor: AppColors.primary,
         title: const Text(
           'Save as Draft',
           style: TextStyle(
@@ -701,10 +701,10 @@ class _SendNotificationScreenState extends State<SendNotificationScreen> {
                             margin: const EdgeInsets.only(bottom: 16),
                             padding: const EdgeInsets.all(14),
                             decoration: BoxDecoration(
-                              color: AppColors.error.withOpacity(0.08),
+                              color: AppColors.error.withValues(alpha: 0.08),
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                color: AppColors.error.withOpacity(0.25),
+                                color: AppColors.error.withValues(alpha: 0.25),
                               ),
                             ),
                             child: Text(
@@ -801,7 +801,7 @@ class _NotificationPreviewCard extends StatelessWidget {
                   child: Image.network(
                     imageUrl,
                     fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) {
+                    errorBuilder: (_, _, _) {
                       return Center(
                         child: Icon(
                           Icons.broken_image_outlined,
@@ -816,7 +816,7 @@ class _NotificationPreviewCard extends StatelessWidget {
             ListTile(
               contentPadding: EdgeInsets.zero,
               leading: CircleAvatar(
-                backgroundColor: AppColors.primary.withOpacity(0.1),
+                backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                 child: const Icon(
                   Icons.notifications,
                   color: AppColors.primary,
@@ -907,10 +907,10 @@ class _InfoChip extends StatelessWidget {
         vertical: 7,
       ),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(999),
         border: Border.all(
-          color: color.withOpacity(0.22),
+          color: color.withValues(alpha: 0.22),
         ),
       ),
       child: Row(
@@ -960,7 +960,7 @@ class _SectionCard extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.035),
+            color: Colors.black.withValues(alpha: 0.035),
             blurRadius: 18,
             offset: const Offset(0, 8),
           ),
@@ -973,7 +973,7 @@ class _SectionCard extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 18,
-                backgroundColor: AppColors.primary.withOpacity(0.1),
+                backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                 child: Icon(
                   icon,
                   color: AppColors.primary,

@@ -1,301 +1,448 @@
+import 'dart:developer';
+
 import '../models/service_model.dart';
 import 'api_service.dart';
 
 class ServiceService {
   ServiceService._();
 
-  static final ServiceService instance = ServiceService._();
+  static final ServiceService _instance =
+      ServiceService._();
 
-  // ==========================================
-  // RESPONSE HELPERS
-  // ==========================================
+  static ServiceService get instance => _instance;
 
-  dynamic _responseData(dynamic response) {
-    try {
-      return response.data;
-    } catch (_) {
-      return response;
-    }
-  }
+  final ApiService _apiService = ApiService.instance;
 
-  Map<String, dynamic> _asMap(dynamic value) {
-    if (value is Map<String, dynamic>) {
-      return value;
-    }
+  // =====================================================
+  // ENDPOINTS
+  // ApiService base URL already includes /api.
+  // =====================================================
 
-    if (value is Map) {
-      return Map<String, dynamic>.from(value);
-    }
+  static const String _servicesEndpoint = '/services';
 
-    return <String, dynamic>{};
-  }
-
-  dynamic _extractSingle(dynamic response) {
-    final dynamic data = _responseData(response);
-
-    if (data is Map<String, dynamic>) {
-      return data['data'] ?? data['service'] ?? data['result'] ?? data;
-    }
-
-    if (data is Map) {
-      final Map<String, dynamic> map = Map<String, dynamic>.from(data);
-
-      return map['data'] ?? map['service'] ?? map['result'] ?? map;
-    }
-
-    return data;
-  }
-
-  List<dynamic> _extractList(dynamic response) {
-    final dynamic data = _responseData(response);
-
-    if (data is Map<String, dynamic>) {
-      final dynamic list = data['data'] ??
-          data['services'] ??
-          data['items'] ??
-          data['results'];
-
-      if (list is List) {
-        return list;
-      }
-    }
-
-    if (data is Map) {
-      final Map<String, dynamic> map = Map<String, dynamic>.from(data);
-
-      final dynamic list = map['data'] ??
-          map['services'] ??
-          map['items'] ??
-          map['results'];
-
-      if (list is List) {
-        return list;
-      }
-    }
-
-    if (data is List) {
-      return data;
-    }
-
-    return [];
-  }
-
-  Map<String, dynamic> _extractMap(dynamic response) {
-    final dynamic data = _responseData(response);
-
-    if (data is Map<String, dynamic>) {
-      final dynamic payload = data['data'] ?? data;
-
-      if (payload is Map<String, dynamic>) {
-        return payload;
-      }
-
-      if (payload is Map) {
-        return Map<String, dynamic>.from(payload);
-      }
-    }
-
-    if (data is Map) {
-      final Map<String, dynamic> map = Map<String, dynamic>.from(data);
-      final dynamic payload = map['data'] ?? map;
-
-      if (payload is Map<String, dynamic>) {
-        return payload;
-      }
-
-      if (payload is Map) {
-        return Map<String, dynamic>.from(payload);
-      }
-    }
-
-    return <String, dynamic>{};
-  }
-
-  ServiceModel _serviceFromResponse(dynamic response) {
-    return ServiceModel.fromMap(
-      _asMap(
-        _extractSingle(response),
-      ),
-    );
-  }
-
-  List<ServiceModel> _servicesFromResponse(dynamic response) {
-    return _extractList(response)
-        .map(
-          (item) => ServiceModel.fromMap(
-            _asMap(item),
-          ),
-        )
-        .toList();
-  }
-
-  // ==========================================
-  // GET ALL SERVICES
-  // Supports keyword and search
-  // ==========================================
+  // =====================================================
+  // GET ALL CUSTOMER-VISIBLE SERVICES
+  // GET /api/services
+  // =====================================================
 
   Future<List<ServiceModel>> getServices({
-    int page = 1,
-    int limit = 20,
-    String? categoryId,
-    String? keyword,
     String? search,
+    String? keyword,
+    String? category,
+    String? categoryId,
     String? location,
     double? minPrice,
     double? maxPrice,
     double? latitude,
     double? longitude,
     double? radius,
+    String? sort,
     String? sortBy,
     String? sortOrder,
+    bool? featured,
+    bool? popular,
+    bool? recommended,
+    int page = 1,
+    int limit = 20,
   }) async {
-    final String? searchValue = search ?? keyword;
+    try {
+      final resolvedSearch = _firstNonEmpty([
+        search,
+        keyword,
+      ]);
 
-    final dynamic response = await ApiService.instance.get(
-      '/services',
-      queryParameters: {
-        'page': page,
-        'limit': limit,
-        if (categoryId != null && categoryId.trim().isNotEmpty)
-          'categoryId': categoryId.trim(),
-        if (searchValue != null && searchValue.trim().isNotEmpty)
-          'search': searchValue.trim(),
-        if (searchValue != null && searchValue.trim().isNotEmpty)
-          'keyword': searchValue.trim(),
-        if (location != null && location.trim().isNotEmpty)
+      final resolvedCategory = _firstNonEmpty([
+        category,
+        categoryId,
+      ]);
+
+      final resolvedSort = _resolveSort(
+        sort: sort,
+        sortBy: sortBy,
+        sortOrder: sortOrder,
+      );
+
+      final queryParameters = <String, dynamic>{
+        'page': page < 1 ? 1 : page,
+        'limit': limit < 1 ? 20 : limit,
+        if (resolvedSearch != null)
+          'search': resolvedSearch,
+        if (resolvedCategory != null)
+          'category': resolvedCategory.toLowerCase(),
+        if (location != null &&
+            location.trim().isNotEmpty)
           'location': location.trim(),
-        if (minPrice != null) 'minPrice': minPrice,
-        if (maxPrice != null) 'maxPrice': maxPrice,
-        if (latitude != null) 'latitude': latitude,
-        if (longitude != null) 'longitude': longitude,
-        if (radius != null) 'radius': radius,
-        if (sortBy != null && sortBy.trim().isNotEmpty)
-          'sortBy': sortBy.trim(),
-        if (sortOrder != null && sortOrder.trim().isNotEmpty)
-          'sortOrder': sortOrder.trim(),
-      },
-    );
+        if (minPrice != null)
+          'minPrice': minPrice,
+        if (maxPrice != null)
+          'maxPrice': maxPrice,
+        if (latitude != null)
+          'lat': latitude,
+        if (longitude != null)
+          'lng': longitude,
+        if (radius != null)
+          'radius': radius,
+        if (resolvedSort != null)
+          'sort': resolvedSort,
+        if (featured != null)
+          'featured': featured,
+        if (popular != null)
+          'popular': popular,
+        if (recommended != null)
+          'recommended': recommended,
+      };
 
-    return _servicesFromResponse(response);
+      final response = await _apiService.get(
+        _servicesEndpoint,
+        queryParameters: queryParameters,
+      );
+
+      return _servicesFromResponse(response);
+    } catch (error, stackTrace) {
+      log(
+        'Get Services Error: $error',
+        stackTrace: stackTrace,
+      );
+
+      rethrow;
+    }
   }
 
-  // ==========================================
+  // =====================================================
   // GET SERVICE BY ID
-  // ==========================================
+  // GET /api/services/:id
+  // =====================================================
 
   Future<ServiceModel> getServiceById(
     String serviceId,
   ) async {
-    final dynamic response = await ApiService.instance.get(
-      '/services/$serviceId',
-    );
+    try {
+      final normalizedId = _requireServiceId(
+        serviceId,
+      );
 
-    return _serviceFromResponse(response);
+      final response = await _apiService.get(
+        '$_servicesEndpoint/$normalizedId',
+      );
+
+      return _serviceFromResponse(response);
+    } catch (error, stackTrace) {
+      log(
+        'Get Service By ID Error: $error',
+        stackTrace: stackTrace,
+      );
+
+      rethrow;
+    }
   }
 
-  // ==========================================
-  // FEATURED SERVICES
-  // ==========================================
-
-  Future<List<ServiceModel>> getFeaturedServices() async {
-    final dynamic response = await ApiService.instance.get(
-      '/services/featured',
-    );
-
-    return _servicesFromResponse(response);
-  }
-
-  // ==========================================
-  // POPULAR SERVICES
-  // ==========================================
-
-  Future<List<ServiceModel>> getPopularServices() async {
-    final dynamic response = await ApiService.instance.get(
-      '/services/popular',
-    );
-
-    return _servicesFromResponse(response);
-  }
-
-  // ==========================================
+  // =====================================================
   // SEARCH SERVICES
-  // ==========================================
+  // GET /api/services/search
+  // =====================================================
 
   Future<List<ServiceModel>> searchServices(
-    String keyword,
-  ) async {
-    final dynamic response = await ApiService.instance.get(
-      '/services/search',
-      queryParameters: {
-        'keyword': keyword.trim(),
-        'search': keyword.trim(),
-      },
-    );
+    String keyword, {
+    String? category,
+    double? latitude,
+    double? longitude,
+    double? radius,
+  }) async {
+    try {
+      final normalizedKeyword = keyword.trim();
 
-    return _servicesFromResponse(response);
+      final queryParameters = <String, dynamic>{
+        if (normalizedKeyword.isNotEmpty)
+          'keyword': normalizedKeyword,
+        if (category != null &&
+            category.trim().isNotEmpty)
+          'category': category.trim().toLowerCase(),
+        if (latitude != null)
+          'lat': latitude,
+        if (longitude != null)
+          'lng': longitude,
+        if (radius != null)
+          'radius': radius,
+      };
+
+      final response = await _apiService.get(
+        '$_servicesEndpoint/search',
+        queryParameters: queryParameters,
+      );
+
+      return _servicesFromResponse(response);
+    } catch (error, stackTrace) {
+      log(
+        'Search Services Error: $error',
+        stackTrace: stackTrace,
+      );
+
+      rethrow;
+    }
   }
 
-  // ==========================================
-  // CATEGORY SERVICES
-  // ==========================================
+  // =====================================================
+  // SEARCH SERVICES - NAMED ARGUMENT COMPATIBILITY
+  // =====================================================
+
+  Future<List<ServiceModel>> searchServicesByKeyword({
+    required String keyword,
+    String? category,
+    double? latitude,
+    double? longitude,
+    double? radius,
+  }) async {
+    return searchServices(
+      keyword,
+      category: category,
+      latitude: latitude,
+      longitude: longitude,
+      radius: radius,
+    );
+  }
+
+  // =====================================================
+  // GET SERVICES BY CATEGORY
+  // GET /api/services?category=...
+  // =====================================================
 
   Future<List<ServiceModel>> getServicesByCategory(
-    String categoryId,
+    String category,
   ) async {
-    final dynamic response = await ApiService.instance.get(
-      '/services/category/$categoryId',
-    );
+    try {
+      final normalizedCategory = category.trim();
 
-    return _servicesFromResponse(response);
+      if (normalizedCategory.isEmpty) {
+        return getServices(
+          page: 1,
+          limit: 100,
+        );
+      }
+
+      return getServices(
+        category: normalizedCategory,
+        page: 1,
+        limit: 100,
+        sort: 'newest',
+      );
+    } catch (error, stackTrace) {
+      log(
+        'Get Services By Category Error: $error',
+        stackTrace: stackTrace,
+      );
+
+      rethrow;
+    }
   }
 
-  // ==========================================
-  // NEARBY SERVICES
-  // ==========================================
+  // =====================================================
+  // GET FEATURED SERVICES
+  // GET /api/services?featured=true
+  // =====================================================
+
+  Future<List<ServiceModel>>
+      getFeaturedServices() async {
+    try {
+      return getServices(
+        featured: true,
+        page: 1,
+        limit: 20,
+        sort: 'newest',
+      );
+    } catch (error, stackTrace) {
+      log(
+        'Get Featured Services Error: $error',
+        stackTrace: stackTrace,
+      );
+
+      rethrow;
+    }
+  }
+
+  // =====================================================
+  // GET POPULAR SERVICES
+  // GET /api/services?popular=true
+  // =====================================================
+
+  Future<List<ServiceModel>>
+      getPopularServices() async {
+    try {
+      return getServices(
+        popular: true,
+        page: 1,
+        limit: 20,
+        sort: 'rating',
+      );
+    } catch (error, stackTrace) {
+      log(
+        'Get Popular Services Error: $error',
+        stackTrace: stackTrace,
+      );
+
+      rethrow;
+    }
+  }
+
+  // =====================================================
+  // GET RECOMMENDED SERVICES
+  // GET /api/services?recommended=true
+  // =====================================================
+
+  Future<List<ServiceModel>>
+      getRecommendedServices() async {
+    try {
+      return getServices(
+        recommended: true,
+        page: 1,
+        limit: 20,
+        sort: 'rating',
+      );
+    } catch (error, stackTrace) {
+      log(
+        'Get Recommended Services Error: $error',
+        stackTrace: stackTrace,
+      );
+
+      rethrow;
+    }
+  }
+
+  // =====================================================
+  // GET HOME SERVICES
+  //
+  // Uses the supported GET /api/services endpoint.
+  // Newly created Provider services appear first.
+  // =====================================================
+
+  Future<List<ServiceModel>> getHomeServices() async {
+    try {
+      return getServices(
+        page: 1,
+        limit: 20,
+        sort: 'newest',
+      );
+    } catch (error, stackTrace) {
+      log(
+        'Get Home Services Error: $error',
+        stackTrace: stackTrace,
+      );
+
+      rethrow;
+    }
+  }
+
+  // =====================================================
+  // GET TOP-RATED SERVICES
+  // =====================================================
+
+  Future<List<ServiceModel>>
+      getTopRatedServices() async {
+    try {
+      return getServices(
+        page: 1,
+        limit: 20,
+        sort: 'rating',
+      );
+    } catch (error, stackTrace) {
+      log(
+        'Get Top Rated Services Error: $error',
+        stackTrace: stackTrace,
+      );
+
+      rethrow;
+    }
+  }
+
+  // =====================================================
+  // GET NEARBY SERVICES
+  // GET /api/services/nearby
+  //
+  // Backend radius is measured in meters.
+  // =====================================================
 
   Future<List<ServiceModel>> getNearbyServices({
     required double latitude,
     required double longitude,
-    double radius = 20,
+    double radius = 30000,
+    String? category,
   }) async {
-    final dynamic response = await ApiService.instance.get(
-      '/services/nearby',
-      queryParameters: {
-        'latitude': latitude,
-        'longitude': longitude,
-        'radius': radius,
-      },
-    );
+    try {
+      final normalizedRadius =
+          radius <= 0 ? 30000 : radius;
 
-    return _servicesFromResponse(response);
+      final response = await _apiService.get(
+        '$_servicesEndpoint/nearby',
+        queryParameters: {
+          'lat': latitude,
+          'lng': longitude,
+          'radius': normalizedRadius,
+          if (category != null &&
+              category.trim().isNotEmpty)
+            'category': category.trim().toLowerCase(),
+        },
+      );
+
+      return _servicesFromResponse(response);
+    } catch (error, stackTrace) {
+      log(
+        'Get Nearby Services Error: $error',
+        stackTrace: stackTrace,
+      );
+
+      rethrow;
+    }
   }
 
-  // ==========================================
-  // PROVIDER SERVICES
-  // Supports:
-  // getProviderServices(providerId)
-  // ==========================================
+  // =====================================================
+  // GET SERVICES FOR A PROVIDER
+  //
+  // The current backend does not provide a dedicated
+  // /providers/:id/services endpoint. This method fetches
+  // public services and filters by provider ID locally.
+  // =====================================================
 
   Future<List<ServiceModel>> getProviderServices(
     String providerId, {
     int page = 1,
-    int limit = 20,
+    int limit = 100,
   }) async {
-    final dynamic response = await ApiService.instance.get(
-      '/providers/$providerId/services',
-      queryParameters: {
-        'page': page,
-        'limit': limit,
-      },
-    );
+    try {
+      final normalizedProviderId =
+          providerId.trim();
 
-    return _servicesFromResponse(response);
+      if (normalizedProviderId.isEmpty) {
+        return <ServiceModel>[];
+      }
+
+      final services = await getServices(
+        page: page,
+        limit: limit,
+        sort: 'newest',
+      );
+
+      return services
+          .where(
+            (service) =>
+                service.providerId ==
+                normalizedProviderId,
+          )
+          .toList();
+    } catch (error, stackTrace) {
+      log(
+        'Get Provider Services Error: $error',
+        stackTrace: stackTrace,
+      );
+
+      rethrow;
+    }
   }
 
-  // ==========================================
+  // =====================================================
   // CHECK AVAILABILITY
-  // Supports bookingDate as DateTime or String
-  // ==========================================
+  //
+  // No dedicated public availability route exists in the
+  // current backend. Use the service visibility fields.
+  // =====================================================
 
   Future<Map<String, dynamic>> checkAvailability({
     required String serviceId,
@@ -304,171 +451,327 @@ class ServiceService {
     String? time,
     String? bookingTime,
   }) async {
-    String? resolvedBookingDate;
+    try {
+      final service = await getServiceById(
+        serviceId,
+      );
 
-    if (bookingDate is DateTime) {
-      resolvedBookingDate = bookingDate.toIso8601String();
-    } else if (bookingDate != null) {
-      resolvedBookingDate = bookingDate.toString();
+      final available =
+          service.isActive &&
+          service.isAvailable &&
+          service.approvalStatus == 'approved';
+
+      return <String, dynamic>{
+        'success': true,
+        'available': available,
+        'isAvailable': available,
+        'serviceId': service.id,
+        'service': service.toMap(),
+        if (date != null)
+          'date': date.toIso8601String(),
+        if (bookingDate != null)
+          'bookingDate':
+              bookingDate is DateTime
+                  ? bookingDate.toIso8601String()
+                  : bookingDate.toString(),
+        if (time != null &&
+            time.trim().isNotEmpty)
+          'time': time.trim(),
+        if (bookingTime != null &&
+            bookingTime.trim().isNotEmpty)
+          'bookingTime':
+              bookingTime.trim(),
+      };
+    } catch (error, stackTrace) {
+      log(
+        'Check Service Availability Error: $error',
+        stackTrace: stackTrace,
+      );
+
+      rethrow;
     }
-
-    final dynamic response = await ApiService.instance.get(
-      '/services/$serviceId/availability',
-      queryParameters: {
-        if (date != null) 'date': date.toIso8601String(),
-        if (resolvedBookingDate != null &&
-            resolvedBookingDate.trim().isNotEmpty)
-          'bookingDate': resolvedBookingDate.trim(),
-        if (time != null && time.trim().isNotEmpty) 'time': time.trim(),
-        if (bookingTime != null && bookingTime.trim().isNotEmpty)
-          'bookingTime': bookingTime.trim(),
-      },
-    );
-
-    return _extractMap(response);
   }
 
-  // ==========================================
-  // CREATE SERVICE
-  // Supports:
-  // name, title, gallery, images, data
-  // ==========================================
-
-  Future<ServiceModel> createService({
-    String? name,
-    String? title,
-    String? description,
-    String? categoryId,
-    double? price,
-    List<String>? gallery,
-    List<String>? images,
-    bool isFeatured = false,
-    Map<String, dynamic>? data,
-  }) async {
-    final String resolvedName = (name ?? title ?? '').trim();
-
-    final List<String> resolvedImages = images ?? gallery ?? <String>[];
-
-    final dynamic response = await ApiService.instance.post(
-      '/services',
-      data: {
-        ...?data,
-        if (resolvedName.isNotEmpty) 'name': resolvedName,
-        if (resolvedName.isNotEmpty) 'title': resolvedName,
-        if (description != null && description.trim().isNotEmpty)
-          'description': description.trim(),
-        if (categoryId != null && categoryId.trim().isNotEmpty)
-          'categoryId': categoryId.trim(),
-        if (price != null) 'price': price,
-        'gallery': resolvedImages,
-        'images': resolvedImages,
-        'isFeatured': isFeatured,
-      },
-    );
-
-    return _serviceFromResponse(response);
-  }
-
-  // ==========================================
-  // UPDATE SERVICE
-  // Supports:
-  // name, title, gallery, images, data
-  // ==========================================
-
-  Future<ServiceModel> updateService({
-    required String serviceId,
-    String? name,
-    String? title,
-    String? description,
-    double? price,
-    bool? isAvailable,
-    bool? isFeatured,
-    String? categoryId,
-    List<String>? gallery,
-    List<String>? images,
-    Map<String, dynamic>? data,
-  }) async {
-    final String? resolvedName = name ?? title;
-
-    final List<String>? resolvedImages =
-        images != null && images.isNotEmpty ? images : gallery;
-
-    final dynamic response = await ApiService.instance.put(
-      '/services/$serviceId',
-      data: {
-        ...?data,
-        if (resolvedName != null && resolvedName.trim().isNotEmpty)
-          'name': resolvedName.trim(),
-        if (resolvedName != null && resolvedName.trim().isNotEmpty)
-          'title': resolvedName.trim(),
-        if (description != null && description.trim().isNotEmpty)
-          'description': description.trim(),
-        if (categoryId != null && categoryId.trim().isNotEmpty)
-          'categoryId': categoryId.trim(),
-        if (price != null) 'price': price,
-        if (isAvailable != null) 'isAvailable': isAvailable,
-        if (isFeatured != null) 'isFeatured': isFeatured,
-        if (resolvedImages != null) 'gallery': resolvedImages,
-        if (resolvedImages != null) 'images': resolvedImages,
-      },
-    );
-
-    return _serviceFromResponse(response);
-  }
-
-  // ==========================================
-  // DELETE SERVICE
-  // ==========================================
-
-  Future<bool> deleteService(
-    String serviceId,
-  ) async {
-    await ApiService.instance.delete(
-      '/services/$serviceId',
-    );
-
-    return true;
-  }
-
-  // ==========================================
-  // HOME SERVICES
-  // ==========================================
-
-  Future<List<ServiceModel>> getHomeServices() async {
-    final dynamic response = await ApiService.instance.get(
-      '/services/home',
-    );
-
-    return _servicesFromResponse(response);
-  }
-
-  // ==========================================
+  // =====================================================
   // SERVICE REVIEWS
-  // ==========================================
+  //
+  // Reviews are mounted separately at /api/reviews.
+  // The exact review filtering field may differ by backend.
+  // =====================================================
 
   Future<dynamic> getServiceReviews(
     String serviceId,
   ) async {
-    final dynamic response = await ApiService.instance.get(
-      '/services/$serviceId/reviews',
-    );
+    try {
+      final normalizedId = _requireServiceId(
+        serviceId,
+      );
 
-    return _responseData(response);
+      final response = await _apiService.get(
+        '/reviews',
+        queryParameters: {
+          'serviceId': normalizedId,
+        },
+      );
+
+      return _responseData(response);
+    } catch (error, stackTrace) {
+      log(
+        'Get Service Reviews Error: $error',
+        stackTrace: stackTrace,
+      );
+
+      rethrow;
+    }
   }
 
-  // ==========================================
+  // =====================================================
   // SERVICE ANALYTICS
-  // Supports:
-  // getServiceAnalytics(serviceId)
-  // ==========================================
+  //
+  // Customer app derives public analytics from the service
+  // because no public /services/:id/analytics route exists.
+  // =====================================================
 
   Future<Map<String, dynamic>> getServiceAnalytics(
     String serviceId,
   ) async {
-    final dynamic response = await ApiService.instance.get(
-      '/services/$serviceId/analytics',
+    try {
+      final service = await getServiceById(
+        serviceId,
+      );
+
+      return <String, dynamic>{
+        'success': true,
+        'serviceId': service.id,
+        'rating': service.rating,
+        'reviewsCount':
+            service.reviewsCount,
+        'bookingCount':
+            service.bookingCount,
+        'isAvailable':
+            service.isAvailable,
+        'isActive': service.isActive,
+        'service': service.toMap(),
+      };
+    } catch (error, stackTrace) {
+      log(
+        'Get Service Analytics Error: $error',
+        stackTrace: stackTrace,
+      );
+
+      rethrow;
+    }
+  }
+
+  // =====================================================
+  // RESPONSE HELPERS
+  // =====================================================
+
+  dynamic _responseData(dynamic response) {
+    if (response == null) {
+      return null;
+    }
+
+    /*
+     * Some ApiService implementations return Dio Response.
+     * Other implementations return the decoded response map.
+     */
+    try {
+      return response.data;
+    } catch (_) {
+      return response;
+    }
+  }
+
+  Map<String, dynamic> _asMap(
+    dynamic value,
+  ) {
+    if (value is Map<String, dynamic>) {
+      return value;
+    }
+
+    if (value is Map) {
+      return value.map(
+        (key, item) => MapEntry(
+          key.toString(),
+          item,
+        ),
+      );
+    }
+
+    return <String, dynamic>{};
+  }
+
+  dynamic _extractSingle(
+    dynamic response,
+  ) {
+    final data = _responseData(response);
+
+    if (data is Map) {
+      final map = _asMap(data);
+
+      return map['service'] ??
+          map['data'] ??
+          map['result'] ??
+          map;
+    }
+
+    return data;
+  }
+
+  List<dynamic> _extractList(
+    dynamic response,
+  ) {
+    final data = _responseData(response);
+
+    if (data is List) {
+      return data;
+    }
+
+    if (data is Map) {
+      final map = _asMap(data);
+
+      final possibleLists = [
+        map['services'],
+        map['data'],
+        map['items'],
+        map['results'],
+      ];
+
+      for (final possibleList
+          in possibleLists) {
+        if (possibleList is List) {
+          return possibleList;
+        }
+
+        /*
+         * Some APIs return:
+         * data: { services: [...] }
+         */
+        if (possibleList is Map) {
+          final nestedMap =
+              _asMap(possibleList);
+
+          final nestedList =
+              nestedMap['services'] ??
+                  nestedMap['items'] ??
+                  nestedMap['results'];
+
+          if (nestedList is List) {
+            return nestedList;
+          }
+        }
+      }
+    }
+
+    return <dynamic>[];
+  }
+
+  ServiceModel _serviceFromResponse(
+    dynamic response,
+  ) {
+    final serviceData = _asMap(
+      _extractSingle(response),
     );
 
-    return _extractMap(response);
+    if (serviceData.isEmpty) {
+      throw const FormatException(
+        'The backend returned an invalid service response.',
+      );
+    }
+
+    return ServiceModel.fromMap(
+      serviceData,
+    );
+  }
+
+  List<ServiceModel> _servicesFromResponse(
+    dynamic response,
+  ) {
+    final rawServices =
+        _extractList(response);
+
+    return rawServices
+        .whereType<Map>()
+        .map(
+          (item) => ServiceModel.fromMap(
+            _asMap(item),
+          ),
+        )
+        .where(
+          (service) => service.id.isNotEmpty,
+        )
+        .toList();
+  }
+
+  // =====================================================
+  // INPUT HELPERS
+  // =====================================================
+
+  String _requireServiceId(
+    String serviceId,
+  ) {
+    final normalizedId = serviceId.trim();
+
+    if (normalizedId.isEmpty) {
+      throw ArgumentError(
+        'Service ID is required.',
+      );
+    }
+
+    return normalizedId;
+  }
+
+  String? _firstNonEmpty(
+    List<String?> values,
+  ) {
+    for (final value in values) {
+      if (value != null &&
+          value.trim().isNotEmpty) {
+        return value.trim();
+      }
+    }
+
+    return null;
+  }
+
+  String? _resolveSort({
+    String? sort,
+    String? sortBy,
+    String? sortOrder,
+  }) {
+    if (sort != null &&
+        sort.trim().isNotEmpty) {
+      return sort.trim();
+    }
+
+    final normalizedSortBy =
+        sortBy?.trim().toLowerCase();
+
+    final normalizedSortOrder =
+        sortOrder?.trim().toLowerCase();
+
+    switch (normalizedSortBy) {
+      case 'price':
+        return normalizedSortOrder == 'desc'
+            ? 'high_price'
+            : 'low_price';
+
+      case 'rating':
+        return 'rating';
+
+      case 'distance':
+        return 'nearest';
+
+      case 'createdat':
+      case 'created_at':
+      case 'date':
+        return normalizedSortOrder == 'asc'
+            ? 'oldest'
+            : 'newest';
+
+      default:
+        return null;
+    }
   }
 }

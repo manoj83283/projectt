@@ -99,12 +99,9 @@ class AdminService {
         query: {
           'page': page,
           'limit': limit,
-          if (search != null)
-            'search': search,
-          if (role != null)
-            'role': role,
-          if (isActive != null)
-            'isActive': isActive,
+          'search': ?search,
+          'role': ?role,
+          'isActive': ?isActive,
         },
       );
 
@@ -182,14 +179,10 @@ class AdminService {
       final response = await _api.put(
         '/admin/users/$adminId',
         data: {
-          if (fullName != null)
-            'fullName': fullName,
-          if (email != null)
-            'email': email,
-          if (phone != null)
-            'phone': phone,
-          if (role != null)
-            'role': role,
+          'fullName': ?fullName,
+          'email': ?email,
+          'phone': ?phone,
+          'role': ?role,
         },
       );
 
