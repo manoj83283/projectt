@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'config/app_config.dart';
 import 'config/route_config.dart';
 import 'config/theme_config.dart';
+
 import 'core/storage/storage_helper.dart';
 
 import 'providers/auth_provider.dart';
@@ -22,7 +23,8 @@ import 'screens/auth/signup_screen.dart';
 
 import 'screens/booking/booking_details_screen.dart';
 import 'screens/booking/booking_screen.dart';
-import 'screens/booking/my_bookings_screen.dart' as booking_screens;
+import 'screens/booking/my_bookings_screen.dart'
+    as booking_screens;
 import 'screens/booking/order_success_screen.dart';
 import 'screens/booking/track_booking_screen.dart';
 
@@ -37,7 +39,8 @@ import 'screens/home/home_screen.dart';
 import 'screens/home/notifications_screen.dart';
 import 'screens/home/search_screen.dart';
 
-import 'screens/orders/my_orders_screen.dart' as order_screens;
+import 'screens/orders/my_orders_screen.dart'
+    as order_screens;
 import 'screens/orders/order_details_screen.dart';
 import 'screens/orders/track_order_screen.dart';
 
@@ -63,15 +66,80 @@ import 'screens/services/service_list_screen.dart';
 
 import 'screens/splash/splash_screen.dart';
 
+import 'services/api_service.dart';
+import 'services/auth_service.dart';
+
+// =====================================================
+// APPLICATION ENTRY POINT
+// =====================================================
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await StorageHelper.init();
+  try {
+    // Initialize the existing application storage.
+    await StorageHelper.init();
+
+    debugPrint(
+      'APPLICATION STORAGE INITIALIZED',
+    );
+  } catch (error, stackTrace) {
+    debugPrint(
+      'APPLICATION STORAGE INITIALIZATION ERROR: $error',
+    );
+
+    debugPrint(
+      'STORAGE STACK TRACE: $stackTrace',
+    );
+  }
+
+  bool sessionRestored = false;
+
+  try {
+    /*
+     * Restore the saved customer JWT before runApp().
+     *
+     * This ensures the Authorization header is available
+     * before protected requests are made.
+     */
+    sessionRestored =
+        await AuthService.instance.restoreSession();
+
+    debugPrint(
+      'APPLICATION SESSION RESTORED: $sessionRestored',
+    );
+
+    debugPrint(
+      'APPLICATION CUSTOMER TOKEN AVAILABLE: '
+      '${AuthService.instance.hasToken}',
+    );
+
+    debugPrint(
+      'APPLICATION API AUTH HEADER AVAILABLE: '
+      '${ApiService.instance.hasAuthToken}',
+    );
+  } catch (error, stackTrace) {
+    /*
+     * A restoration failure should not prevent the
+     * application from starting.
+     */
+    debugPrint(
+      'APPLICATION SESSION RESTORE ERROR: $error',
+    );
+
+    debugPrint(
+      'SESSION RESTORE STACK TRACE: $stackTrace',
+    );
+  }
 
   runApp(
     const EventEaseApp(),
   );
 }
+
+// =====================================================
+// ROOT APPLICATION
+// =====================================================
 
 class EventEaseApp extends StatelessWidget {
   const EventEaseApp({
@@ -81,24 +149,92 @@ class EventEaseApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
-      providers: [
+      providers: <SingleChildWidget>[
+        // =================================================
+        // AUTHENTICATION
+        // =================================================
+
         ChangeNotifierProvider<AuthProvider>(
-          create: (_) => AuthProvider(),
+          create: (
+            BuildContext context,
+          ) {
+            final AuthProvider authProvider =
+                AuthProvider();
+
+            /*
+             * AuthService restores the actual token before
+             * runApp().
+             *
+             * AuthProvider must separately synchronize its
+             * isLoggedIn and user state.
+             *
+             * Without this call, AuthProvider starts with
+             * isLoggedIn=false even when a saved JWT exists.
+             */
+            authProvider.checkAuth();
+
+            return authProvider;
+          },
         ),
+
+        // =================================================
+        // SERVICES
+        // =================================================
+
         ChangeNotifierProvider<ServiceProvider>(
-          create: (_) => ServiceProvider(),
+          create: (
+            BuildContext context,
+          ) {
+            return ServiceProvider();
+          },
         ),
+
+        // =================================================
+        // CATEGORIES
+        // =================================================
+
         ChangeNotifierProvider<CategoryProvider>(
-          create: (_) => CategoryProvider(),
+          create: (
+            BuildContext context,
+          ) {
+            return CategoryProvider();
+          },
         ),
+
+        // =================================================
+        // CART
+        // =================================================
+
         ChangeNotifierProvider<CartProvider>(
-          create: (_) => CartProvider(),
+          create: (
+            BuildContext context,
+          ) {
+            return CartProvider();
+          },
         ),
+
+        // =================================================
+        // BOOKINGS
+        // =================================================
+
         ChangeNotifierProvider<BookingProvider>(
-          create: (_) => BookingProvider(),
+          create: (
+            BuildContext context,
+          ) {
+            return BookingProvider();
+          },
         ),
+
+        // =================================================
+        // ORDERS
+        // =================================================
+
         ChangeNotifierProvider<OrderProvider>(
-          create: (_) => OrderProvider(),
+          create: (
+            BuildContext context,
+          ) {
+            return OrderProvider();
+          },
         ),
       ],
       child: ScreenUtilInit(
@@ -109,8 +245,8 @@ class EventEaseApp extends StatelessWidget {
         minTextAdapt: true,
         splitScreenMode: true,
         builder: (
-          context,
-          child,
+          BuildContext context,
+          Widget? child,
         ) {
           return MaterialApp(
             debugShowCheckedModeBanner: false,
@@ -118,7 +254,14 @@ class EventEaseApp extends StatelessWidget {
             theme: ThemeConfig.lightTheme,
             darkTheme: ThemeConfig.darkTheme,
             themeMode: ThemeMode.system,
-            supportedLocales: AppConfig.supportedLocales,
+
+            /*
+             * These locales must also exist in
+             * AppConfig.supportedLocales.
+             */
+            supportedLocales:
+                AppConfig.supportedLocales,
+
             initialRoute: RouteConfig.splash,
             routes: _routes,
             onUnknownRoute: _onUnknownRoute,
@@ -128,81 +271,369 @@ class EventEaseApp extends StatelessWidget {
     );
   }
 
+  // =====================================================
+  // APPLICATION ROUTES
+  // =====================================================
+
   Map<String, WidgetBuilder> get _routes {
-    return {
-      // Splash
-      RouteConfig.splash: (context) => const SplashScreen(),
+    return <String, WidgetBuilder>{
+      // =================================================
+      // SPLASH
+      // =================================================
 
-      // Auth
-      RouteConfig.login: (context) => const LoginScreen(),
-      RouteConfig.signup: (context) => const SignupScreen(),
-      RouteConfig.forgotPassword: (context) => const ForgotPasswordScreen(),
-      RouteConfig.otp: (context) => const OtpScreen(),
-      RouteConfig.resetPassword: (context) => const ResetPasswordScreen(),
+      RouteConfig.splash: (
+        BuildContext context,
+      ) {
+        return const SplashScreen();
+      },
 
-      // Home
-      RouteConfig.home: (context) => const HomeScreen(),
-      RouteConfig.search: (context) => const SearchScreen(),
-      RouteConfig.notifications: (context) => const NotificationsScreen(),
-      RouteConfig.category: (context) => const CategoryScreen(),
+      // =================================================
+      // AUTHENTICATION
+      // =================================================
 
-      // Services
-      RouteConfig.serviceList: (context) => const ServiceListScreen(),
-      RouteConfig.serviceDetails: (context) => const ServiceDetailScreen(),
-      RouteConfig.providerProfile: (context) => const ProviderProfileScreen(),
-      RouteConfig.serviceFilter: (context) => const ServiceFilterScreen(),
-      RouteConfig.serviceGallery: (context) => const ServiceGalleryScreen(),
+      RouteConfig.login: (
+        BuildContext context,
+      ) {
+        return const LoginScreen();
+      },
 
-      // Booking
-      RouteConfig.booking: (context) => const BookingScreen(),
-      RouteConfig.myBookings: (context) => const booking_screens.MyBookingsScreen(),
-      RouteConfig.bookingDetails: (context) => const BookingDetailsScreen(),
-      RouteConfig.trackBooking: (context) => const TrackBookingScreen(),
-      RouteConfig.orderSuccess: (context) => const OrderSuccessScreen(),
+      RouteConfig.signup: (
+        BuildContext context,
+      ) {
+        return const SignupScreen();
+      },
 
-      // Cart
-      RouteConfig.cart: (context) => const CartScreen(),
-      RouteConfig.checkout: (context) => const CheckoutScreen(),
+      RouteConfig.forgotPassword: (
+        BuildContext context,
+      ) {
+        return const ForgotPasswordScreen();
+      },
 
-      // Orders
-      RouteConfig.myOrders: (context) => const order_screens.MyOrdersScreen(),
-      RouteConfig.orderDetails: (context) => const OrderDetailsScreen(),
-      RouteConfig.trackOrder: (context) => const TrackOrderScreen(),
+      RouteConfig.otp: (
+        BuildContext context,
+      ) {
+        return const OtpScreen();
+      },
 
-      // Reviews
-      RouteConfig.reviews: (context) => const ReviewsScreen(),
-      RouteConfig.ratingDialog: (context) => _buildRatingDialog(),
+      RouteConfig.resetPassword: (
+        BuildContext context,
+      ) {
+        return const ResetPasswordScreen();
+      },
 
-      // Chat
-      RouteConfig.chat: (context) => const ChatScreen(),
-      RouteConfig.chatList: (context) => const ChatListScreen(),
+      // =================================================
+      // HOME
+      // =================================================
 
-      // Profile
-      RouteConfig.profile: (context) => const ProfileScreen(),
-      RouteConfig.editProfile: (context) => const EditProfileScreen(),
-      RouteConfig.address: (context) => const AddressScreen(),
-      RouteConfig.addAddress: (context) => const AddAddressScreen(),
-      RouteConfig.settings: (context) => const SettingsScreen(),
-      RouteConfig.language: (context) => const LanguageScreen(),
-      RouteConfig.changePassword: (context) => const ChangePasswordScreen(),
-      RouteConfig.helpSupport: (context) => const HelpSupportScreen(),
-      RouteConfig.privacyPolicy: (context) => const PrivacyPolicyScreen(),
-      RouteConfig.termsConditions: (context) => const TermsConditionsScreen(),
+      RouteConfig.home: (
+        BuildContext context,
+      ) {
+        return const HomeScreen();
+      },
+
+      RouteConfig.search: (
+        BuildContext context,
+      ) {
+        return const SearchScreen();
+      },
+
+      RouteConfig.notifications: (
+        BuildContext context,
+      ) {
+        return const NotificationsScreen();
+      },
+
+      RouteConfig.category: (
+        BuildContext context,
+      ) {
+        return const CategoryScreen();
+      },
+
+      // =================================================
+      // SERVICES
+      // =================================================
+
+      RouteConfig.serviceList: (
+        BuildContext context,
+      ) {
+        return const ServiceListScreen();
+      },
+
+      RouteConfig.serviceDetails: (
+        BuildContext context,
+      ) {
+        return const ServiceDetailScreen();
+      },
+
+      RouteConfig.providerProfile: (
+        BuildContext context,
+      ) {
+        return const ProviderProfileScreen();
+      },
+
+      RouteConfig.serviceFilter: (
+        BuildContext context,
+      ) {
+        return const ServiceFilterScreen();
+      },
+
+      RouteConfig.serviceGallery: (
+        BuildContext context,
+      ) {
+        return const ServiceGalleryScreen();
+      },
+
+      // =================================================
+      // BOOKINGS
+      // =================================================
+
+      RouteConfig.booking: (
+        BuildContext context,
+      ) {
+        return const BookingScreen();
+      },
+
+      RouteConfig.myBookings: (
+        BuildContext context,
+      ) {
+        return const booking_screens
+            .MyBookingsScreen();
+      },
+
+      RouteConfig.bookingDetails: (
+        BuildContext context,
+      ) {
+        return const BookingDetailsScreen();
+      },
+
+      RouteConfig.trackBooking: (
+        BuildContext context,
+      ) {
+        return const TrackBookingScreen();
+      },
+
+      RouteConfig.orderSuccess: (
+        BuildContext context,
+      ) {
+        return const OrderSuccessScreen();
+      },
+
+      // =================================================
+      // CART AND CHECKOUT
+      // =================================================
+
+      RouteConfig.cart: (
+        BuildContext context,
+      ) {
+        return const CartScreen();
+      },
+
+      RouteConfig.checkout: (
+        BuildContext context,
+      ) {
+        return const CheckoutScreen();
+      },
+
+      // =================================================
+      // ORDERS
+      // =================================================
+
+      RouteConfig.myOrders: (
+        BuildContext context,
+      ) {
+        return const order_screens
+            .MyOrdersScreen();
+      },
+
+      RouteConfig.orderDetails: (
+        BuildContext context,
+      ) {
+        return const OrderDetailsScreen();
+      },
+
+      RouteConfig.trackOrder: (
+        BuildContext context,
+      ) {
+        return const TrackOrderScreen();
+      },
+
+      // =================================================
+      // REVIEWS
+      // =================================================
+
+      RouteConfig.reviews: (
+        BuildContext context,
+      ) {
+        return const ReviewsScreen();
+      },
+
+      RouteConfig.ratingDialog: (
+        BuildContext context,
+      ) {
+        return _buildRatingDialog();
+      },
+
+      // =================================================
+      // CHAT
+      // =================================================
+
+      RouteConfig.chat: (
+        BuildContext context,
+      ) {
+        return const ChatScreen();
+      },
+
+      RouteConfig.chatList: (
+        BuildContext context,
+      ) {
+        return const ChatListScreen();
+      },
+
+      // =================================================
+      // PROFILE
+      // =================================================
+
+      RouteConfig.profile: (
+        BuildContext context,
+      ) {
+        return const ProfileScreen();
+      },
+
+      RouteConfig.editProfile: (
+        BuildContext context,
+      ) {
+        return const EditProfileScreen();
+      },
+
+      RouteConfig.address: (
+        BuildContext context,
+      ) {
+        return const AddressScreen();
+      },
+
+      RouteConfig.addAddress: (
+        BuildContext context,
+      ) {
+        return const AddAddressScreen();
+      },
+
+      RouteConfig.settings: (
+        BuildContext context,
+      ) {
+        return const SettingsScreen();
+      },
+
+      RouteConfig.language: (
+        BuildContext context,
+      ) {
+        return const LanguageScreen();
+      },
+
+      RouteConfig.changePassword: (
+        BuildContext context,
+      ) {
+        return const ChangePasswordScreen();
+      },
+
+      RouteConfig.helpSupport: (
+        BuildContext context,
+      ) {
+        return const HelpSupportScreen();
+      },
+
+      RouteConfig.privacyPolicy: (
+        BuildContext context,
+      ) {
+        return const PrivacyPolicyScreen();
+      },
+
+      RouteConfig.termsConditions: (
+        BuildContext context,
+      ) {
+        return const TermsConditionsScreen();
+      },
     };
   }
+
+  // =====================================================
+  // UNKNOWN ROUTE
+  // =====================================================
 
   Route<dynamic> _onUnknownRoute(
     RouteSettings settings,
   ) {
-    return MaterialPageRoute(
-      builder: (_) {
-        return const Scaffold(
+    return MaterialPageRoute<dynamic>(
+      settings: settings,
+      builder: (
+        BuildContext context,
+      ) {
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text(
+              'Page Not Found',
+            ),
+          ),
           body: Center(
-            child: Text(
-              'Page not found',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
+            child: Padding(
+              padding: const EdgeInsets.all(
+                24,
+              ),
+              child: Column(
+                mainAxisAlignment:
+                    MainAxisAlignment.center,
+                children: <Widget>[
+                  Icon(
+                    Icons.error_outline,
+                    size: 80,
+                    color: Colors.grey.shade500,
+                  ),
+                  const SizedBox(
+                    height: 20,
+                  ),
+                  const Text(
+                    'Page not found',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(
+                    height: 10,
+                  ),
+                  Text(
+                    settings.name == null
+                        ? 'The requested page is unavailable.'
+                        : 'The route "${settings.name}" '
+                            'is unavailable.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                  const SizedBox(
+                    height: 24,
+                  ),
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.of(context)
+                          .pushNamedAndRemoveUntil(
+                        RouteConfig.home,
+                        (
+                          Route<dynamic> route,
+                        ) {
+                          return false;
+                        },
+                      );
+                    },
+                    icon: const Icon(
+                      Icons.home,
+                    ),
+                    label: const Text(
+                      'Go to Home',
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -210,6 +641,10 @@ class EventEaseApp extends StatelessWidget {
       },
     );
   }
+
+  // =====================================================
+  // RATING DIALOG ROUTE
+  // =====================================================
 
   Widget _buildRatingDialog() {
     return const RatingDialog();

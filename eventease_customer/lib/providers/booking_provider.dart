@@ -35,17 +35,13 @@ class BookingProvider extends ChangeNotifier {
   String? get error => _error;
 
   // ==========================================
-  // SET LOADING
+  // INTERNAL HELPERS
   // ==========================================
 
   void _setLoading(bool value) {
     _isLoading = value;
     notifyListeners();
   }
-
-  // ==========================================
-  // SET ERROR
-  // ==========================================
 
   void _setError(String? value) {
     _error = value;
@@ -56,13 +52,13 @@ class BookingProvider extends ChangeNotifier {
   // CREATE BOOKING
   // ==========================================
 
-  Future<bool> createBooking({
+  Future<BookingModel> createBooking({
     required String serviceId,
     required DateTime bookingDate,
     required String bookingTime,
     required String address,
-    required double latitude,
-    required double longitude,
+    double? latitude,
+    double? longitude,
     String? notes,
     String? couponCode,
   }) async {
@@ -82,14 +78,23 @@ class BookingProvider extends ChangeNotifier {
         couponCode: couponCode,
       );
 
-      _myBookings.insert(0, booking);
+      _selectedBooking = booking;
+
+      _myBookings.removeWhere(
+        (item) => item.id == booking.id,
+      );
+
+      _myBookings.insert(
+        0,
+        booking,
+      );
 
       notifyListeners();
 
-      return true;
+      return booking;
     } catch (e) {
       _setError(e.toString());
-      return false;
+      rethrow;
     } finally {
       _setLoading(false);
     }
@@ -102,6 +107,7 @@ class BookingProvider extends ChangeNotifier {
   Future<void> getMyBookings({
     int page = 1,
     int limit = 20,
+    String? status,
   }) async {
     try {
       _setLoading(true);
@@ -111,6 +117,7 @@ class BookingProvider extends ChangeNotifier {
           await _repository.getMyBookings(
         page: page,
         limit: limit,
+        status: status,
       );
 
       notifyListeners();
@@ -128,6 +135,7 @@ class BookingProvider extends ChangeNotifier {
   Future<void> getProviderBookings({
     int page = 1,
     int limit = 20,
+    String? status,
   }) async {
     try {
       _setLoading(true);
@@ -137,6 +145,7 @@ class BookingProvider extends ChangeNotifier {
           await _repository.getProviderBookings(
         page: page,
         limit: limit,
+        status: status,
       );
 
       notifyListeners();
@@ -181,7 +190,8 @@ class BookingProvider extends ChangeNotifier {
       _setError(null);
 
       _myBookings =
-          await _repository.getBookingHistory();
+          await _repository
+              .getBookingHistory();
 
       notifyListeners();
     } catch (e) {
@@ -363,11 +373,11 @@ class BookingProvider extends ChangeNotifier {
 
       if (success) {
         _myBookings.removeWhere(
-          (e) => e.id == bookingId,
+          (item) => item.id == bookingId,
         );
 
         _providerBookings.removeWhere(
-          (e) => e.id == bookingId,
+          (item) => item.id == bookingId,
         );
       }
 
@@ -416,9 +426,8 @@ class BookingProvider extends ChangeNotifier {
   // ==========================================
 
   void reset() {
-    _myBookings.clear();
-    _providerBookings.clear();
-
+    _myBookings = [];
+    _providerBookings = [];
     _selectedBooking = null;
     _error = null;
 

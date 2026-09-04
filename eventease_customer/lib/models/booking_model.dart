@@ -34,6 +34,8 @@ class BookingModel {
   final double? latitude;
   final double? longitude;
 
+  final String? chatRoomId;
+
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -60,13 +62,10 @@ class BookingModel {
     this.address,
     this.latitude,
     this.longitude,
+    this.chatRoomId,
     this.createdAt,
     this.updatedAt,
   });
-
-  // =========================================
-  // EMPTY
-  // =========================================
 
   factory BookingModel.empty() {
     return BookingModel(
@@ -85,176 +84,216 @@ class BookingModel {
     );
   }
 
-  // =========================================
-  // COPY WITH
-  // =========================================
+  static String _extractId(
+    dynamic value,
+  ) {
+    if (value == null) {
+      return '';
+    }
 
-  BookingModel copyWith({
-    String? id,
-    String? customerId,
-    String? customerName,
-    String? providerId,
-    String? providerName,
-    String? serviceId,
-    String? serviceName,
-    String? bookingNumber,
-    DateTime? bookingDate,
-    String? bookingTime,
-    double? amount,
-    double? gst,
-    double? serviceFee,
-    double? discount,
-    double? totalAmount,
-    String? bookingStatus,
-    String? paymentStatus,
-    String? paymentId,
-    String? notes,
-    String? address,
-    double? latitude,
-    double? longitude,
-    DateTime? createdAt,
-    DateTime? updatedAt,
-  }) {
-    return BookingModel(
-      id: id ?? this.id,
-      customerId: customerId ?? this.customerId,
-      customerName: customerName ?? this.customerName,
-      providerId: providerId ?? this.providerId,
-      providerName: providerName ?? this.providerName,
-      serviceId: serviceId ?? this.serviceId,
-      serviceName: serviceName ?? this.serviceName,
-      bookingNumber: bookingNumber ?? this.bookingNumber,
-      bookingDate: bookingDate ?? this.bookingDate,
-      bookingTime: bookingTime ?? this.bookingTime,
-      amount: amount ?? this.amount,
-      gst: gst ?? this.gst,
-      serviceFee: serviceFee ?? this.serviceFee,
-      discount: discount ?? this.discount,
-      totalAmount: totalAmount ?? this.totalAmount,
-      bookingStatus: bookingStatus ?? this.bookingStatus,
-      paymentStatus: paymentStatus ?? this.paymentStatus,
-      paymentId: paymentId ?? this.paymentId,
-      notes: notes ?? this.notes,
-      address: address ?? this.address,
-      latitude: latitude ?? this.latitude,
-      longitude: longitude ?? this.longitude,
-      createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
-    );
+    if (value is String) {
+      return value;
+    }
+
+    if (value is Map) {
+      return value['_id']?.toString() ??
+          value['id']?.toString() ??
+          '';
+    }
+
+    return '';
   }
 
-  // =========================================
-  // FROM MAP
-  // =========================================
+  static String _extractName(
+    dynamic value,
+  ) {
+    if (value == null) {
+      return '';
+    }
+
+    if (value is String) {
+      return value;
+    }
+
+    if (value is Map) {
+      return value['name']?.toString() ??
+          value['firstName']?.toString() ??
+          value['businessName']?.toString() ??
+          '';
+    }
+
+    return '';
+  }
+
+  static double _asDouble(
+    dynamic value,
+  ) {
+    if (value == null) {
+      return 0;
+    }
+
+    if (value is num) {
+      return value.toDouble();
+    }
+
+    return double.tryParse(
+          value.toString(),
+        ) ??
+        0;
+  }
 
   factory BookingModel.fromMap(
     Map<String, dynamic> map,
   ) {
+    final customer =
+        map['customer'] ??
+            map['user'];
+
+    final provider =
+        map['provider'];
+
+    final service =
+        map['service'];
+
     return BookingModel(
       id: map['_id']?.toString() ??
           map['id']?.toString() ??
           '',
 
       customerId:
-          map['customerId']?.toString() ?? '',
+          map['customerId']?.toString() ??
+              _extractId(customer),
 
       customerName:
-          map['customerName'] ?? '',
+          map['customerName']?.toString() ??
+              _extractName(customer),
 
       providerId:
-          map['providerId']?.toString() ?? '',
+          map['providerId']?.toString() ??
+              _extractId(provider),
 
       providerName:
-          map['providerName'] ?? '',
+          map['providerName']?.toString() ??
+              _extractName(provider),
 
       serviceId:
-          map['serviceId']?.toString() ?? '',
+          map['serviceId']?.toString() ??
+              _extractId(service),
 
       serviceName:
-          map['serviceName'] ?? '',
+          map['serviceName']?.toString() ??
+              _extractName(service),
 
       bookingNumber:
-          map['bookingNumber'] ?? '',
+          map['bookingNumber']
+                  ?.toString() ??
+              '',
 
       bookingDate:
           map['bookingDate'] != null
-              ? DateTime.parse(
-                  map['bookingDate'],
-                )
-              : DateTime.now(),
+              ? DateTime.tryParse(
+                    map['bookingDate']
+                        .toString(),
+                  ) ??
+                  DateTime.now()
+              : map['date'] != null
+                  ? DateTime.tryParse(
+                        map['date']
+                            .toString(),
+                      ) ??
+                      DateTime.now()
+                  : DateTime.now(),
 
       bookingTime:
-          map['bookingTime'] ?? '',
+          map['bookingTime']
+                  ?.toString() ??
+              '',
 
-      amount:
-          (map['amount'] as num?)
-                  ?.toDouble() ??
-              0,
+      amount: _asDouble(
+        map['amount'] ??
+            map['totalAmount'] ??
+            map['totalPrice'],
+      ),
 
-      gst:
-          (map['gst'] as num?)
-                  ?.toDouble() ??
-              0,
+      totalAmount: _asDouble(
+        map['totalAmount'] ??
+            map['totalPrice'] ??
+            map['amount'],
+      ),
 
-      serviceFee:
-          (map['serviceFee'] as num?)
-                  ?.toDouble() ??
-              0,
+      gst: _asDouble(
+        map['gst'] ??
+            map['taxAmount'],
+      ),
 
-      discount:
-          (map['discount'] as num?)
-                  ?.toDouble() ??
-              0,
+      serviceFee: _asDouble(
+        map['serviceFee'] ??
+            map['platformFee'],
+      ),
 
-      totalAmount:
-          (map['totalAmount'] as num?)
-                  ?.toDouble() ??
-              0,
+      discount: _asDouble(
+        map['discount'] ??
+            map['discountAmount'],
+      ),
 
       bookingStatus:
-          map['bookingStatus'] ??
+          map['bookingStatus']
+                  ?.toString() ??
+              map['status']
+                  ?.toString() ??
               'pending',
 
       paymentStatus:
-          map['paymentStatus'] ??
+          map['paymentStatus']
+                  ?.toString() ??
               'pending',
 
       paymentId:
-          map['paymentId'],
+          map['paymentId']
+              ?.toString(),
 
       notes:
-          map['notes'],
+          map['notes']
+              ?.toString(),
 
       address:
-          map['address'],
+          map['address']
+              ?.toString(),
 
-      latitude:
-          (map['latitude'] as num?)
-              ?.toDouble(),
+      latitude: map['latitude'] == null
+          ? null
+          : _asDouble(
+              map['latitude'],
+            ),
 
       longitude:
-          (map['longitude'] as num?)
-              ?.toDouble(),
+          map['longitude'] == null
+              ? null
+              : _asDouble(
+                  map['longitude'],
+                ),
+
+      chatRoomId:
+          map['chatRoomId']
+              ?.toString(),
 
       createdAt:
           map['createdAt'] != null
               ? DateTime.tryParse(
-                  map['createdAt'],
+                  map['createdAt']
+                      .toString(),
                 )
               : null,
 
       updatedAt:
           map['updatedAt'] != null
               ? DateTime.tryParse(
-                  map['updatedAt'],
+                  map['updatedAt']
+                      .toString(),
                 )
               : null,
     );
   }
-
-  // =========================================
-  // TO MAP
-  // =========================================
 
   Map<String, dynamic> toMap() {
     return {
@@ -281,16 +320,13 @@ class BookingModel {
       'address': address,
       'latitude': latitude,
       'longitude': longitude,
+      'chatRoomId': chatRoomId,
       'createdAt':
           createdAt?.toIso8601String(),
       'updatedAt':
           updatedAt?.toIso8601String(),
     };
   }
-
-  // =========================================
-  // JSON
-  // =========================================
 
   factory BookingModel.fromJson(
     String source,
@@ -304,10 +340,6 @@ class BookingModel {
     return jsonEncode(toMap());
   }
 
-  // =========================================
-  // STATUS HELPERS
-  // =========================================
-
   bool get isPending =>
       bookingStatus.toLowerCase() ==
       'pending';
@@ -315,10 +347,6 @@ class BookingModel {
   bool get isAccepted =>
       bookingStatus.toLowerCase() ==
       'accepted';
-
-  bool get isConfirmed =>
-      bookingStatus.toLowerCase() ==
-      'confirmed';
 
   bool get isCompleted =>
       bookingStatus.toLowerCase() ==
@@ -336,22 +364,21 @@ class BookingModel {
       latitude != null &&
       longitude != null;
 
-  // =========================================
-  // OVERRIDES
-  // =========================================
-
   @override
   String toString() {
     return 'BookingModel(id: $id, bookingNumber: $bookingNumber)';
   }
 
   @override
-  bool operator ==(Object other) {
+  bool operator ==(
+    Object other,
+  ) {
     return identical(this, other) ||
         other is BookingModel &&
             other.id == id;
   }
 
   @override
-  int get hashCode => id.hashCode;
+  int get hashCode =>
+      id.hashCode;
 }
