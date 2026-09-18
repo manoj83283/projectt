@@ -77,7 +77,6 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   try {
-    // Initialize the existing application storage.
     await StorageHelper.init();
 
     debugPrint(
@@ -93,20 +92,14 @@ Future<void> main() async {
     );
   }
 
-  bool sessionRestored = false;
-
   try {
-    /*
-     * Restore the saved customer JWT before runApp().
-     *
-     * This ensures the Authorization header is available
-     * before protected requests are made.
-     */
-    sessionRestored =
-        await AuthService.instance.restoreSession();
+    final sessionRestored =
+        await AuthService.instance
+            .restoreSession();
 
     debugPrint(
-      'APPLICATION SESSION RESTORED: $sessionRestored',
+      'APPLICATION SESSION RESTORED: '
+      '$sessionRestored',
     );
 
     debugPrint(
@@ -119,16 +112,14 @@ Future<void> main() async {
       '${ApiService.instance.hasAuthToken}',
     );
   } catch (error, stackTrace) {
-    /*
-     * A restoration failure should not prevent the
-     * application from starting.
-     */
     debugPrint(
-      'APPLICATION SESSION RESTORE ERROR: $error',
+      'APPLICATION SESSION RESTORE ERROR: '
+      '$error',
     );
 
     debugPrint(
-      'SESSION RESTORE STACK TRACE: $stackTrace',
+      'SESSION RESTORE STACK TRACE: '
+      '$stackTrace',
     );
   }
 
@@ -147,40 +138,27 @@ class EventEaseApp extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(
+    BuildContext context,
+  ) {
     return MultiProvider(
-      providers: <SingleChildWidget>[
-        // =================================================
-        // AUTHENTICATION
-        // =================================================
-
+      providers: [
         ChangeNotifierProvider<AuthProvider>(
           create: (
             BuildContext context,
           ) {
-            final AuthProvider authProvider =
+            final authProvider =
                 AuthProvider();
 
             /*
-             * AuthService restores the actual token before
-             * runApp().
-             *
-             * AuthProvider must separately synchronize its
-             * isLoggedIn and user state.
-             *
-             * Without this call, AuthProvider starts with
-             * isLoggedIn=false even when a saved JWT exists.
+             * AuthService restores the JWT before runApp.
+             * AuthProvider synchronizes its local UI state.
              */
             authProvider.checkAuth();
 
             return authProvider;
           },
         ),
-
-        // =================================================
-        // SERVICES
-        // =================================================
-
         ChangeNotifierProvider<ServiceProvider>(
           create: (
             BuildContext context,
@@ -188,11 +166,6 @@ class EventEaseApp extends StatelessWidget {
             return ServiceProvider();
           },
         ),
-
-        // =================================================
-        // CATEGORIES
-        // =================================================
-
         ChangeNotifierProvider<CategoryProvider>(
           create: (
             BuildContext context,
@@ -200,11 +173,6 @@ class EventEaseApp extends StatelessWidget {
             return CategoryProvider();
           },
         ),
-
-        // =================================================
-        // CART
-        // =================================================
-
         ChangeNotifierProvider<CartProvider>(
           create: (
             BuildContext context,
@@ -212,11 +180,6 @@ class EventEaseApp extends StatelessWidget {
             return CartProvider();
           },
         ),
-
-        // =================================================
-        // BOOKINGS
-        // =================================================
-
         ChangeNotifierProvider<BookingProvider>(
           create: (
             BuildContext context,
@@ -224,11 +187,6 @@ class EventEaseApp extends StatelessWidget {
             return BookingProvider();
           },
         ),
-
-        // =================================================
-        // ORDERS
-        // =================================================
-
         ChangeNotifierProvider<OrderProvider>(
           create: (
             BuildContext context,
@@ -249,22 +207,24 @@ class EventEaseApp extends StatelessWidget {
           Widget? child,
         ) {
           return MaterialApp(
-            debugShowCheckedModeBanner: false,
-            title: AppConfig.appName,
-            theme: ThemeConfig.lightTheme,
-            darkTheme: ThemeConfig.darkTheme,
-            themeMode: ThemeMode.system,
-
-            /*
-             * These locales must also exist in
-             * AppConfig.supportedLocales.
-             */
+            debugShowCheckedModeBanner:
+                false,
+            title:
+                AppConfig.appName,
+            theme:
+                ThemeConfig.lightTheme,
+            darkTheme:
+                ThemeConfig.darkTheme,
+            themeMode:
+                ThemeMode.system,
             supportedLocales:
                 AppConfig.supportedLocales,
-
-            initialRoute: RouteConfig.splash,
-            routes: _routes,
-            onUnknownRoute: _onUnknownRoute,
+            initialRoute:
+                RouteConfig.splash,
+            routes:
+                _routes,
+            onUnknownRoute:
+                _onUnknownRoute,
           );
         },
       ),
@@ -575,7 +535,8 @@ class EventEaseApp extends StatelessWidget {
           ),
           body: Center(
             child: Padding(
-              padding: const EdgeInsets.all(
+              padding:
+                  const EdgeInsets.all(
                 24,
               ),
               child: Column(
@@ -585,17 +546,20 @@ class EventEaseApp extends StatelessWidget {
                   Icon(
                     Icons.error_outline,
                     size: 80,
-                    color: Colors.grey.shade500,
+                    color:
+                        Colors.grey.shade500,
                   ),
                   const SizedBox(
                     height: 20,
                   ),
                   const Text(
                     'Page not found',
-                    textAlign: TextAlign.center,
+                    textAlign:
+                        TextAlign.center,
                     style: TextStyle(
                       fontSize: 22,
-                      fontWeight: FontWeight.w700,
+                      fontWeight:
+                          FontWeight.w700,
                     ),
                   ),
                   const SizedBox(
@@ -604,11 +568,12 @@ class EventEaseApp extends StatelessWidget {
                   Text(
                     settings.name == null
                         ? 'The requested page is unavailable.'
-                        : 'The route "${settings.name}" '
-                            'is unavailable.',
-                    textAlign: TextAlign.center,
+                        : 'The route "${settings.name}" is unavailable.',
+                    textAlign:
+                        TextAlign.center,
                     style: TextStyle(
-                      color: Colors.grey.shade600,
+                      color:
+                          Colors.grey.shade600,
                     ),
                   ),
                   const SizedBox(

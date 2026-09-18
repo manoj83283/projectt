@@ -30,10 +30,29 @@ class _LoginScreenState extends State<LoginScreen> {
 
   bool obscurePassword = true;
   bool isLoading = false;
+  bool _submitted = false;
 
-  // =====================================================
-  // DISPOSE
-  // =====================================================
+  bool _returnToBooking = false;
+  bool _routeArgumentsInitialized = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    if (_routeArgumentsInitialized) {
+      return;
+    }
+
+    _routeArgumentsInitialized = true;
+
+    final arguments =
+        ModalRoute.of(context)?.settings.arguments;
+
+    if (arguments is Map) {
+      _returnToBooking =
+          arguments['returnToBooking'] == true;
+    }
+  }
 
   @override
   void dispose() {
@@ -43,24 +62,31 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  // =====================================================
-  // ROUTE HELPERS
-  // =====================================================
-
-  bool _shouldReturnToBooking() {
-    final dynamic arguments =
-        ModalRoute.of(context)?.settings.arguments;
-
-    if (arguments is Map) {
-      return arguments['returnToBooking'] == true;
+  String _cleanError(
+    Object? error,
+  ) {
+    if (error == null) {
+      return '';
     }
 
-    return false;
-  }
+    var message = error.toString().trim();
 
-  // =====================================================
-  // MESSAGE HELPERS
-  // =====================================================
+    const prefixes = <String>[
+      'Exception: ',
+      'FormatException: ',
+      'Invalid argument(s): ',
+    ];
+
+    for (final prefix in prefixes) {
+      if (message.startsWith(prefix)) {
+        message = message
+            .substring(prefix.length)
+            .trim();
+      }
+    }
+
+    return message;
+  }
 
   void _showMessage(
     String message, {
@@ -83,53 +109,105 @@ class _LoginScreenState extends State<LoginScreen> {
       );
   }
 
-  String _cleanError(Object error) {
-    return error
-        .toString()
-        .replaceFirst(
-          'Exception: ',
-          '',
-        )
-        .replaceFirst(
-          'Invalid argument(s): ',
-          '',
-        )
-        .trim();
+  void _onCredentialsChanged(
+    String value,
+  ) {
+    final authProvider =
+        context.read<AuthProvider>();
+
+    if (authProvider.error != null) {
+      authProvider.clearError();
+    }
+
+    if (_submitted) {
+      _formKey.currentState?.validate();
+    }
   }
 
-  // =====================================================
-  // LOGIN
-  // =====================================================
+  String? _validateEmail(
+    String? value,
+  ) {
+    final email = value?.trim() ?? '';
+
+    if (email.isEmpty) {
+      return 'Email is required';
+    }
+
+    final emailPattern = RegExp(
+      r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
+    );
+
+    if (!emailPattern.hasMatch(email)) {
+      return 'Enter a valid email address';
+    }
+
+    return null;
+  }
+
+  String? _validatePassword(
+    String? value,
+  ) {
+    final password = value ?? '';
+
+    if (password.isEmpty) {
+      return 'Password is required';
+    }
+
+    if (password.length < 6) {
+      return 'Password must contain at least 6 characters';
+    }
+
+    return null;
+  }
 
   Future<void> _login() async {
     if (isLoading) {
       return;
     }
 
-    final FormState? formState =
-        _formKey.currentState;
+    FocusScope.of(context).unfocus();
 
-    if (formState == null ||
-        !formState.validate()) {
+    setState(() {
+      _submitted = true;
+    });
+
+    final formIsValid =
+        _formKey.currentState?.validate() ??
+            false;
+
+    if (!formIsValid) {
       return;
     }
 
-    FocusScope.of(context).unfocus();
+    final authProvider =
+        context.read<AuthProvider>();
+
+    authProvider.clearError();
 
     setState(() {
       isLoading = true;
     });
 
     try {
-      final AuthProvider authProvider =
-          context.read<AuthProvider>();
+      final email = emailController.text
+          .trim()
+          .toLowerCase();
 
-      final bool success =
+      final password =
+          passwordController.text;
+
+      debugPrint(
+        'CUSTOMER LOGIN SUBMITTED',
+      );
+
+      debugPrint(
+        'CUSTOMER LOGIN EMAIL: $email',
+      );
+
+      final success =
           await authProvider.login(
-        email: emailController.text
-            .trim()
-            .toLowerCase(),
-        password: passwordController.text,
+        email: email,
+        password: password,
       );
 
       if (!mounted) {
@@ -137,47 +215,42 @@ class _LoginScreenState extends State<LoginScreen> {
       }
 
       if (!success) {
-        final String errorMessage =
-            authProvider.error?.trim().isNotEmpty ==
-                    true
-                ? authProvider.error!.trim()
-                : 'Unable to sign in. Check your '
-                    'email and password.';
+        final errorMessage = _cleanError(
+          authProvider.error,
+        );
 
         _showMessage(
-          _cleanError(errorMessage),
+          errorMessage.isEmpty
+              ? 'Unable to sign in. Check your email and password.'
+              : errorMessage,
           isError: true,
         );
 
         return;
       }
 
-      /*
-       * Do not navigate until the saved JWT can be read
-       * back from local storage.
-       */
-      final String? token =
-          await AuthService.instance.getToken();
+      final token =
+          await AuthService.instance
+              .getToken();
 
-      if (token == null || token.trim().isEmpty) {
+      if (!mounted) {
+        return;
+      }
+
+      if (token == null ||
+          token.trim().isEmpty) {
         throw Exception(
-          'Sign-in succeeded, but the customer '
-          'authentication token was not saved.',
+          'Sign-in succeeded, but the Customer authentication token was not saved.',
         );
       }
 
-      /*
-       * Explicitly attach the JWT to Dio so protected
-       * booking requests include:
-       *
-       * Authorization: Bearer CUSTOMER_JWT
-       */
-      ApiService.instance.setAuthToken(token);
+      ApiService.instance.setAuthToken(
+        token,
+      );
 
       if (!ApiService.instance.hasAuthToken) {
         throw Exception(
-          'Sign-in succeeded, but customer authentication '
-          'could not be attached to API requests.',
+          'Sign-in succeeded, but Customer authentication could not be attached to API requests.',
         );
       }
 
@@ -199,23 +272,19 @@ class _LoginScreenState extends State<LoginScreen> {
         'Signed in successfully.',
       );
 
-      /*
-       * When Login was opened from BookingScreen, return
-       * to the existing booking form instead of replacing
-       * it with the Home screen.
-       */
-      if (_shouldReturnToBooking()) {
-        Navigator.of(context).pop(true);
+      if (_returnToBooking &&
+          Navigator.canPop(context)) {
+        Navigator.of(context).pop(
+          true,
+        );
+
         return;
       }
 
-      Navigator.of(context).pushNamedAndRemoveUntil(
+      Navigator.of(context)
+          .pushNamedAndRemoveUntil(
         RouteConfig.home,
-        (
-          Route<dynamic> route,
-        ) {
-          return false;
-        },
+        (route) => false,
       );
     } catch (error, stackTrace) {
       debugPrint(
@@ -223,14 +292,16 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       debugPrint(
-        'CUSTOMER SIGN-IN STACK TRACE: $stackTrace',
+        'CUSTOMER SIGN-IN STACK TRACE: '
+        '$stackTrace',
       );
 
       if (!mounted) {
         return;
       }
 
-      final String message = _cleanError(error);
+      final message =
+          _cleanError(error);
 
       _showMessage(
         message.isEmpty
@@ -247,10 +318,6 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  // =====================================================
-  // GOOGLE LOGIN
-  // =====================================================
-
   Future<void> _googleLogin() async {
     if (isLoading) {
       return;
@@ -263,10 +330,12 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      final AuthProvider authProvider =
+      final authProvider =
           context.read<AuthProvider>();
 
-      final bool success =
+      authProvider.clearError();
+
+      final success =
           await authProvider.googleLogin();
 
       if (!mounted) {
@@ -274,49 +343,58 @@ class _LoginScreenState extends State<LoginScreen> {
       }
 
       if (!success) {
-        final String message =
-            authProvider.error ??
-                'Unable to sign in with Google.';
+        final message = _cleanError(
+          authProvider.error,
+        );
 
         _showMessage(
-          _cleanError(message),
+          message.isEmpty
+              ? 'Unable to sign in with Google.'
+              : message,
           isError: true,
         );
 
         return;
       }
 
-      final String? token =
-          await AuthService.instance.getToken();
+      final token =
+          await AuthService.instance
+              .getToken();
 
-      if (token == null || token.trim().isEmpty) {
-        throw Exception(
-          'Google sign-in succeeded, but the customer '
-          'authentication token was not saved.',
-        );
-      }
-
-      ApiService.instance.setAuthToken(token);
-
-      if (!ApiService.instance.hasAuthToken) {
-        throw Exception(
-          'Unable to attach Google authentication '
-          'to API requests.',
-        );
-      }
-
-      if (_shouldReturnToBooking()) {
-        Navigator.of(context).pop(true);
+      if (!mounted) {
         return;
       }
 
-      Navigator.of(context).pushNamedAndRemoveUntil(
+      if (token == null ||
+          token.trim().isEmpty) {
+        throw Exception(
+          'Google sign-in succeeded, but the Customer authentication token was not saved.',
+        );
+      }
+
+      ApiService.instance.setAuthToken(
+        token,
+      );
+
+      if (!ApiService.instance.hasAuthToken) {
+        throw Exception(
+          'Unable to attach Google authentication to API requests.',
+        );
+      }
+
+      if (_returnToBooking &&
+          Navigator.canPop(context)) {
+        Navigator.of(context).pop(
+          true,
+        );
+
+        return;
+      }
+
+      Navigator.of(context)
+          .pushNamedAndRemoveUntil(
         RouteConfig.home,
-        (
-          Route<dynamic> route,
-        ) {
-          return false;
-        },
+        (route) => false,
       );
     } catch (error, stackTrace) {
       debugPrint(
@@ -324,15 +402,21 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       debugPrint(
-        'GOOGLE SIGN-IN STACK TRACE: $stackTrace',
+        'GOOGLE SIGN-IN STACK TRACE: '
+        '$stackTrace',
       );
 
       if (!mounted) {
         return;
       }
 
+      final message =
+          _cleanError(error);
+
       _showMessage(
-        _cleanError(error),
+        message.isEmpty
+            ? 'Unable to sign in with Google.'
+            : message,
         isError: true,
       );
     } finally {
@@ -344,20 +428,17 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  // =====================================================
-  // SIGN-UP NAVIGATION
-  // =====================================================
-
   Future<void> _openSignup() async {
     if (isLoading) {
       return;
     }
 
-    final dynamic result =
-        await Navigator.of(context).pushNamed(
+    final result =
+        await Navigator.of(context)
+            .pushNamed(
       RouteConfig.signup,
       arguments: <String, dynamic>{
-        if (_shouldReturnToBooking())
+        if (_returnToBooking)
           'returnToBooking': true,
       },
     );
@@ -366,71 +447,33 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
-    /*
-     * If sign-up returned success and saved a JWT,
-     * return to the booking form.
-     */
-    if (_shouldReturnToBooking() &&
+    if (_returnToBooking &&
         result == true) {
-      final String? token =
-          await AuthService.instance.getToken();
+      final token =
+          await AuthService.instance
+              .getToken();
 
       if (token != null &&
           token.trim().isNotEmpty) {
-        ApiService.instance.setAuthToken(token);
+        ApiService.instance.setAuthToken(
+          token,
+        );
 
         if (!mounted) {
           return;
         }
 
-        Navigator.of(context).pop(true);
+        Navigator.of(context).pop(
+          true,
+        );
       }
     }
   }
 
-  // =====================================================
-  // VALIDATORS
-  // =====================================================
-
-  String? _validateEmail(String? value) {
-    final String email =
-        value?.trim().toLowerCase() ?? '';
-
-    if (email.isEmpty) {
-      return 'Email is required';
-    }
-
-    final RegExp emailPattern = RegExp(
-      r'^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$',
-    );
-
-    if (!emailPattern.hasMatch(email)) {
-      return 'Enter a valid email address';
-    }
-
-    return null;
-  }
-
-  String? _validatePassword(String? value) {
-    final String password = value ?? '';
-
-    if (password.isEmpty) {
-      return 'Password is required';
-    }
-
-    if (password.length < 6) {
-      return 'Password must contain at least 6 characters';
-    }
-
-    return null;
-  }
-
-  // =====================================================
-  // BUILD
-  // =====================================================
-
   @override
-  Widget build(BuildContext context) {
+  Widget build(
+    BuildContext context,
+  ) {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -438,31 +481,36 @@ class _LoginScreenState extends State<LoginScreen> {
           keyboardDismissBehavior:
               ScrollViewKeyboardDismissBehavior
                   .onDrag,
-          padding: const EdgeInsets.symmetric(
+          padding:
+              const EdgeInsets.symmetric(
             horizontal: 24,
           ),
           child: Form(
             key: _formKey,
-            autovalidateMode:
-                AutovalidateMode.onUserInteraction,
+            autovalidateMode: _submitted
+                ? AutovalidateMode
+                    .onUserInteraction
+                : AutovalidateMode
+                    .disabled,
             child: Column(
               children: <Widget>[
-                const SizedBox(height: 36),
+                const SizedBox(
+                  height: 36,
+                ),
 
-                /*
-                 * Show Back when Sign In was opened
-                 * from the booking flow.
-                 */
-                if (_shouldReturnToBooking())
+                if (_returnToBooking)
                   Align(
-                    alignment: Alignment.centerLeft,
+                    alignment:
+                        Alignment.centerLeft,
                     child: IconButton(
-                      tooltip: 'Back to booking',
+                      tooltip:
+                          'Back to booking',
                       onPressed: isLoading
                           ? null
                           : () {
-                              Navigator.of(context)
-                                  .pop(false);
+                              Navigator.of(
+                                context,
+                              ).pop(false);
                             },
                       icon: const Icon(
                         Icons.arrow_back,
@@ -470,27 +518,34 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
 
-                const SizedBox(height: 14),
-
-                // =========================================
-                // LOGO
-                // =========================================
+                const SizedBox(
+                  height: 14,
+                ),
 
                 Container(
                   height: 100,
                   width: 100,
-                  decoration: BoxDecoration(
-                    color: ThemeConfig.primaryColor,
+                  decoration:
+                      BoxDecoration(
+                    color: ThemeConfig
+                        .primaryColor,
                     borderRadius:
-                        BorderRadius.circular(20),
+                        BorderRadius.circular(
+                      20,
+                    ),
                     boxShadow: <BoxShadow>[
                       BoxShadow(
-                        color: ThemeConfig.primaryColor
+                        color: ThemeConfig
+                            .primaryColor
                             .withValues(
                           alpha: 0.24,
                         ),
                         blurRadius: 18,
-                        offset: const Offset(0, 8),
+                        offset:
+                            const Offset(
+                          0,
+                          8,
+                        ),
                       ),
                     ],
                   ),
@@ -501,92 +556,114 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
 
-                const SizedBox(height: 20),
+                const SizedBox(
+                  height: 20,
+                ),
 
                 const Text(
                   'Welcome Back',
-                  textAlign: TextAlign.center,
+                  textAlign:
+                      TextAlign.center,
                   style: TextStyle(
                     fontSize: 30,
-                    fontWeight: FontWeight.bold,
+                    fontWeight:
+                        FontWeight.bold,
                   ),
                 ),
 
-                const SizedBox(height: 8),
+                const SizedBox(
+                  height: 8,
+                ),
 
                 Text(
-                  _shouldReturnToBooking()
+                  _returnToBooking
                       ? 'Sign in to continue with your booking'
                       : 'Sign in to continue using EventEase',
-                  textAlign: TextAlign.center,
+                  textAlign:
+                      TextAlign.center,
                   style: TextStyle(
-                    color: Colors.grey.shade600,
+                    color:
+                        Colors.grey.shade600,
                     fontSize: 15,
                   ),
                 ),
 
-                const SizedBox(height: 40),
-
-                // =========================================
-                // EMAIL
-                // =========================================
+                const SizedBox(
+                  height: 40,
+                ),
 
                 TextFormField(
-                  controller: emailController,
+                  controller:
+                      emailController,
                   enabled: !isLoading,
                   keyboardType:
                       TextInputType.emailAddress,
                   textInputAction:
                       TextInputAction.next,
-                  autofillHints: const <String>[
+                  autofillHints:
+                      const <String>[
                     AutofillHints.email,
                     AutofillHints.username,
                   ],
                   autocorrect: false,
                   enableSuggestions: false,
-                  decoration: const InputDecoration(
+                  onChanged:
+                      _onCredentialsChanged,
+                  decoration:
+                      const InputDecoration(
                     labelText: 'Email',
-                    hintText: 'Enter your email',
+                    hintText:
+                        'Enter your email',
                     prefixIcon: Icon(
                       Icons.email_outlined,
                     ),
-                    border: OutlineInputBorder(),
+                    border:
+                        OutlineInputBorder(),
                   ),
-                  validator: _validateEmail,
+                  validator:
+                      _validateEmail,
                 ),
 
-                const SizedBox(height: 16),
-
-                // =========================================
-                // PASSWORD
-                // =========================================
+                const SizedBox(
+                  height: 16,
+                ),
 
                 TextFormField(
-                  controller: passwordController,
+                  controller:
+                      passwordController,
                   enabled: !isLoading,
-                  obscureText: obscurePassword,
+                  obscureText:
+                      obscurePassword,
                   textInputAction:
                       TextInputAction.done,
-                  autofillHints: const <String>[
+                  autofillHints:
+                      const <String>[
                     AutofillHints.password,
                   ],
+                  onChanged:
+                      _onCredentialsChanged,
                   onFieldSubmitted: (_) {
                     if (!isLoading) {
                       _login();
                     }
                   },
-                  decoration: InputDecoration(
+                  decoration:
+                      InputDecoration(
                     labelText: 'Password',
-                    hintText: 'Enter your password',
-                    prefixIcon: const Icon(
+                    hintText:
+                        'Enter your password',
+                    prefixIcon:
+                        const Icon(
                       Icons.lock_outline,
                     ),
                     border:
                         const OutlineInputBorder(),
-                    suffixIcon: IconButton(
-                      tooltip: obscurePassword
-                          ? 'Show password'
-                          : 'Hide password',
+                    suffixIcon:
+                        IconButton(
+                      tooltip:
+                          obscurePassword
+                              ? 'Show password'
+                              : 'Hide password',
                       onPressed: isLoading
                           ? null
                           : () {
@@ -597,28 +674,31 @@ class _LoginScreenState extends State<LoginScreen> {
                             },
                       icon: Icon(
                         obscurePassword
-                            ? Icons.visibility_off
-                            : Icons.visibility,
+                            ? Icons
+                                .visibility_off
+                            : Icons
+                                .visibility,
                       ),
                     ),
                   ),
-                  validator: _validatePassword,
+                  validator:
+                      _validatePassword,
                 ),
 
-                const SizedBox(height: 10),
-
-                // =========================================
-                // FORGOT PASSWORD
-                // =========================================
+                const SizedBox(
+                  height: 10,
+                ),
 
                 Align(
-                  alignment: Alignment.centerRight,
+                  alignment:
+                      Alignment.centerRight,
                   child: TextButton(
                     onPressed: isLoading
                         ? null
                         : () {
-                            Navigator.of(context)
-                                .pushNamed(
+                            Navigator.of(
+                              context,
+                            ).pushNamed(
                               RouteConfig
                                   .forgotPassword,
                             );
@@ -629,18 +709,17 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
 
-                const SizedBox(height: 20),
-
-                // =========================================
-                // SIGN-IN BUTTON
-                // =========================================
+                const SizedBox(
+                  height: 20,
+                ),
 
                 SizedBox(
                   width: double.infinity,
                   height: 55,
                   child: ElevatedButton(
-                    onPressed:
-                        isLoading ? null : _login,
+                    onPressed: isLoading
+                        ? null
+                        : _login,
                     child: isLoading
                         ? const Row(
                             mainAxisAlignment:
@@ -652,11 +731,15 @@ class _LoginScreenState extends State<LoginScreen> {
                                 width: 22,
                                 child:
                                     CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
+                                  strokeWidth:
+                                      2,
+                                  color:
+                                      Colors.white,
                                 ),
                               ),
-                              SizedBox(width: 12),
+                              SizedBox(
+                                width: 12,
+                              ),
                               Text(
                                 'Signing In...',
                               ),
@@ -668,17 +751,16 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
 
-                const SizedBox(height: 20),
-
-                // =========================================
-                // DIVIDER
-                // =========================================
+                const SizedBox(
+                  height: 20,
+                ),
 
                 Row(
                   children: <Widget>[
                     Expanded(
                       child: Divider(
-                        color: Colors.grey.shade300,
+                        color: Colors
+                            .grey.shade300,
                       ),
                     ),
                     const Padding(
@@ -686,28 +768,31 @@ class _LoginScreenState extends State<LoginScreen> {
                           EdgeInsets.symmetric(
                         horizontal: 10,
                       ),
-                      child: Text('OR'),
+                      child: Text(
+                        'OR',
+                      ),
                     ),
                     Expanded(
                       child: Divider(
-                        color: Colors.grey.shade300,
+                        color: Colors
+                            .grey.shade300,
                       ),
                     ),
                   ],
                 ),
 
-                const SizedBox(height: 20),
-
-                // =========================================
-                // GOOGLE LOGIN
-                // =========================================
+                const SizedBox(
+                  height: 20,
+                ),
 
                 SizedBox(
                   width: double.infinity,
                   height: 55,
-                  child: OutlinedButton.icon(
-                    onPressed:
-                        isLoading ? null : _googleLogin,
+                  child:
+                      OutlinedButton.icon(
+                    onPressed: isLoading
+                        ? null
+                        : _googleLogin,
                     icon: const Icon(
                       Icons.g_mobiledata,
                       size: 28,
@@ -718,14 +803,13 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
 
-                const SizedBox(height: 30),
-
-                // =========================================
-                // SIGN-UP
-                // =========================================
+                const SizedBox(
+                  height: 30,
+                ),
 
                 Wrap(
-                  alignment: WrapAlignment.center,
+                  alignment:
+                      WrapAlignment.center,
                   crossAxisAlignment:
                       WrapCrossAlignment.center,
                   children: <Widget>[
@@ -733,8 +817,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       "Don't have an account?",
                     ),
                     TextButton(
-                      onPressed:
-                          isLoading ? null : _openSignup,
+                      onPressed: isLoading
+                          ? null
+                          : _openSignup,
                       child: const Text(
                         'Sign Up',
                       ),
@@ -742,7 +827,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   ],
                 ),
 
-                const SizedBox(height: 24),
+                const SizedBox(
+                  height: 24,
+                ),
               ],
             ),
           ),

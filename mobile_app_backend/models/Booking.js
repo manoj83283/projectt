@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 const { Schema } = mongoose;
 
 // =====================================================
-// BOOKING CONSTANTS
+// CONSTANTS
 // =====================================================
 
 export const BOOKING_STATUSES = Object.freeze({
@@ -27,16 +27,27 @@ export const PAYMENT_METHODS = Object.freeze({
   ONLINE: "ONLINE",
 });
 
+const TERMINAL_BOOKING_STATUSES = Object.freeze([
+  BOOKING_STATUSES.COMPLETED,
+  BOOKING_STATUSES.REJECTED,
+  BOOKING_STATUSES.CANCELLED,
+]);
+
 // =====================================================
-// STATUS HISTORY
+// STATUS HISTORY SCHEMA
 // =====================================================
 
 const statusHistorySchema = new Schema(
   {
     status: {
       type: String,
-      enum: Object.values(BOOKING_STATUSES),
-      required: true,
+      enum: Object.values(
+        BOOKING_STATUSES
+      ),
+      required: [
+        true,
+        "Booking history status is required",
+      ],
     },
 
     changedBy: {
@@ -49,6 +60,10 @@ const statusHistorySchema = new Schema(
       type: String,
       trim: true,
       default: "",
+      maxlength: [
+        1000,
+        "Status history note cannot exceed 1000 characters",
+      ],
     },
 
     changedAt: {
@@ -62,7 +77,7 @@ const statusHistorySchema = new Schema(
 );
 
 // =====================================================
-// GEOJSON LOCATION
+// GEOJSON LOCATION SCHEMA
 // =====================================================
 
 const locationPointSchema = new Schema(
@@ -86,8 +101,11 @@ const locationPointSchema = new Schema(
             return false;
           }
 
-          const longitude = Number(value[0]);
-          const latitude = Number(value[1]);
+          const longitude =
+            Number(value[0]);
+
+          const latitude =
+            Number(value[1]);
 
           return (
             Number.isFinite(longitude) &&
@@ -115,9 +133,9 @@ const locationPointSchema = new Schema(
 
 const bookingSchema = new Schema(
   {
-    // =================================================
+    // -------------------------------------------------
     // CUSTOMER
-    // =================================================
+    // -------------------------------------------------
 
     user: {
       type: Schema.Types.ObjectId,
@@ -126,18 +144,19 @@ const bookingSchema = new Schema(
         true,
         "Customer is required",
       ],
+      index: true,
     },
 
-    // Compatibility field for controllers using customer.
     customer: {
       type: Schema.Types.ObjectId,
       ref: "User",
       default: null,
+      index: true,
     },
 
-    // =================================================
+    // -------------------------------------------------
     // SERVICE AND PROVIDER
-    // =================================================
+    // -------------------------------------------------
 
     service: {
       type: Schema.Types.ObjectId,
@@ -146,9 +165,9 @@ const bookingSchema = new Schema(
         true,
         "Service is required",
       ],
+      index: true,
     },
 
-    // This must be copied from Service.provider.
     provider: {
       type: Schema.Types.ObjectId,
       ref: "User",
@@ -156,22 +175,25 @@ const bookingSchema = new Schema(
         true,
         "Service provider is required",
       ],
+      index: true,
     },
 
-    // =================================================
-    // BOOKING REFERENCE
-    // =================================================
+    // -------------------------------------------------
+    // BOOKING IDENTIFICATION
+    // -------------------------------------------------
 
     bookingNumber: {
       type: String,
       trim: true,
+      uppercase: true,
       unique: true,
       sparse: true,
+      index: true,
     },
 
-    // =================================================
+    // -------------------------------------------------
     // BOOKING SCHEDULE
-    // =================================================
+    // -------------------------------------------------
 
     bookingDate: {
       type: Date,
@@ -179,9 +201,9 @@ const bookingSchema = new Schema(
         true,
         "Booking date is required",
       ],
+      index: true,
     },
 
-    // Compatibility field for old code using date.
     date: {
       type: Date,
       default: null,
@@ -213,9 +235,54 @@ const bookingSchema = new Schema(
       ],
     },
 
-    // =================================================
-    // CUSTOMER DETAILS
-    // =================================================
+    // -------------------------------------------------
+    // CUSTOMER BOOKING DETAILS
+    // -------------------------------------------------
+
+    contactNumber: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+
+    alternateContactNumber: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+
+    guestCount: {
+      type: Number,
+      default: 0,
+      min: [
+        0,
+        "Guest count cannot be negative",
+      ],
+    },
+
+    locationType: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+
+    serviceLocationType: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+
+    landmark: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+
+    nearbyLocation: {
+      type: String,
+      trim: true,
+      default: "",
+    },
 
     notes: {
       type: String,
@@ -237,9 +304,9 @@ const bookingSchema = new Schema(
       ],
     },
 
-    // =================================================
+    // -------------------------------------------------
     // ADDRESS AND LOCATION
-    // =================================================
+    // -------------------------------------------------
 
     address: {
       type: String,
@@ -262,15 +329,16 @@ const bookingSchema = new Schema(
 
     locationPoint: {
       type: locationPointSchema,
+
       default: () => ({
         type: "Point",
         coordinates: [0, 0],
       }),
     },
 
-    // =================================================
+    // -------------------------------------------------
     // PRICING
-    // =================================================
+    // -------------------------------------------------
 
     pricePerHour: {
       type: Number,
@@ -339,7 +407,6 @@ const bookingSchema = new Schema(
       ],
     },
 
-    // Compatibility field for Flutter totalAmount.
     totalAmount: {
       type: Number,
       default: 0,
@@ -363,22 +430,29 @@ const bookingSchema = new Schema(
       default: "",
     },
 
-    // =================================================
+    // -------------------------------------------------
     // PAYMENT
-    // =================================================
+    // -------------------------------------------------
 
     paymentMethod: {
       type: String,
-      enum: Object.values(PAYMENT_METHODS),
-      default: PAYMENT_METHODS.COD,
+      enum: Object.values(
+        PAYMENT_METHODS
+      ),
+      default:
+        PAYMENT_METHODS.COD,
       uppercase: true,
     },
 
     paymentStatus: {
       type: String,
-      enum: Object.values(PAYMENT_STATUSES),
-      default: PAYMENT_STATUSES.PENDING,
+      enum: Object.values(
+        PAYMENT_STATUSES
+      ),
+      default:
+        PAYMENT_STATUSES.PENDING,
       lowercase: true,
+      index: true,
     },
 
     paymentId: {
@@ -398,15 +472,19 @@ const bookingSchema = new Schema(
       default: null,
     },
 
-    // =================================================
+    // -------------------------------------------------
     // BOOKING STATUS
-    // =================================================
+    // -------------------------------------------------
 
     status: {
       type: String,
-      enum: Object.values(BOOKING_STATUSES),
-      default: BOOKING_STATUSES.PENDING,
+      enum: Object.values(
+        BOOKING_STATUSES
+      ),
+      default:
+        BOOKING_STATUSES.PENDING,
       lowercase: true,
+      index: true,
     },
 
     statusHistory: {
@@ -418,17 +496,25 @@ const bookingSchema = new Schema(
       type: String,
       trim: true,
       default: "",
+      maxlength: [
+        1000,
+        "Rejection reason cannot exceed 1000 characters",
+      ],
     },
 
     cancellationReason: {
       type: String,
       trim: true,
       default: "",
+      maxlength: [
+        1000,
+        "Cancellation reason cannot exceed 1000 characters",
+      ],
     },
 
-    // =================================================
-    // TIMELINE
-    // =================================================
+    // -------------------------------------------------
+    // STATUS TIMELINE
+    // -------------------------------------------------
 
     acceptedAt: {
       type: Date,
@@ -455,9 +541,9 @@ const bookingSchema = new Schema(
       default: null,
     },
 
-    // =================================================
+    // -------------------------------------------------
     // RATING AND REVIEW
-    // =================================================
+    // -------------------------------------------------
 
     rating: {
       type: Number,
@@ -487,15 +573,15 @@ const bookingSchema = new Schema(
       default: null,
     },
 
-    // =================================================
+    // -------------------------------------------------
     // CHAT
-    // =================================================
+    // -------------------------------------------------
 
-    // The booking ID is used as the shared chat room ID.
     chatRoomId: {
       type: String,
       trim: true,
       default: "",
+      index: true,
     },
 
     chatEnabled: {
@@ -503,9 +589,9 @@ const bookingSchema = new Schema(
       default: true,
     },
 
-    // =================================================
+    // -------------------------------------------------
     // SOFT DELETE
-    // =================================================
+    // -------------------------------------------------
 
     isCustomerDeleted: {
       type: Boolean,
@@ -520,10 +606,13 @@ const bookingSchema = new Schema(
     deletedAt: {
       type: Date,
       default: null,
+      index: true,
     },
   },
   {
     timestamps: true,
+
+    optimisticConcurrency: true,
 
     toJSON: {
       virtuals: true,
@@ -543,7 +632,9 @@ bookingSchema
   .virtual("customerId")
   .get(function getCustomerId() {
     return (
+      this.customer?._id?.toString() ||
       this.customer?.toString() ||
+      this.user?._id?.toString() ||
       this.user?.toString() ||
       ""
     );
@@ -552,22 +643,50 @@ bookingSchema
 bookingSchema
   .virtual("providerId")
   .get(function getProviderId() {
-    return this.provider?.toString() || "";
+    return (
+      this.provider?._id?.toString() ||
+      this.provider?.toString() ||
+      ""
+    );
   });
 
 bookingSchema
   .virtual("serviceId")
   .get(function getServiceId() {
-    return this.service?.toString() || "";
+    return (
+      this.service?._id?.toString() ||
+      this.service?.toString() ||
+      ""
+    );
   });
 
 bookingSchema
   .virtual("amount")
   .get(function getAmount() {
     return (
-      Number(this.totalAmount || 0) ||
-      Number(this.totalPrice || 0)
+      Number(
+        this.totalAmount || 0
+      ) ||
+      Number(
+        this.totalPrice || 0
+      )
     );
+  });
+
+bookingSchema
+  .virtual("bookingStatus")
+  .get(function getBookingStatus() {
+    return (
+      this.status ||
+      BOOKING_STATUSES.PENDING
+    );
+  });
+
+bookingSchema
+  .virtual("isTerminal")
+  .get(function getIsTerminal() {
+    return TERMINAL_BOOKING_STATUSES
+      .includes(this.status);
   });
 
 bookingSchema
@@ -616,106 +735,221 @@ bookingSchema
   });
 
 // =====================================================
-// NORMALIZATION
+// DOCUMENT METHODS
+// =====================================================
+
+bookingSchema.methods.addStatusHistory =
+  function addStatusHistory({
+    status,
+    changedBy = null,
+    note = "",
+    changedAt = new Date(),
+  }) {
+    if (
+      !Array.isArray(
+        this.statusHistory
+      )
+    ) {
+      this.statusHistory = [];
+    }
+
+    const normalizedStatus =
+      status
+        ?.toString()
+        .trim()
+        .toLowerCase()
+        .replaceAll("-", "_")
+        .replaceAll(" ", "_");
+
+    if (
+      !Object.values(
+        BOOKING_STATUSES
+      ).includes(normalizedStatus)
+    ) {
+      throw new Error(
+        `Invalid booking status: ${normalizedStatus}`
+      );
+    }
+
+    this.statusHistory.push({
+      status:
+        normalizedStatus,
+
+      changedBy:
+        changedBy || null,
+
+      note:
+        note?.toString().trim() ||
+        "",
+
+      changedAt,
+    });
+
+    return this;
+  };
+
+bookingSchema.methods.isOwnedByCustomer =
+  function isOwnedByCustomer(
+    customerId
+  ) {
+    if (!customerId) {
+      return false;
+    }
+
+    const normalizedCustomerId =
+      customerId.toString();
+
+    return (
+      this.customer?.toString() ===
+        normalizedCustomerId ||
+      this.user?.toString() ===
+        normalizedCustomerId
+    );
+  };
+
+bookingSchema.methods.isAssignedToProvider =
+  function isAssignedToProvider(
+    providerId
+  ) {
+    if (!providerId) {
+      return false;
+    }
+
+    return (
+      this.provider?.toString() ===
+      providerId.toString()
+    );
+  };
+
+// =====================================================
+// NORMALIZATION BEFORE VALIDATION
 // =====================================================
 
 bookingSchema.pre(
   "validate",
   function normalizeBooking(next) {
     try {
-      // Keep customer and user synchronized.
-      if (!this.customer && this.user) {
-        this.customer = this.user;
+      if (
+        !this.customer &&
+        this.user
+      ) {
+        this.customer =
+          this.user;
       }
 
-      if (!this.user && this.customer) {
-        this.user = this.customer;
+      if (
+        !this.user &&
+        this.customer
+      ) {
+        this.user =
+          this.customer;
       }
 
-      // Keep bookingDate and date synchronized.
       if (
         !this.bookingDate &&
         this.date
       ) {
-        this.bookingDate = this.date;
+        this.bookingDate =
+          this.date;
       }
 
       if (
         !this.date &&
         this.bookingDate
       ) {
-        this.date = this.bookingDate;
+        this.date =
+          this.bookingDate;
       }
 
-      // Normalize text.
-      this.bookingTime =
-        typeof this.bookingTime === "string"
-          ? this.bookingTime.trim()
-          : "";
+      const stringFields = [
+        "bookingTime",
+        "duration",
+        "address",
+        "location",
+        "contactNumber",
+        "alternateContactNumber",
+        "locationType",
+        "serviceLocationType",
+        "landmark",
+        "nearbyLocation",
+        "notes",
+        "specialInstructions",
+        "couponCode",
+        "rejectionReason",
+        "cancellationReason",
+      ];
 
-      this.duration =
-        typeof this.duration === "string"
-          ? this.duration.trim()
-          : "";
+      for (const field of stringFields) {
+        this[field] =
+          typeof this[field] ===
+          "string"
+            ? this[field].trim()
+            : "";
+      }
 
-      this.address =
-        typeof this.address === "string"
-          ? this.address.trim()
-          : "";
+      this.hoursBooked =
+        Math.max(
+          1,
+          Number(
+            this.hoursBooked || 1
+          )
+        );
 
-      this.location =
-        typeof this.location === "string"
-          ? this.location.trim()
-          : "";
+      this.guestCount =
+        Math.max(
+          0,
+          Number(
+            this.guestCount || 0
+          )
+        );
 
-      this.notes =
-        typeof this.notes === "string"
-          ? this.notes.trim()
-          : "";
+      this.pricePerHour =
+        Math.max(
+          0,
+          Number(
+            this.pricePerHour || 0
+          )
+        );
 
-      this.specialInstructions =
-        typeof this.specialInstructions ===
-        "string"
-          ? this.specialInstructions.trim()
-          : "";
+      this.basePrice =
+        Math.max(
+          0,
+          Number(
+            this.basePrice || 0
+          )
+        );
 
-      // Normalize numeric values.
-      this.hoursBooked = Math.max(
-        1,
-        Number(this.hoursBooked || 1)
-      );
+      this.platformFee =
+        Math.max(
+          0,
+          Number(
+            this.platformFee || 0
+          )
+        );
 
-      this.pricePerHour = Math.max(
-        0,
-        Number(this.pricePerHour || 0)
-      );
+      this.taxAmount =
+        Math.max(
+          0,
+          Number(
+            this.taxAmount || 0
+          )
+        );
 
-      this.basePrice = Math.max(
-        0,
-        Number(this.basePrice || 0)
-      );
+      this.discountAmount =
+        Math.max(
+          0,
+          Number(
+            this.discountAmount || 0
+          )
+        );
 
-      this.platformFee = Math.max(
-        0,
-        Number(this.platformFee || 0)
-      );
-
-      this.taxAmount = Math.max(
-        0,
-        Number(this.taxAmount || 0)
-      );
-
-      this.discountAmount = Math.max(
-        0,
-        Number(this.discountAmount || 0)
-      );
-
-      // Calculate subtotal if missing.
       if (
         !this.subtotal ||
         Number(this.subtotal) <= 0
       ) {
-        if (this.pricePerHour > 0) {
+        if (
+          this.pricePerHour > 0
+        ) {
           this.subtotal =
             this.pricePerHour *
             this.hoursBooked;
@@ -728,51 +962,98 @@ bookingSchema.pre(
         }
       }
 
-      this.subtotal = Math.max(
-        0,
-        Number(this.subtotal || 0)
-      );
+      this.subtotal =
+        Math.max(
+          0,
+          Number(
+            this.subtotal || 0
+          )
+        );
 
-      const calculatedTotal = Math.max(
-        0,
-        this.subtotal +
-          this.platformFee +
-          this.taxAmount -
-          this.discountAmount
-      );
+      const calculatedTotal =
+        Math.max(
+          0,
+          this.subtotal +
+            this.platformFee +
+            this.taxAmount -
+            this.discountAmount
+        );
 
-      // Synchronize totalPrice and totalAmount.
       if (
         !this.totalPrice ||
         Number(this.totalPrice) <= 0
       ) {
-        this.totalPrice = Number(
-          this.totalAmount ||
+        this.totalPrice =
+          Number(
+            this.totalAmount ||
             calculatedTotal
-        );
+          );
       }
 
       if (
         !this.totalAmount ||
         Number(this.totalAmount) <= 0
       ) {
-        this.totalAmount = Number(
-          this.totalPrice ||
+        this.totalAmount =
+          Number(
+            this.totalPrice ||
             calculatedTotal
-        );
+          );
       }
 
-      this.totalPrice = Math.max(
-        0,
-        Number(this.totalPrice || 0)
-      );
+      this.totalPrice =
+        Math.max(
+          0,
+          Number(
+            this.totalPrice || 0
+          )
+        );
 
-      this.totalAmount = Math.max(
-        0,
-        Number(this.totalAmount || 0)
-      );
+      this.totalAmount =
+        Math.max(
+          0,
+          Number(
+            this.totalAmount || 0
+          )
+        );
 
-      // Use booking ID as the shared chat room ID.
+      this.status =
+        this.status
+          ?.toString()
+          .trim()
+          .toLowerCase()
+          .replaceAll("-", "_")
+          .replaceAll(" ", "_") ||
+        BOOKING_STATUSES.PENDING;
+
+      this.paymentMethod =
+        this.paymentMethod
+          ?.toString()
+          .trim()
+          .toUpperCase() ||
+        PAYMENT_METHODS.COD;
+
+      this.paymentStatus =
+        this.paymentStatus
+          ?.toString()
+          .trim()
+          .toLowerCase() ||
+        PAYMENT_STATUSES.PENDING;
+
+      this.currency =
+        this.currency
+          ?.toString()
+          .trim()
+          .toUpperCase() ||
+        "INR";
+
+      this.couponCode =
+        this.couponCode
+          ?.toString()
+          .trim()
+          .toUpperCase() ||
+        "";
+
       if (
         !this.chatRoomId &&
         this._id
@@ -781,48 +1062,51 @@ bookingSchema.pre(
           this._id.toString();
       }
 
-      // Generate readable booking number.
       if (
         !this.bookingNumber &&
         this._id
       ) {
-        const suffix = this._id
-          .toString()
-          .slice(-8)
-          .toUpperCase();
+        const suffix =
+          this._id
+            .toString()
+            .slice(-8)
+            .toUpperCase();
 
         this.bookingNumber =
           `EB-${suffix}`;
       }
 
-      // Add initial booking history.
       if (
         !Array.isArray(
           this.statusHistory
-        ) ||
-        this.statusHistory.length === 0
+        )
       ) {
-        this.statusHistory = [
-          {
-            status:
-              this.status ||
-              BOOKING_STATUSES.PENDING,
-
-            changedBy:
-              this.user || null,
-
-            note:
-              "Booking created",
-
-            changedAt:
-              new Date(),
-          },
-        ];
+        this.statusHistory = [];
       }
 
-      next();
+      if (
+        this.isNew &&
+        this.statusHistory.length === 0
+      ) {
+        this.statusHistory.push({
+          status:
+            this.status ||
+            BOOKING_STATUSES.PENDING,
+
+          changedBy:
+            this.user || null,
+
+          note:
+            "Booking created",
+
+          changedAt:
+            new Date(),
+        });
+      }
+
+      return next();
     } catch (error) {
-      next(error);
+      return next(error);
     }
   }
 );
@@ -833,18 +1117,27 @@ bookingSchema.pre(
 
 bookingSchema.pre(
   "save",
-  function synchronizeStatusTimestamp(next) {
+  function synchronizeStatusTimestamp(
+    next
+  ) {
     try {
-      if (!this.isModified("status")) {
+      if (
+        !this.isModified("status")
+      ) {
         return next();
       }
 
       const now = new Date();
 
       switch (this.status) {
+        case BOOKING_STATUSES.PENDING:
+          break;
+
         case BOOKING_STATUSES.ACCEPTED:
           this.acceptedAt =
             this.acceptedAt || now;
+
+          this.rejectionReason = "";
           break;
 
         case BOOKING_STATUSES.REJECTED:
@@ -860,6 +1153,19 @@ bookingSchema.pre(
         case BOOKING_STATUSES.COMPLETED:
           this.completedAt =
             this.completedAt || now;
+
+          if (
+            this.paymentMethod ===
+              PAYMENT_METHODS.COD &&
+            this.paymentStatus ===
+              PAYMENT_STATUSES.PENDING
+          ) {
+            this.paymentStatus =
+              PAYMENT_STATUSES.PAID;
+
+            this.paidAt =
+              this.paidAt || now;
+          }
           break;
 
         case BOOKING_STATUSES.CANCELLED:
@@ -871,20 +1177,22 @@ bookingSchema.pre(
           break;
       }
 
-      next();
+      return next();
     } catch (error) {
-      next(error);
+      return next(error);
     }
   }
 );
 
 // =====================================================
-// QUERY MIDDLEWARE
+// SOFT-DELETE QUERY MIDDLEWARE
 // =====================================================
 
 bookingSchema.pre(
   /^find/,
-  function excludeDeletedBookings(next) {
+  function excludeDeletedBookings(
+    next
+  ) {
     const options =
       this.getOptions?.() || {};
 
@@ -893,14 +1201,15 @@ bookingSchema.pre(
 
     if (
       !options.includeDeleted &&
-      currentQuery.deletedAt === undefined
+      currentQuery.deletedAt ===
+        undefined
     ) {
       this.where({
         deletedAt: null,
       });
     }
 
-    next();
+    return next();
   }
 );
 
@@ -927,6 +1236,12 @@ bookingSchema.index({
   provider: 1,
   status: 1,
   bookingDate: 1,
+});
+
+bookingSchema.index({
+  provider: 1,
+  status: 1,
+  createdAt: -1,
 });
 
 bookingSchema.index({
@@ -963,7 +1278,9 @@ bookingSchema.index({
 });
 
 bookingSchema.index({
-  chatRoomId: 1,
+  provider: 1,
+  bookingDate: 1,
+  bookingTime: 1,
 });
 
 bookingSchema.index({

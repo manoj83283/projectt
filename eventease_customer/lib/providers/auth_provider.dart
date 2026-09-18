@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 
 import '../models/user_model.dart';
 import '../repositories/auth_repository.dart';
@@ -20,10 +20,6 @@ class AuthProvider extends ChangeNotifier {
 
   String? _error;
 
-  // =====================================================
-  // GETTERS
-  // =====================================================
-
   UserModel? get user => _user;
 
   bool get isLoading => _isLoading;
@@ -44,11 +40,7 @@ class AuthProvider extends ChangeNotifier {
         ApiService.instance.hasAuthToken;
   }
 
-  // =====================================================
-  // INTERNAL HELPERS
-  // =====================================================
-
-  void _notifySafely() {
+  void _notify() {
     notifyListeners();
   }
 
@@ -63,18 +55,18 @@ class AuthProvider extends ChangeNotifier {
     _isLoading = value;
 
     if (notify) {
-      _notifySafely();
+      _notify();
     }
   }
 
   void _setError(
-    String? value, {
+    Object? value, {
     bool notify = true,
   }) {
     _error = _cleanError(value);
 
     if (notify) {
-      _notifySafely();
+      _notify();
     }
   }
 
@@ -84,28 +76,34 @@ class AuthProvider extends ChangeNotifier {
     _error = null;
 
     if (notify) {
-      _notifySafely();
+      _notify();
     }
   }
 
   String? _cleanError(
-    String? value,
+    Object? value,
   ) {
     if (value == null) {
       return null;
     }
 
-    String message = value.trim();
+    var message = value.toString().trim();
 
-    if (message.startsWith('Exception: ')) {
-      message = message.substring(
-        'Exception: '.length,
-      );
+    const prefixes = <String>[
+      'Exception: ',
+      'FormatException: ',
+      'Invalid argument(s): ',
+    ];
+
+    for (final prefix in prefixes) {
+      if (message.startsWith(prefix)) {
+        message = message
+            .substring(prefix.length)
+            .trim();
+      }
     }
 
-    return message.trim().isEmpty
-        ? null
-        : message.trim();
+    return message.isEmpty ? null : message;
   }
 
   void _setAuthenticatedUser(
@@ -114,33 +112,22 @@ class AuthProvider extends ChangeNotifier {
   }) {
     _user = user;
     _isLoggedIn = true;
+    _isInitialized = true;
     _error = null;
 
     if (notify) {
-      _notifySafely();
+      _notify();
     }
   }
 
   void _setAuthenticatedWithoutUser({
     bool notify = true,
   }) {
-    /*
-     * A valid JWT is enough to keep the customer signed in.
-     *
-     * The profile may be temporarily unavailable due to:
-     *
-     * 1. Backend startup delay
-     * 2. Temporary network problem
-     * 3. Incorrect profile route
-     * 4. Server error
-     *
-     * None of those conditions should destroy the customer
-     * session or redirect the customer to Sign In.
-     */
     _isLoggedIn = true;
+    _isInitialized = true;
 
     if (notify) {
-      _notifySafely();
+      _notify();
     }
   }
 
@@ -153,15 +140,37 @@ class AuthProvider extends ChangeNotifier {
     }
 
     _isLoggedIn = false;
+    _isInitialized = true;
 
     if (notify) {
-      _notifySafely();
+      _notify();
     }
   }
 
-  // =====================================================
-  // LOGIN
-  // =====================================================
+  Future<String?> _restoreToken() async {
+    String? token =
+        await AuthService.instance.getToken();
+
+    if (token == null ||
+        token.trim().isEmpty) {
+      await AuthService.instance
+          .restoreSession();
+
+      token =
+          await AuthService.instance.getToken();
+    }
+
+    if (token == null ||
+        token.trim().isEmpty) {
+      return null;
+    }
+
+    ApiService.instance.setAuthToken(
+      token,
+    );
+
+    return token;
+  }
 
   Future<bool> login({
     required String email,
@@ -171,42 +180,47 @@ class AuthProvider extends ChangeNotifier {
       return false;
     }
 
+    final normalizedEmail =
+        email.trim().toLowerCase();
+
+    if (normalizedEmail.isEmpty) {
+      _setError(
+        'Email is required.',
+      );
+
+      return false;
+    }
+
+    if (password.trim().isEmpty) {
+      _setError(
+        'Password is required.',
+      );
+
+      return false;
+    }
+
     try {
       _setLoading(true);
       _clearError();
 
-      final String normalizedEmail =
-          email.trim().toLowerCase();
+      debugPrint(
+        'STARTING CUSTOMER LOGIN',
+      );
 
-      if (normalizedEmail.isEmpty) {
-        throw ArgumentError(
-          'Email is required.',
-        );
-      }
-
-      if (password.trim().isEmpty) {
-        throw ArgumentError(
-          'Password is required.',
-        );
-      }
-
-      final UserModel user =
+      final user =
           await _repository.login(
         email: normalizedEmail,
         password: password,
       );
 
-      /*
-       * Confirm that login actually persisted a token.
-       */
-      final String? token =
-          await AuthService.instance.getToken();
+      final token =
+          await AuthService.instance
+              .getToken();
 
       if (token == null ||
           token.trim().isEmpty) {
         throw Exception(
-          'Customer sign-in completed, but the authentication '
-          'token was not saved. Please try again.',
+          'Customer login succeeded, but the authentication token was not saved.',
         );
       }
 
@@ -216,8 +230,7 @@ class AuthProvider extends ChangeNotifier {
 
       if (!ApiService.instance.hasAuthToken) {
         throw Exception(
-          'Customer sign-in completed, but authentication '
-          'could not be attached to API requests.',
+          'Customer authentication could not be attached to API requests.',
         );
       }
 
@@ -225,8 +238,6 @@ class AuthProvider extends ChangeNotifier {
         user,
         notify: false,
       );
-
-      _isInitialized = true;
 
       debugPrint(
         'CUSTOMER LOGIN SUCCESS',
@@ -241,11 +252,11 @@ class AuthProvider extends ChangeNotifier {
       );
 
       debugPrint(
-        'CUSTOMER API AUTH HEADER AVAILABLE: '
+        'CUSTOMER AUTH HEADER AVAILABLE: '
         '${ApiService.instance.hasAuthToken}',
       );
 
-      _notifySafely();
+      _notify();
 
       return true;
     } catch (error) {
@@ -253,17 +264,14 @@ class AuthProvider extends ChangeNotifier {
         'CUSTOMER LOGIN ERROR: $error',
       );
 
-      /*
-       * Do not delete an existing valid session when a new
-       * login attempt fails because of a network error.
-       */
-      final String? existingToken =
-          await AuthService.instance.getToken();
+      final savedToken =
+          await AuthService.instance
+              .getToken();
 
-      if (existingToken != null &&
-          existingToken.trim().isNotEmpty) {
+      if (savedToken != null &&
+          savedToken.trim().isNotEmpty) {
         ApiService.instance.setAuthToken(
-          existingToken,
+          savedToken,
         );
 
         _isLoggedIn = true;
@@ -274,22 +282,18 @@ class AuthProvider extends ChangeNotifier {
       }
 
       _setError(
-        error.toString(),
+        error,
         notify: false,
       );
 
       _isInitialized = true;
-      _notifySafely();
+      _notify();
 
       return false;
     } finally {
       _setLoading(false);
     }
   }
-
-  // =====================================================
-  // REGISTER
-  // =====================================================
 
   Future<bool> register({
     required String fullName,
@@ -301,44 +305,52 @@ class AuthProvider extends ChangeNotifier {
       return false;
     }
 
+    final normalizedName =
+        fullName.trim();
+
+    final normalizedEmail =
+        email.trim().toLowerCase();
+
+    final normalizedMobile =
+        mobile.trim();
+
+    if (normalizedName.isEmpty) {
+      _setError(
+        'Customer name is required.',
+      );
+
+      return false;
+    }
+
+    if (normalizedEmail.isEmpty) {
+      _setError(
+        'Email is required.',
+      );
+
+      return false;
+    }
+
+    if (normalizedMobile.isEmpty) {
+      _setError(
+        'Mobile number is required.',
+      );
+
+      return false;
+    }
+
+    if (password.trim().isEmpty) {
+      _setError(
+        'Password is required.',
+      );
+
+      return false;
+    }
+
     try {
       _setLoading(true);
       _clearError();
 
-      final String normalizedName =
-          fullName.trim();
-
-      final String normalizedEmail =
-          email.trim().toLowerCase();
-
-      final String normalizedMobile =
-          mobile.trim();
-
-      if (normalizedName.isEmpty) {
-        throw ArgumentError(
-          'Customer name is required.',
-        );
-      }
-
-      if (normalizedEmail.isEmpty) {
-        throw ArgumentError(
-          'Email is required.',
-        );
-      }
-
-      if (normalizedMobile.isEmpty) {
-        throw ArgumentError(
-          'Mobile number is required.',
-        );
-      }
-
-      if (password.trim().isEmpty) {
-        throw ArgumentError(
-          'Password is required.',
-        );
-      }
-
-      final UserModel user =
+      final user =
           await _repository.register(
         fullName: normalizedName,
         email: normalizedEmail,
@@ -346,14 +358,14 @@ class AuthProvider extends ChangeNotifier {
         password: password,
       );
 
-      final String? token =
-          await AuthService.instance.getToken();
+      final token =
+          await AuthService.instance
+              .getToken();
 
       if (token == null ||
           token.trim().isEmpty) {
         throw Exception(
-          'Customer registration completed, but the '
-          'authentication token was not saved.',
+          'Registration succeeded, but the Customer authentication token was not saved.',
         );
       }
 
@@ -361,42 +373,47 @@ class AuthProvider extends ChangeNotifier {
         token,
       );
 
+      if (!ApiService.instance.hasAuthToken) {
+        throw Exception(
+          'The Customer authentication header could not be attached.',
+        );
+      }
+
       _setAuthenticatedUser(
         user,
         notify: false,
       );
-
-      _isInitialized = true;
 
       debugPrint(
         'CUSTOMER REGISTRATION SUCCESS',
       );
 
       debugPrint(
-        'CUSTOMER API AUTH HEADER AVAILABLE: '
+        'CUSTOMER AUTH HEADER AVAILABLE: '
         '${ApiService.instance.hasAuthToken}',
       );
 
-      _notifySafely();
+      _notify();
 
       return true;
     } catch (error) {
       debugPrint(
-        'CUSTOMER REGISTER ERROR: $error',
+        'CUSTOMER REGISTRATION ERROR: $error',
       );
 
       _setError(
-        error.toString(),
+        error,
         notify: false,
       );
 
-      final String? existingToken =
-          await AuthService.instance.getToken();
+      final savedToken =
+          await AuthService.instance
+              .getToken();
 
-      if (existingToken != null &&
-          existingToken.trim().isNotEmpty) {
+      if (savedToken != null &&
+          savedToken.trim().isNotEmpty) {
         ApiService.instance.setAuthToken(
-          existingToken,
+          savedToken,
         );
 
         _isLoggedIn = true;
@@ -407,7 +424,7 @@ class AuthProvider extends ChangeNotifier {
       }
 
       _isInitialized = true;
-      _notifySafely();
+      _notify();
 
       return false;
     } finally {
@@ -415,11 +432,12 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  // =====================================================
-  // GOOGLE LOGIN
-  // =====================================================
-
-  Future<bool> googleLogin() async {
+  Future<bool> googleLogin({
+    String? idToken,
+    String? accessToken,
+    String? email,
+    String? name,
+  }) async {
     if (_isLoading) {
       return false;
     }
@@ -428,17 +446,22 @@ class AuthProvider extends ChangeNotifier {
       _setLoading(true);
       _clearError();
 
-      final UserModel user =
-          await _repository.googleLogin();
+      final user =
+          await _repository.googleLogin(
+        idToken: idToken,
+        accessToken: accessToken,
+        email: email,
+        name: name,
+      );
 
-      final String? token =
-          await AuthService.instance.getToken();
+      final token =
+          await AuthService.instance
+              .getToken();
 
       if (token == null ||
           token.trim().isEmpty) {
         throw Exception(
-          'Google login completed, but the authentication '
-          'token was not saved.',
+          'Google login succeeded, but the Customer authentication token was not saved.',
         );
       }
 
@@ -451,18 +474,16 @@ class AuthProvider extends ChangeNotifier {
         notify: false,
       );
 
-      _isInitialized = true;
-
       debugPrint(
         'GOOGLE LOGIN SUCCESS',
       );
 
       debugPrint(
-        'GOOGLE LOGIN AUTH HEADER AVAILABLE: '
+        'GOOGLE AUTH HEADER AVAILABLE: '
         '${ApiService.instance.hasAuthToken}',
       );
 
-      _notifySafely();
+      _notify();
 
       return true;
     } catch (error) {
@@ -471,17 +492,18 @@ class AuthProvider extends ChangeNotifier {
       );
 
       _setError(
-        error.toString(),
+        error,
         notify: false,
       );
 
-      final String? existingToken =
-          await AuthService.instance.getToken();
+      final savedToken =
+          await AuthService.instance
+              .getToken();
 
-      if (existingToken != null &&
-          existingToken.trim().isNotEmpty) {
+      if (savedToken != null &&
+          savedToken.trim().isNotEmpty) {
         ApiService.instance.setAuthToken(
-          existingToken,
+          savedToken,
         );
 
         _isLoggedIn = true;
@@ -492,17 +514,13 @@ class AuthProvider extends ChangeNotifier {
       }
 
       _isInitialized = true;
-      _notifySafely();
+      _notify();
 
       return false;
     } finally {
       _setLoading(false);
     }
   }
-
-  // =====================================================
-  // OTP
-  // =====================================================
 
   Future<bool> sendOtp(
     String mobile,
@@ -511,18 +529,20 @@ class AuthProvider extends ChangeNotifier {
       return false;
     }
 
+    final normalizedMobile =
+        mobile.trim();
+
+    if (normalizedMobile.isEmpty) {
+      _setError(
+        'Mobile number is required.',
+      );
+
+      return false;
+    }
+
     try {
       _setLoading(true);
       _clearError();
-
-      final String normalizedMobile =
-          mobile.trim();
-
-      if (normalizedMobile.isEmpty) {
-        throw ArgumentError(
-          'Mobile number is required.',
-        );
-      }
 
       return await _repository.sendOtp(
         normalizedMobile,
@@ -533,7 +553,7 @@ class AuthProvider extends ChangeNotifier {
       );
 
       _setError(
-        error.toString(),
+        error,
         notify: false,
       );
 
@@ -551,24 +571,46 @@ class AuthProvider extends ChangeNotifier {
       return false;
     }
 
+    final normalizedMobile =
+        mobile.trim();
+
+    final normalizedOtp =
+        otp.trim();
+
+    if (normalizedMobile.isEmpty) {
+      _setError(
+        'Mobile number is required.',
+      );
+
+      return false;
+    }
+
+    if (normalizedOtp.isEmpty) {
+      _setError(
+        'OTP is required.',
+      );
+
+      return false;
+    }
+
     try {
       _setLoading(true);
       _clearError();
 
-      final UserModel user =
+      final user =
           await _repository.verifyOtp(
-        mobile: mobile.trim(),
-        otp: otp.trim(),
+        mobile: normalizedMobile,
+        otp: normalizedOtp,
       );
 
-      final String? token =
-          await AuthService.instance.getToken();
+      final token =
+          await AuthService.instance
+              .getToken();
 
       if (token == null ||
           token.trim().isEmpty) {
         throw Exception(
-          'OTP verification completed, but the customer '
-          'authentication token was not saved.',
+          'OTP verification succeeded, but the authentication token was not saved.',
         );
       }
 
@@ -581,8 +623,7 @@ class AuthProvider extends ChangeNotifier {
         notify: false,
       );
 
-      _isInitialized = true;
-      _notifySafely();
+      _notify();
 
       return true;
     } catch (error) {
@@ -591,7 +632,7 @@ class AuthProvider extends ChangeNotifier {
       );
 
       _setError(
-        error.toString(),
+        error,
         notify: false,
       );
 
@@ -601,10 +642,6 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  // =====================================================
-  // PASSWORD
-  // =====================================================
-
   Future<bool> forgotPassword(
     String email,
   ) async {
@@ -612,12 +649,24 @@ class AuthProvider extends ChangeNotifier {
       return false;
     }
 
+    final normalizedEmail =
+        email.trim().toLowerCase();
+
+    if (normalizedEmail.isEmpty) {
+      _setError(
+        'Email is required.',
+      );
+
+      return false;
+    }
+
     try {
       _setLoading(true);
       _clearError();
 
-      return await _repository.forgotPassword(
-        email.trim().toLowerCase(),
+      return await _repository
+          .forgotPassword(
+        normalizedEmail,
       );
     } catch (error) {
       debugPrint(
@@ -625,7 +674,7 @@ class AuthProvider extends ChangeNotifier {
       );
 
       _setError(
-        error.toString(),
+        error,
         notify: false,
       );
 
@@ -643,11 +692,28 @@ class AuthProvider extends ChangeNotifier {
       return false;
     }
 
+    if (token.trim().isEmpty) {
+      _setError(
+        'Reset token is required.',
+      );
+
+      return false;
+    }
+
+    if (password.trim().isEmpty) {
+      _setError(
+        'Password is required.',
+      );
+
+      return false;
+    }
+
     try {
       _setLoading(true);
       _clearError();
 
-      return await _repository.resetPassword(
+      return await _repository
+          .resetPassword(
         token: token.trim(),
         password: password,
       );
@@ -657,7 +723,7 @@ class AuthProvider extends ChangeNotifier {
       );
 
       _setError(
-        error.toString(),
+        error,
         notify: false,
       );
 
@@ -667,24 +733,12 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  // =====================================================
-  // PROFILE
-  // =====================================================
-
   Future<void> getProfile() async {
-    if (_isLoading) {
-      return;
-    }
-
     try {
-      _setLoading(true);
-      _clearError();
+      final token =
+          await _restoreToken();
 
-      final String? token =
-          await AuthService.instance.getToken();
-
-      if (token == null ||
-          token.trim().isEmpty) {
+      if (token == null) {
         _setUnauthenticated(
           notify: false,
         );
@@ -694,38 +748,29 @@ class AuthProvider extends ChangeNotifier {
           notify: false,
         );
 
-        _notifySafely();
+        _notify();
+
         return;
       }
 
-      ApiService.instance.setAuthToken(
-        token,
-      );
-
-      final UserModel profile =
+      final profile =
           await _repository.getProfile();
 
       _setAuthenticatedUser(
         profile,
-        notify: false,
       );
 
       debugPrint(
         'CUSTOMER PROFILE LOADED',
       );
-
-      _notifySafely();
     } catch (error) {
       debugPrint(
         'CUSTOMER PROFILE ERROR: $error',
       );
 
-      /*
-       * Do not mark the customer as logged out just because
-       * the profile endpoint failed.
-       */
-      final String? token =
-          await AuthService.instance.getToken();
+      final token =
+          await AuthService.instance
+              .getToken();
 
       if (token != null &&
           token.trim().isNotEmpty) {
@@ -743,13 +788,11 @@ class AuthProvider extends ChangeNotifier {
       }
 
       _setError(
-        error.toString(),
+        error,
         notify: false,
       );
 
-      _notifySafely();
-    } finally {
-      _setLoading(false);
+      _notify();
     }
   }
 
@@ -764,7 +807,7 @@ class AuthProvider extends ChangeNotifier {
       _setLoading(true);
       _clearError();
 
-      final String token =
+      final token =
           await AuthService.instance
               .ensureAuthenticated();
 
@@ -772,7 +815,7 @@ class AuthProvider extends ChangeNotifier {
         token,
       );
 
-      final UserModel profile =
+      final profile =
           await _repository.updateProfile(
         data: data,
       );
@@ -782,7 +825,7 @@ class AuthProvider extends ChangeNotifier {
         notify: false,
       );
 
-      _notifySafely();
+      _notify();
 
       return true;
     } catch (error) {
@@ -791,7 +834,7 @@ class AuthProvider extends ChangeNotifier {
       );
 
       _setError(
-        error.toString(),
+        error,
         notify: false,
       );
 
@@ -801,10 +844,6 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  // =====================================================
-  // RESTORE AUTH
-  // =====================================================
-
   Future<void> checkAuth() async {
     if (_isCheckingAuth) {
       return;
@@ -813,48 +852,31 @@ class AuthProvider extends ChangeNotifier {
     _isCheckingAuth = true;
 
     try {
-      _setLoading(true);
       _clearError();
 
       debugPrint(
         'STARTING CUSTOMER SESSION RESTORE',
       );
 
-      /*
-       * Restore the token directly through AuthService.
-       *
-       * Do not depend only on AuthRepository.isLoggedIn()
-       * because the API header must also be restored.
-       */
-      bool restored =
-          await AuthService.instance.restoreSession();
+      final restored =
+          await _repository.restoreSession();
 
-      String? token =
-          await AuthService.instance.getToken();
+      final token =
+          await _repository.getToken();
 
-      /*
-       * restoreSession can return false during an initialization
-       * timing problem, but the token may still be available.
-       */
-      if (!restored &&
-          token != null &&
-          token.trim().isNotEmpty) {
-        restored = true;
-      }
-
-      if (!restored ||
+      if ((!restored &&
+              (token == null ||
+                  token.trim().isEmpty)) ||
           token == null ||
           token.trim().isEmpty) {
-        debugPrint(
-          'NO CUSTOMER SESSION AVAILABLE',
-        );
-
         _setUnauthenticated(
           notify: false,
         );
 
-        _isInitialized = true;
-        _notifySafely();
+        debugPrint(
+          'NO CUSTOMER SESSION AVAILABLE',
+        );
+
         return;
       }
 
@@ -863,34 +885,24 @@ class AuthProvider extends ChangeNotifier {
       );
 
       if (!ApiService.instance.hasAuthToken) {
-        debugPrint(
-          'CUSTOMER TOKEN EXISTS BUT API HEADER IS MISSING',
-        );
-
         _setUnauthenticated(
           notify: false,
         );
 
         _setError(
-          'Unable to restore customer authentication.',
+          'Unable to attach Customer authentication.',
           notify: false,
         );
 
-        _isInitialized = true;
-        _notifySafely();
         return;
       }
 
-      /*
-       * A valid saved token is enough to restore the session.
-       * Do not wait for profile loading to mark the customer
-       * as authenticated.
-       */
+      _user =
+          AuthService.instance.currentUser;
+
       _setAuthenticatedWithoutUser(
         notify: false,
       );
-
-      _user = AuthService.instance.currentUser;
 
       debugPrint(
         'CUSTOMER TOKEN SESSION RESTORED',
@@ -901,12 +913,8 @@ class AuthProvider extends ChangeNotifier {
         '${ApiService.instance.hasAuthToken}',
       );
 
-      /*
-       * Profile loading is optional for session restoration.
-       * A failure here must not send the user to Sign In.
-       */
       try {
-        final UserModel profile =
+        final profile =
             await _repository.getProfile();
 
         _setAuthenticatedUser(
@@ -927,33 +935,19 @@ class AuthProvider extends ChangeNotifier {
           '$profileError',
         );
 
-        /*
-         * Keep logged in because the JWT exists.
-         */
         _isLoggedIn = true;
 
         _user ??=
             AuthService.instance.currentUser;
-
-        _setError(
-          profileError.toString(),
-          notify: false,
-        );
       }
-
-      _isInitialized = true;
-      _notifySafely();
     } catch (error) {
       debugPrint(
         'CUSTOMER AUTH CHECK ERROR: $error',
       );
 
-      /*
-       * Final fallback: check local token before marking the
-       * customer as signed out.
-       */
-      final String? token =
-          await AuthService.instance.getToken();
+      final token =
+          await AuthService.instance
+              .getToken();
 
       if (token != null &&
           token.trim().isNotEmpty) {
@@ -962,6 +956,7 @@ class AuthProvider extends ChangeNotifier {
         );
 
         _isLoggedIn = true;
+
         _user ??=
             AuthService.instance.currentUser;
 
@@ -975,47 +970,34 @@ class AuthProvider extends ChangeNotifier {
       }
 
       _setError(
-        error.toString(),
+        error,
         notify: false,
       );
-
-      _isInitialized = true;
-      _notifySafely();
     } finally {
       _isCheckingAuth = false;
-      _setLoading(false);
+      _isInitialized = true;
+      _notify();
     }
   }
 
-  // =====================================================
-  // VALIDATE SESSION FOR BOOKING
-  // =====================================================
-
-  Future<bool> validateBookingSession() async {
+  Future<bool>
+      validateBookingSession() async {
     try {
-      String? token =
-          await AuthService.instance.getToken();
+      final token =
+          await _restoreToken();
 
       if (token == null ||
           token.trim().isEmpty) {
-        await AuthService.instance.restoreSession();
-
-        token =
-            await AuthService.instance.getToken();
-      }
-
-      if (token == null ||
-          token.trim().isEmpty) {
-        debugPrint(
-          'BOOKING SESSION VALIDATION FAILED: '
-          'TOKEN MISSING',
-        );
-
         _setUnauthenticated(
           notify: false,
         );
 
-        _notifySafely();
+        _notify();
+
+        debugPrint(
+          'BOOKING SESSION VALIDATION FAILED: '
+          'TOKEN MISSING',
+        );
 
         return false;
       }
@@ -1034,6 +1016,7 @@ class AuthProvider extends ChangeNotifier {
       }
 
       _isLoggedIn = true;
+      _isInitialized = true;
 
       _user ??=
           AuthService.instance.currentUser;
@@ -1047,25 +1030,22 @@ class AuthProvider extends ChangeNotifier {
         '${ApiService.instance.hasAuthToken}',
       );
 
-      _notifySafely();
+      _notify();
 
       return true;
     } catch (error) {
       debugPrint(
-        'BOOKING SESSION VALIDATION ERROR: $error',
+        'BOOKING SESSION VALIDATION ERROR: '
+        '$error',
       );
 
       return false;
     }
   }
 
-  // =====================================================
-  // REFRESH CUSTOMER
-  // =====================================================
-
   Future<bool> refreshCustomer() async {
     try {
-      final String token =
+      final token =
           await AuthService.instance
               .ensureAuthenticated();
 
@@ -1073,10 +1053,12 @@ class AuthProvider extends ChangeNotifier {
         token,
       );
 
-      final UserModel profile =
+      final profile =
           await _repository.getProfile();
 
-      _setAuthenticatedUser(profile);
+      _setAuthenticatedUser(
+        profile,
+      );
 
       return true;
     } catch (error) {
@@ -1084,11 +1066,9 @@ class AuthProvider extends ChangeNotifier {
         'REFRESH CUSTOMER ERROR: $error',
       );
 
-      /*
-       * Keep session active if a token still exists.
-       */
-      final String? token =
-          await AuthService.instance.getToken();
+      final token =
+          await AuthService.instance
+              .getToken();
 
       if (token != null &&
           token.trim().isNotEmpty) {
@@ -1097,16 +1077,13 @@ class AuthProvider extends ChangeNotifier {
         );
 
         _isLoggedIn = true;
-        _notifySafely();
+        _isInitialized = true;
+        _notify();
       }
 
       return false;
     }
   }
-
-  // =====================================================
-  // LOGOUT
-  // =====================================================
 
   Future<void> logout() async {
     if (_isLoading) {
@@ -1119,28 +1096,25 @@ class AuthProvider extends ChangeNotifier {
       await _repository.logout();
     } catch (error) {
       debugPrint(
-        'CUSTOMER BACKEND LOGOUT ERROR: $error',
+        'CUSTOMER LOGOUT ERROR: $error',
       );
 
-      /*
-       * Local authentication must still be cleared when the
-       * customer explicitly presses Logout.
-       */
-      await AuthService.instance.clearLocalAuth();
+      await AuthService.instance
+          .clearLocalAuth();
     } finally {
       _user = null;
       _isLoggedIn = false;
       _isInitialized = true;
       _error = null;
 
-      _notifySafely();
-      _setLoading(false);
+      _setLoading(
+        false,
+        notify: false,
+      );
+
+      _notify();
     }
   }
-
-  // =====================================================
-  // DELETE ACCOUNT
-  // =====================================================
 
   Future<bool> deleteAccount() async {
     if (_isLoading) {
@@ -1151,27 +1125,30 @@ class AuthProvider extends ChangeNotifier {
       _setLoading(true);
       _clearError();
 
-      final bool success =
-          await _repository.deleteAccount();
+      final success =
+          await _repository
+              .deleteAccount();
 
       if (success) {
         _user = null;
         _isLoggedIn = false;
+        _isInitialized = true;
 
         await AuthService.instance
             .clearLocalAuth();
       }
 
-      _notifySafely();
+      _notify();
 
       return success;
     } catch (error) {
       debugPrint(
-        'DELETE CUSTOMER ACCOUNT ERROR: $error',
+        'DELETE CUSTOMER ACCOUNT ERROR: '
+        '$error',
       );
 
       _setError(
-        error.toString(),
+        error,
         notify: false,
       );
 
@@ -1181,25 +1158,16 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  // =====================================================
-  // MANUAL USER SYNC
-  // =====================================================
-
   void setUser(
     UserModel? user,
   ) {
     _user = user;
+    _isLoggedIn = user != null ||
+        AuthService.instance.hasToken;
+    _isInitialized = true;
 
-    if (user != null) {
-      _isLoggedIn = true;
-    }
-
-    _notifySafely();
+    _notify();
   }
-
-  // =====================================================
-  // CLEAR ERROR
-  // =====================================================
 
   void clearError() {
     _clearError(

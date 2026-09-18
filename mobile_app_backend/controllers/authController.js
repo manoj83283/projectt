@@ -3,20 +3,11 @@ import jwt from "jsonwebtoken";
 import User from "../models/user.js";
 import { sendNotification } from "../utils/notification.js";
 
-// =====================================================
-// CONSTANTS
-// =====================================================
-
 const ACCESS_TOKEN_EXPIRY =
   process.env.JWT_EXPIRES_IN || "7d";
 
 const REFRESH_TOKEN_EXPIRY =
-  process.env.JWT_REFRESH_EXPIRES_IN ||
-  "30d";
-
-// =====================================================
-// NORMALIZATION HELPERS
-// =====================================================
+  process.env.JWT_REFRESH_EXPIRES_IN || "30d";
 
 const normalizeString = (
   value,
@@ -51,10 +42,6 @@ const normalizeRole = (value) => {
     : "user";
 };
 
-// =====================================================
-// NAME HELPERS
-// =====================================================
-
 const resolveUserName = ({
   firstName,
   lastName,
@@ -77,27 +64,24 @@ const resolveUserName = ({
       !resolvedLastName) &&
     resolvedFullName
   ) {
-    const parts =
+    const nameParts =
       resolvedFullName
         .split(/\s+/)
         .filter(Boolean);
 
     if (!resolvedFirstName) {
       resolvedFirstName =
-        parts[0] || "";
+        nameParts[0] || "";
     }
 
     if (!resolvedLastName) {
       resolvedLastName =
-        parts.slice(1).join(" ");
+        nameParts
+          .slice(1)
+          .join(" ");
     }
   }
 
-  /*
-   * Some Customer registration screens submit only one
-   * name. A single-word name should not cause signup to
-   * fail.
-   */
   if (
     resolvedFirstName &&
     !resolvedLastName
@@ -105,46 +89,44 @@ const resolveUserName = ({
     resolvedLastName = "Customer";
   }
 
+  const resolvedName = [
+    resolvedFirstName,
+    resolvedLastName,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .trim();
+
   return {
     firstName: resolvedFirstName,
     lastName: resolvedLastName,
-    fullName: [
-      resolvedFirstName,
-      resolvedLastName,
-    ]
-      .filter(Boolean)
-      .join(" ")
-      .trim(),
+    fullName: resolvedName,
   };
 };
 
-// =====================================================
-// TOKEN HELPERS
-// =====================================================
-
 const getJwtSecret = () => {
-  const secret =
+  const jwtSecret =
     process.env.JWT_SECRET;
 
-  if (!secret) {
-    if (
-      process.env.NODE_ENV ===
-      "production"
-    ) {
-      throw new Error(
-        "JWT_SECRET is not configured"
-      );
-    }
-
-    console.warn(
-      "JWT_SECRET is not configured. " +
-        "Using development fallback secret."
-    );
-
-    return "eventease-development-secret";
+  if (jwtSecret) {
+    return jwtSecret;
   }
 
-  return secret;
+  if (
+    process.env.NODE_ENV ===
+    "production"
+  ) {
+    throw new Error(
+      "JWT_SECRET is not configured"
+    );
+  }
+
+  console.warn(
+    "JWT_SECRET is not configured. " +
+      "Using development fallback secret."
+  );
+
+  return "eventease-development-secret";
 };
 
 const getRefreshTokenSecret = () => {
@@ -184,13 +166,8 @@ const generateRefreshToken = (user) => {
   );
 };
 
-// Existing imports may still use generateToken.
 export const generateToken =
   generateAccessToken;
-
-// =====================================================
-// RESPONSE HELPERS
-// =====================================================
 
 const sanitizeUser = (user) => {
   if (!user) {
@@ -268,16 +245,18 @@ const sendControllerError = (
   ) {
     const errors = Object.values(
       error.errors || {}
-    ).map((item) => item.message);
+    ).map(
+      (item) => item.message
+    );
+
+    const message =
+      errors[0] ||
+      "Validation failed";
 
     return res.status(400).json({
       success: false,
-      message:
-        errors[0] ||
-        "Validation failed",
-      msg:
-        errors[0] ||
-        "Validation failed",
+      message,
+      msg: message,
       errors,
     });
   }
@@ -292,22 +271,40 @@ const sendControllerError = (
     });
   }
 
+  const message =
+    error?.message ||
+    "Internal server error";
+
   return res.status(500).json({
     success: false,
-    message:
-      error?.message ||
-      "Internal server error",
-    msg:
-      error?.message ||
-      "Internal server error",
+    message,
+    msg: message,
   });
 };
 
-// =====================================================
-// SIGNUP
-// POST /api/auth/signup
-// POST /api/auth/register
-// =====================================================
+const buildSupportedUserData = (
+  userData
+) => {
+  const schemaPaths =
+    User.schema?.paths || {};
+
+  const supportedUserData = {};
+
+  for (
+    const [key, value] of
+    Object.entries(userData)
+  ) {
+    if (
+      schemaPaths[key] &&
+      value !== undefined
+    ) {
+      supportedUserData[key] =
+        value;
+    }
+  }
+
+  return supportedUserData;
+};
 
 export const signup = async (
   req,
@@ -355,7 +352,7 @@ export const signup = async (
         role || userType
       );
 
-    const finalShopName =
+    const normalizedBusinessName =
       normalizeString(
         shopName || businessName
       );
@@ -364,9 +361,19 @@ export const signup = async (
       return res.status(400).json({
         success: false,
         message:
-          "Customer first name is required",
+          "First name is required",
         msg:
-          "Customer first name is required",
+          "First name is required",
+      });
+    }
+
+    if (!resolvedName.lastName) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Last name is required",
+        msg:
+          "Last name is required",
       });
     }
 
@@ -462,24 +469,34 @@ export const signup = async (
       }
     }
 
+    const duplicateConditions = [
+      {
+        email:
+          normalizedEmail,
+      },
+    ];
+
+    if (normalizedPhone) {
+      duplicateConditions.push({
+        phone:
+          normalizedPhone,
+      });
+    }
+
     const existingUser =
       await User.findOne({
-        $or: [
-          {
-            email:
-              normalizedEmail,
-          },
-          {
-            phone:
-              normalizedPhone,
-          },
-        ],
+        $or:
+          duplicateConditions,
       });
 
     if (existingUser) {
+      const sameEmail =
+        normalizeEmail(
+          existingUser.email
+        ) === normalizedEmail;
+
       const duplicateField =
-        existingUser.email ===
-        normalizedEmail
+        sameEmail
           ? "email"
           : "phone number";
 
@@ -517,44 +534,30 @@ export const signup = async (
       password:
         normalizedPassword,
 
+      role:
+        normalizedRole,
+
       dob:
         normalizedDob,
 
       location:
-        location || null,
-
-      role:
-        normalizedRole,
+        location || undefined,
 
       shopName:
-        finalShopName,
+        normalizedBusinessName,
 
       businessName:
-        finalShopName,
+        normalizedBusinessName,
+
+      isActive: true,
+
+      isBlocked: false,
     };
 
-    /*
-     * Only include schema-supported fields.
-     * This keeps compatibility with different User model
-     * versions while strict mode is enabled.
-     */
-    const schemaPaths =
-      User.schema?.paths || {};
-
-    const supportedUserData = {};
-
-    for (
-      const [key, value] of
-      Object.entries(userData)
-    ) {
-      if (
-        schemaPaths[key] &&
-        value !== undefined
-      ) {
-        supportedUserData[key] =
-          value;
-      }
-    }
+    const supportedUserData =
+      buildSupportedUserData(
+        userData
+      );
 
     const user =
       await User.create(
@@ -576,6 +579,11 @@ export const signup = async (
       }
     }
 
+    console.log(
+      "CUSTOMER SIGNUP SUCCESS:",
+      user.email
+    );
+
     return sendAuthResponse(
       res,
       user,
@@ -594,19 +602,15 @@ export const signup = async (
   }
 };
 
-// =====================================================
-// SIGNIN
-// POST /api/auth/signin
-// POST /api/auth/login
-// =====================================================
-
 export const signin = async (
   req,
   res
 ) => {
   try {
     const email =
-      normalizeEmail(req.body.email);
+      normalizeEmail(
+        req.body.email
+      );
 
     const password =
       normalizeString(
@@ -623,23 +627,61 @@ export const signin = async (
       });
     }
 
-    /*
-     * Password may be excluded by default in the User
-     * schema. Explicitly selecting it keeps signin working
-     * for models configured with select: false.
-     */
+    console.log(
+      "SIGNIN ATTEMPT EMAIL:",
+      email
+    );
+
     const user =
       await User.findOne({
         email,
       }).select("+password");
 
+    console.log(
+      "SIGNIN USER FOUND:",
+      Boolean(user)
+    );
+
     if (!user) {
+      console.log(
+        "SIGNIN FAILED: USER NOT FOUND"
+      );
+
       return res.status(401).json({
         success: false,
         message:
           "Invalid email or password",
         msg:
           "Invalid email or password",
+      });
+    }
+
+    console.log(
+      "SIGNIN USER ID:",
+      user._id.toString()
+    );
+
+    console.log(
+      "SIGNIN USER ROLE:",
+      user.role
+    );
+
+    console.log(
+      "SIGNIN PASSWORD AVAILABLE:",
+      Boolean(user.password)
+    );
+
+    if (!user.password) {
+      console.error(
+        "SIGNIN FAILED: PASSWORD FIELD NOT AVAILABLE"
+      );
+
+      return res.status(500).json({
+        success: false,
+        message:
+          "Password validation is not configured correctly",
+        msg:
+          "Password validation is not configured correctly",
       });
     }
 
@@ -653,6 +695,11 @@ export const signin = async (
         await user.matchPassword(
           password
         );
+
+      console.log(
+        "SIGNIN PASSWORD METHOD:",
+        "matchPassword"
+      );
     } else if (
       typeof user.comparePassword ===
       "function"
@@ -661,11 +708,29 @@ export const signin = async (
         await user.comparePassword(
           password
         );
-    } else {
-      throw new Error(
-        "User model does not expose matchPassword or comparePassword"
+
+      console.log(
+        "SIGNIN PASSWORD METHOD:",
+        "comparePassword"
       );
+    } else {
+      console.error(
+        "SIGNIN FAILED: PASSWORD METHOD MISSING"
+      );
+
+      return res.status(500).json({
+        success: false,
+        message:
+          "Password validation is not configured correctly",
+        msg:
+          "Password validation is not configured correctly",
+      });
     }
+
+    console.log(
+      "SIGNIN PASSWORD MATCHED:",
+      passwordMatches
+    );
 
     if (!passwordMatches) {
       return res.status(401).json({
@@ -681,6 +746,10 @@ export const signin = async (
       user.isActive === false ||
       user.isBlocked === true
     ) {
+      console.log(
+        "SIGNIN FAILED: ACCOUNT UNAVAILABLE"
+      );
+
       return res.status(403).json({
         success: false,
         message:
@@ -689,6 +758,11 @@ export const signin = async (
           "This account is unavailable",
       });
     }
+
+    console.log(
+      "SIGNIN SUCCESS:",
+      user.email
+    );
 
     return sendAuthResponse(
       res,
@@ -708,19 +782,15 @@ export const signin = async (
   }
 };
 
-// =====================================================
-// GOOGLE LOGIN
-// POST /api/auth/google
-// POST /api/auth/google-login
-// =====================================================
-
 export const googleLogin = async (
   req,
   res
 ) => {
   try {
     const email =
-      normalizeEmail(req.body.email);
+      normalizeEmail(
+        req.body.email
+      );
 
     const name =
       normalizeString(
@@ -729,7 +799,9 @@ export const googleLogin = async (
       );
 
     const requestedRole =
-      normalizeRole(req.body.role);
+      normalizeRole(
+        req.body.role
+      );
 
     if (!email) {
       return res.status(400).json({
@@ -752,10 +824,16 @@ export const googleLogin = async (
           fullName: name,
         });
 
-      const generatedPassword =
-        `Google_${Date.now()}_${Math.random()
+      const uniqueSuffix =
+        `${Date.now()}_${Math.random()
           .toString(36)
           .slice(2)}`;
+
+      const generatedPassword =
+        `Google_${uniqueSuffix}`;
+
+      const generatedPhone =
+        `google_${uniqueSuffix}`;
 
       const userData = {
         firstName:
@@ -776,45 +854,45 @@ export const googleLogin = async (
 
         email,
 
-        /*
-         * If phone is required in the User schema, provide
-         * a unique placeholder. The user can update it later.
-         */
         phone:
-          `google_${Date.now()}`,
+          generatedPhone,
 
         mobile:
-          `google_${Date.now()}`,
+          generatedPhone,
 
         password:
           generatedPassword,
 
         role:
           requestedRole,
+
+        isActive: true,
+
+        isBlocked: false,
       };
 
-      const schemaPaths =
-        User.schema?.paths || {};
-
-      const supportedUserData = {};
-
-      for (
-        const [key, value] of
-        Object.entries(userData)
-      ) {
-        if (
-          schemaPaths[key] &&
-          value !== undefined
-        ) {
-          supportedUserData[key] =
-            value;
-        }
-      }
+      const supportedUserData =
+        buildSupportedUserData(
+          userData
+        );
 
       user =
         await User.create(
           supportedUserData
         );
+    }
+
+    if (
+      user.isActive === false ||
+      user.isBlocked === true
+    ) {
+      return res.status(403).json({
+        success: false,
+        message:
+          "This account is unavailable",
+        msg:
+          "This account is unavailable",
+      });
     }
 
     return sendAuthResponse(
@@ -834,11 +912,6 @@ export const googleLogin = async (
     );
   }
 };
-
-// =====================================================
-// GET PROFILE
-// GET /api/auth/profile
-// =====================================================
 
 export const getProfile = async (
   req,
@@ -874,6 +947,19 @@ export const getProfile = async (
       });
     }
 
+    if (
+      user.isActive === false ||
+      user.isBlocked === true
+    ) {
+      return res.status(403).json({
+        success: false,
+        message:
+          "This account is unavailable",
+        msg:
+          "This account is unavailable",
+      });
+    }
+
     const sanitizedUser =
       sanitizeUser(user);
 
@@ -894,11 +980,6 @@ export const getProfile = async (
     );
   }
 };
-
-// =====================================================
-// REFRESH ACCESS TOKEN
-// POST /api/auth/refresh-token
-// =====================================================
 
 export const refreshAccessToken =
   async (req, res) => {
@@ -926,7 +1007,7 @@ export const refreshAccessToken =
           refreshToken,
           getRefreshTokenSecret()
         );
-      } catch (_) {
+      } catch (error) {
         return res.status(401).json({
           success: false,
           message:
@@ -964,6 +1045,19 @@ export const refreshAccessToken =
         });
       }
 
+      if (
+        user.isActive === false ||
+        user.isBlocked === true
+      ) {
+        return res.status(403).json({
+          success: false,
+          message:
+            "This account is unavailable",
+          msg:
+            "This account is unavailable",
+        });
+      }
+
       return sendAuthResponse(
         res,
         user,
@@ -982,33 +1076,16 @@ export const refreshAccessToken =
     }
   };
 
-// =====================================================
-// LOGOUT
-// POST /api/auth/logout
-// =====================================================
-
 export const logout = async (
   req,
   res
 ) => {
-  /*
-   * Authentication currently uses stateless JWTs.
-   * Flutter removes the access and refresh tokens locally.
-   *
-   * If token revocation is added later, store a token ID
-   * or token version in MongoDB and invalidate it here.
-   */
   return res.status(200).json({
     success: true,
     message:
       "Logout successful",
   });
 };
-
-// =====================================================
-// CHECK EMAIL
-// GET /api/auth/check-email?email=...
-// =====================================================
 
 export const checkEmailExists =
   async (req, res) => {
@@ -1051,11 +1128,6 @@ export const checkEmailExists =
     }
   };
 
-// =====================================================
-// CHECK PHONE
-// GET /api/auth/check-phone?phone=...
-// =====================================================
-
 export const checkPhoneExists =
   async (req, res) => {
     try {
@@ -1075,16 +1147,25 @@ export const checkPhoneExists =
         });
       }
 
+      const conditions = [
+        {
+          phone,
+        },
+      ];
+
+      if (
+        User.schema?.paths?.mobile
+      ) {
+        conditions.push({
+          mobile:
+            phone,
+        });
+      }
+
       const exists =
         await User.exists({
-          $or: [
-            {
-              phone,
-            },
-            {
-              mobile: phone,
-            },
-          ],
+          $or:
+            conditions,
         });
 
       return res.status(200).json({
@@ -1104,11 +1185,6 @@ export const checkPhoneExists =
       );
     }
   };
-
-// =====================================================
-// UPDATE FCM TOKEN
-// POST /api/auth/fcm-token
-// =====================================================
 
 export const updateFcmToken =
   async (req, res) => {
@@ -1139,6 +1215,18 @@ export const updateFcmToken =
             "FCM token is required",
           msg:
             "FCM token is required",
+        });
+      }
+
+      if (
+        !User.schema?.paths?.fcmToken
+      ) {
+        return res.status(500).json({
+          success: false,
+          message:
+            "FCM token field is not configured in the User model",
+          msg:
+            "FCM token field is not configured in the User model",
         });
       }
 

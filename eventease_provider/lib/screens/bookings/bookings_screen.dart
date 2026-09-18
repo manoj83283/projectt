@@ -5,7 +5,9 @@ import '../../models/booking_model.dart';
 import '../../providers/booking_provider.dart';
 
 class BookingsScreen extends StatefulWidget {
-  const BookingsScreen({super.key});
+  const BookingsScreen({
+    super.key,
+  });
 
   @override
   State<BookingsScreen> createState() =>
@@ -15,7 +17,7 @@ class BookingsScreen extends StatefulWidget {
 class _BookingsScreenState
     extends State<BookingsScreen>
     with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+  late final TabController _tabController;
 
   @override
   void initState() {
@@ -44,18 +46,43 @@ class _BookingsScreenState
     super.dispose();
   }
 
+  String _normalizeStatus(
+    String? value,
+  ) {
+    return (value ?? '')
+        .trim()
+        .toLowerCase()
+        .replaceAll('-', '_')
+        .replaceAll(' ', '_');
+  }
+
   List<BookingModel> _filterBookings(
     List<BookingModel> bookings,
     String status,
   ) {
-    if (status == 'all') {
+    final normalizedStatus =
+        _normalizeStatus(status);
+
+    if (normalizedStatus == 'all') {
       return bookings;
     }
 
     return bookings.where((booking) {
-      return booking.status
-              .toLowerCase() ==
-          status.toLowerCase();
+      final bookingStatus =
+          _normalizeStatus(
+        booking.status,
+      );
+
+      if (normalizedStatus ==
+          'accepted') {
+        return bookingStatus ==
+                'accepted' ||
+            bookingStatus ==
+                'confirmed';
+      }
+
+      return bookingStatus ==
+          normalizedStatus;
     }).toList();
   }
 
@@ -67,12 +94,13 @@ class _BookingsScreenState
           'Bookings',
         ),
         bottom: TabBar(
-          controller: _tabController,
+          controller:
+              _tabController,
           isScrollable: true,
           tabs: const [
             Tab(text: 'All'),
             Tab(text: 'Pending'),
-            Tab(text: 'Confirmed'),
+            Tab(text: 'Accepted'),
             Tab(text: 'Completed'),
           ],
         ),
@@ -98,7 +126,9 @@ class _BookingsScreenState
               onRefresh: _loadBookings,
               child: ListView(
                 children: const [
-                  SizedBox(height: 150),
+                  SizedBox(
+                    height: 150,
+                  ),
                   Center(
                     child: Column(
                       children: [
@@ -126,27 +156,34 @@ class _BookingsScreenState
           return RefreshIndicator(
             onRefresh: _loadBookings,
             child: TabBarView(
-              controller: _tabController,
+              controller:
+                  _tabController,
               children: [
                 _BookingList(
                   bookings:
                       bookingProvider.bookings,
                 ),
                 _BookingList(
-                  bookings: _filterBookings(
-                    bookingProvider.bookings,
+                  bookings:
+                      _filterBookings(
+                    bookingProvider
+                        .bookings,
                     'pending',
                   ),
                 ),
                 _BookingList(
-                  bookings: _filterBookings(
-                    bookingProvider.bookings,
-                    'confirmed',
+                  bookings:
+                      _filterBookings(
+                    bookingProvider
+                        .bookings,
+                    'accepted',
                   ),
                 ),
                 _BookingList(
-                  bookings: _filterBookings(
-                    bookingProvider.bookings,
+                  bookings:
+                      _filterBookings(
+                    bookingProvider
+                        .bookings,
                     'completed',
                   ),
                 ),
@@ -166,17 +203,33 @@ class _BookingList extends StatelessWidget {
     required this.bookings,
   });
 
+  String _normalizeStatus(
+    String? value,
+  ) {
+    return (value ?? 'pending')
+        .trim()
+        .toLowerCase()
+        .replaceAll('-', '_')
+        .replaceAll(' ', '_');
+  }
+
   Color _getStatusColor(
     String? status,
   ) {
-    switch (status?.toLowerCase()) {
-      case 'completed':
-        return Colors.green;
-
+    switch (
+        _normalizeStatus(status)) {
+      case 'accepted':
       case 'confirmed':
         return Colors.blue;
 
+      case 'in_progress':
+        return Colors.deepPurple;
+
+      case 'completed':
+        return Colors.green;
+
       case 'cancelled':
+      case 'rejected':
         return Colors.red;
 
       case 'pending':
@@ -185,8 +238,37 @@ class _BookingList extends StatelessWidget {
     }
   }
 
+  String _statusLabel(
+    String? status,
+  ) {
+    switch (
+        _normalizeStatus(status)) {
+      case 'accepted':
+      case 'confirmed':
+        return 'ACCEPTED';
+
+      case 'in_progress':
+        return 'IN PROGRESS';
+
+      case 'completed':
+        return 'COMPLETED';
+
+      case 'cancelled':
+        return 'CANCELLED';
+
+      case 'rejected':
+        return 'REJECTED';
+
+      case 'pending':
+      default:
+        return 'PENDING';
+    }
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(
+    BuildContext context,
+  ) {
     if (bookings.isEmpty) {
       return const Center(
         child: Text(
@@ -196,10 +278,15 @@ class _BookingList extends StatelessWidget {
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding:
+          const EdgeInsets.all(16),
       itemCount: bookings.length,
-      itemBuilder: (context, index) {
-        final booking = bookings[index];
+      itemBuilder: (
+        context,
+        index,
+      ) {
+        final booking =
+            bookings[index];
 
         return Card(
           margin:
@@ -208,7 +295,9 @@ class _BookingList extends StatelessWidget {
           ),
           child: Padding(
             padding:
-                const EdgeInsets.all(16),
+                const EdgeInsets.all(
+              16,
+            ),
             child: Column(
               crossAxisAlignment:
                   CrossAxisAlignment
@@ -218,8 +307,12 @@ class _BookingList extends StatelessWidget {
                   children: [
                     Expanded(
                       child: Text(
-                        booking.serviceName ??
-                            'Service',
+                        (booking.serviceName ??
+                                '')
+                                .isEmpty
+                            ? 'Service'
+                            : booking
+                                .serviceName!,
                         style:
                             const TextStyle(
                           fontSize: 18,
@@ -247,9 +340,9 @@ class _BookingList extends StatelessWidget {
                         ),
                       ),
                       child: Text(
-                        booking.status
-                                .toUpperCase() ??
-                            'PENDING',
+                        _statusLabel(
+                          booking.status,
+                        ),
                         style:
                             const TextStyle(
                           color:
@@ -263,11 +356,9 @@ class _BookingList extends StatelessWidget {
                     ),
                   ],
                 ),
-
                 const SizedBox(
                   height: 12,
                 ),
-
                 Row(
                   children: [
                     const Icon(
@@ -285,11 +376,9 @@ class _BookingList extends StatelessWidget {
                     ),
                   ],
                 ),
-
                 const SizedBox(
                   height: 8,
                 ),
-
                 Row(
                   children: [
                     const Icon(
@@ -299,17 +388,17 @@ class _BookingList extends StatelessWidget {
                     const SizedBox(
                       width: 8,
                     ),
-                    Text(
-                      booking.bookingDate ??
-                          '',
+                    Expanded(
+                      child: Text(
+                        booking.bookingDate ??
+                            '',
+                      ),
                     ),
                   ],
                 ),
-
                 const SizedBox(
                   height: 8,
                 ),
-
                 Row(
                   children: [
                     const Icon(
@@ -319,17 +408,17 @@ class _BookingList extends StatelessWidget {
                     const SizedBox(
                       width: 8,
                     ),
-                    Text(
-                      booking.bookingTime ??
-                          '',
+                    Expanded(
+                      child: Text(
+                        booking.bookingTime ??
+                            '',
+                      ),
                     ),
                   ],
                 ),
-
                 const SizedBox(
                   height: 12,
                 ),
-
                 Row(
                   mainAxisAlignment:
                       MainAxisAlignment
@@ -347,12 +436,12 @@ class _BookingList extends StatelessWidget {
                                 .bold,
                       ),
                     ),
-
                     ElevatedButton(
                       onPressed: () {
-                        // Navigate Booking Details
+                        // Booking Details Screen
                       },
-                      child: const Text(
+                      child:
+                          const Text(
                         'View',
                       ),
                     ),
