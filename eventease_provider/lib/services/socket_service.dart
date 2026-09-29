@@ -22,9 +22,9 @@ class SocketService {
 
   io.Socket? get socket => _socket;
 
-  // =========================
-  // CONNECT SOCKET
-  // =========================
+  // =====================================================
+  // CONNECT
+  // =====================================================
 
   Future<void> connect() async {
     try {
@@ -32,19 +32,24 @@ class SocketService {
           await StorageHelper.getToken();
 
       if (token == null ||
-          token.isEmpty) {
-        log('Socket Token Missing');
+          token.trim().isEmpty) {
+        log('Socket token missing');
         return;
       }
 
+      disconnect();
+
       _socket = io.io(
-        'https://your-api-domain.com',
+        // CHANGE TO YOUR BACKEND URL
+        'http://10.0.2.2:5000',
         io.OptionBuilder()
-            .setTransports(['websocket'])
+            .setTransports([
+              'websocket',
+            ])
             .disableAutoConnect()
             .enableReconnection()
-            .setReconnectionAttempts(10)
-            .setReconnectionDelay(3000)
+            .setReconnectionAttempts(20)
+            .setReconnectionDelay(2000)
             .setAuth({
               'token': token,
             })
@@ -55,13 +60,15 @@ class SocketService {
 
       _socket?.connect();
     } catch (e) {
-      log('Socket Connect Error: $e');
+      log(
+        'Socket Connect Error: $e',
+      );
     }
   }
 
-  // =========================
+  // =====================================================
   // CORE LISTENERS
-  // =========================
+  // =====================================================
 
   void _registerCoreListeners() {
     _socket?.onConnect((_) {
@@ -74,8 +81,11 @@ class SocketService {
         'provider_id',
       );
 
-      if (providerId != null) {
-        joinProviderRoom(providerId);
+      if (providerId != null &&
+          providerId.isNotEmpty) {
+        joinProviderRoom(
+          providerId,
+        );
       }
     });
 
@@ -100,13 +110,15 @@ class SocketService {
     });
 
     _socket?.onError((error) {
-      log('Socket Error: $error');
+      log(
+        'Socket Error: $error',
+      );
     });
   }
 
-  // =========================
-  // JOIN PROVIDER ROOM
-  // =========================
+  // =====================================================
+  // PROVIDER ROOM
+  // =====================================================
 
   void joinProviderRoom(
     String providerId,
@@ -119,9 +131,9 @@ class SocketService {
     );
   }
 
-  // =========================
-  // JOIN CHAT ROOM
-  // =========================
+  // =====================================================
+  // CHAT ROOM
+  // =====================================================
 
   void joinChatRoom(
     String roomId,
@@ -134,10 +146,6 @@ class SocketService {
     );
   }
 
-  // =========================
-  // LEAVE CHAT ROOM
-  // =========================
-
   void leaveChatRoom(
     String roomId,
   ) {
@@ -149,9 +157,9 @@ class SocketService {
     );
   }
 
-  // =========================
-  // SEND MESSAGE
-  // =========================
+  // =====================================================
+  // CHAT
+  // =====================================================
 
   void sendMessage({
     required String roomId,
@@ -172,10 +180,6 @@ class SocketService {
     );
   }
 
-  // =========================
-  // SEND TYPING
-  // =========================
-
   void sendTyping({
     required String roomId,
     required String userId,
@@ -188,10 +192,6 @@ class SocketService {
       },
     );
   }
-
-  // =========================
-  // STOP TYPING
-  // =========================
 
   void stopTyping({
     required String roomId,
@@ -206,26 +206,92 @@ class SocketService {
     );
   }
 
-  // =========================
-  // MESSAGE READ
-  // =========================
-
   void markMessageRead({
-    required String messageId,
     required String roomId,
+    required String messageId,
   }) {
     _socket?.emit(
       'message_read',
       {
-        'messageId': messageId,
         'roomId': roomId,
+        'messageId': messageId,
       },
     );
   }
 
-  // =========================
-  // PROVIDER ONLINE
-  // =========================
+  // =====================================================
+  // BOOKING EVENTS
+  // =====================================================
+
+  void bookingAccepted(
+    String bookingId,
+  ) {
+    _socket?.emit(
+      'booking_accepted',
+      {
+        'bookingId': bookingId,
+      },
+    );
+  }
+
+  void otpVerified(
+    String bookingId,
+  ) {
+    _socket?.emit(
+      'booking_otp_verified',
+      {
+        'bookingId': bookingId,
+      },
+    );
+  }
+
+  void bookingStarted(
+    String bookingId,
+  ) {
+    _socket?.emit(
+      'booking_started',
+      {
+        'bookingId': bookingId,
+      },
+    );
+  }
+
+  void bookingCompleted(
+    String bookingId,
+  ) {
+    _socket?.emit(
+      'booking_completed',
+      {
+        'bookingId': bookingId,
+      },
+    );
+  }
+
+  void bookingCancelled(
+    String bookingId,
+  ) {
+    _socket?.emit(
+      'booking_cancelled',
+      {
+        'bookingId': bookingId,
+      },
+    );
+  }
+
+  void bookingRejected(
+    String bookingId,
+  ) {
+    _socket?.emit(
+      'booking_rejected',
+      {
+        'bookingId': bookingId,
+      },
+    );
+  }
+
+  // =====================================================
+  // PROVIDER STATUS
+  // =====================================================
 
   void updateOnlineStatus(
     bool isOnline,
@@ -237,10 +303,6 @@ class SocketService {
       },
     );
   }
-
-  // =========================
-  // LOCATION UPDATE
-  // =========================
 
   void updateLocation({
     required double latitude,
@@ -255,54 +317,9 @@ class SocketService {
     );
   }
 
-  // =========================
-  // BOOKING ACCEPTED
-  // =========================
-
-  void bookingAccepted(
-    String bookingId,
-  ) {
-    _socket?.emit(
-      'booking_accepted',
-      {
-        'bookingId': bookingId,
-      },
-    );
-  }
-
-  // =========================
-  // BOOKING STARTED
-  // =========================
-
-  void bookingStarted(
-    String bookingId,
-  ) {
-    _socket?.emit(
-      'booking_started',
-      {
-        'bookingId': bookingId,
-      },
-    );
-  }
-
-  // =========================
-  // BOOKING COMPLETED
-  // =========================
-
-  void bookingCompleted(
-    String bookingId,
-  ) {
-    _socket?.emit(
-      'booking_completed',
-      {
-        'bookingId': bookingId,
-      },
-    );
-  }
-
-  // =========================
-  // LISTEN NEW MESSAGE
-  // =========================
+  // =====================================================
+  // LISTENERS
+  // =====================================================
 
   void onNewMessage(
     Function(dynamic data) callback,
@@ -313,10 +330,6 @@ class SocketService {
     );
   }
 
-  // =========================
-  // LISTEN TYPING
-  // =========================
-
   void onTyping(
     Function(dynamic data) callback,
   ) {
@@ -325,10 +338,6 @@ class SocketService {
       callback,
     );
   }
-
-  // =========================
-  // LISTEN STOP TYPING
-  // =========================
 
   void onStopTyping(
     Function(dynamic data) callback,
@@ -339,10 +348,6 @@ class SocketService {
     );
   }
 
-  // =========================
-  // LISTEN NOTIFICATIONS
-  // =========================
-
   void onNotification(
     Function(dynamic data) callback,
   ) {
@@ -351,10 +356,6 @@ class SocketService {
       callback,
     );
   }
-
-  // =========================
-  // LISTEN BOOKING EVENTS
-  // =========================
 
   void onBookingUpdate(
     Function(dynamic data) callback,
@@ -365,9 +366,28 @@ class SocketService {
     );
   }
 
-  // =========================
-  // LISTEN PAYMENT EVENTS
-  // =========================
+  void onOrderUpdate(
+    Function(dynamic data) callback,
+  ) {
+    _socket?.on(
+      'order_update',
+      callback,
+    );
+  }
+
+  void onDashboardRefresh(
+    Function(dynamic data) callback,
+  ) {
+    _socket?.on(
+      'refreshProviderDashboard',
+      callback,
+    );
+
+    _socket?.on(
+      'refreshBookings',
+      callback,
+    );
+  }
 
   void onPaymentUpdate(
     Function(dynamic data) callback,
@@ -378,44 +398,30 @@ class SocketService {
     );
   }
 
-  // =========================
-  // LISTEN ORDER EVENTS
-  // =========================
+  // =====================================================
+  // REMOVE LISTENERS
+  // =====================================================
 
-  void onOrderUpdate(
-    Function(dynamic data) callback,
+  void off(
+    String event,
   ) {
-    _socket?.on(
-      'order_update',
-      callback,
-    );
-  }
-
-  // =========================
-  // REMOVE LISTENER
-  // =========================
-
-  void off(String event) {
     _socket?.off(event);
   }
-
-  // =========================
-  // REMOVE ALL LISTENERS
-  // =========================
 
   void removeAllListeners() {
     _socket?.clearListeners();
   }
 
-  // =========================
+  // =====================================================
   // DISCONNECT
-  // =========================
+  // =====================================================
 
   void disconnect() {
     _socket?.disconnect();
     _socket?.dispose();
 
     _socket = null;
+
     _isConnected = false;
 
     log('Socket Closed');

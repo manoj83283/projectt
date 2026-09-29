@@ -1,16 +1,27 @@
 import mongoose from "mongoose";
 
+import Booking from "../models/Booking.js";
 import Chat from "../models/chat.js";
 import Message from "../models/Message.js";
 
 // =====================================================
-// HELPERS
+// COMMON HELPERS
 // =====================================================
 
 const getAuthenticatedUserId = (req) => {
   return (
     req.user?._id?.toString() ||
     req.user?.id?.toString() ||
+    ""
+  );
+};
+
+const getAuthenticatedUserRole = (req) => {
+  return (
+    req.user?.role
+      ?.toString()
+      .trim()
+      .toLowerCase() ||
     ""
   );
 };
@@ -32,10 +43,49 @@ const normalizeString = (
   return normalizedValue || fallback;
 };
 
+const normalizeNumber = (
+  value,
+  fallback = 0
+) => {
+  if (
+    value === null ||
+    value === undefined ||
+    value === ""
+  ) {
+    return fallback;
+  }
+
+  const parsedValue = Number(value);
+
+  return Number.isFinite(parsedValue)
+    ? parsedValue
+    : fallback;
+};
+
 const isValidObjectId = (value) => {
   return mongoose.Types.ObjectId.isValid(
     value
   );
+};
+
+const getDocumentId = (value) => {
+  if (!value) {
+    return "";
+  }
+
+  if (typeof value === "string") {
+    return value.trim();
+  }
+
+  if (value._id) {
+    return value._id.toString();
+  }
+
+  if (value.id) {
+    return value.id.toString();
+  }
+
+  return value.toString();
 };
 
 const asPlainObject = (document) => {
@@ -57,86 +107,129 @@ const asPlainObject = (document) => {
   };
 };
 
-const serializeDirectMessage = (
-  document
+const normalizeRoomId = (
+  value
 ) => {
-  const value =
-    asPlainObject(document);
+  const roomId =
+    normalizeString(value);
 
-  if (!value) {
-    return null;
+  if (!roomId) {
+    return "";
   }
 
-  return {
-    ...value,
+  if (
+    roomId.startsWith(
+      "booking:"
+    )
+  ) {
+    return roomId;
+  }
 
-    id:
-      value._id?.toString() ||
-      value.id?.toString() ||
-      "",
+  if (
+    isValidObjectId(roomId)
+  ) {
+    return `booking:${roomId}`;
+  }
 
-    senderId:
-      value.sender?._id?.toString() ||
-      value.sender?.toString() ||
-      value.senderId?.toString() ||
-      "",
-
-    receiverId:
-      value.receiver?._id?.toString() ||
-      value.receiver?.toString() ||
-      value.receiverId?.toString() ||
-      "",
-  };
+  return roomId;
 };
 
-const serializeRoomMessage = (
-  document
+const extractBookingId = (
+  roomId,
+  bookingId
 ) => {
-  const value =
-    asPlainObject(document);
+  const normalizedBookingId =
+    normalizeString(bookingId);
 
-  if (!value) {
-    return null;
+  if (
+    normalizedBookingId &&
+    isValidObjectId(
+      normalizedBookingId
+    )
+  ) {
+    return normalizedBookingId;
   }
 
+  const normalizedRoomId =
+    normalizeString(roomId);
+
+  if (
+    normalizedRoomId.startsWith(
+      "booking:"
+    )
+  ) {
+    const value =
+      normalizedRoomId
+        .substring(
+          "booking:".length
+        )
+        .trim();
+
+    if (isValidObjectId(value)) {
+      return value;
+    }
+  }
+
+  if (
+    isValidObjectId(
+      normalizedRoomId
+    )
+  ) {
+    return normalizedRoomId;
+  }
+
+  return "";
+};
+
+const getPagination = (req) => {
+  const page = Math.max(
+    1,
+    Math.floor(
+      normalizeNumber(
+        req.query.page,
+        1
+      )
+    )
+  );
+
+  const requestedLimit =
+    Math.max(
+      1,
+      Math.floor(
+        normalizeNumber(
+          req.query.limit,
+          50
+        )
+      )
+    );
+
+  const limit = Math.min(
+    requestedLimit,
+    100
+  );
+
   return {
-    ...value,
-
-    id:
-      value._id?.toString() ||
-      value.id?.toString() ||
-      "",
-
-    roomId:
-      value.roomId?.toString() ||
-      "",
-
-    senderId:
-      value.senderId?._id?.toString() ||
-      value.senderId?.toString() ||
-      value.sender?._id?.toString() ||
-      value.sender?.toString() ||
-      "",
-
-    receiverId:
-      value.receiverId?._id?.toString() ||
-      value.receiverId?.toString() ||
-      value.receiver?._id?.toString() ||
-      value.receiver?.toString() ||
-      "",
+    page,
+    limit,
+    skip:
+      (page - 1) * limit,
   };
 };
 
 const sendError = (
   res,
   statusCode,
-  message
+  message,
+  extra = {}
 ) => {
-  return res.status(statusCode).json({
-    success: false,
-    message,
-    msg: message,
-  });
+  return res
+    .status(statusCode)
+    .json({
+      success: false,
+      message,
+      msg: message,
+      ...extra,
+    });
 };
 
 const sendControllerError = (
@@ -150,7 +243,8 @@ const sendControllerError = (
   );
 
   if (
-    error?.name === "CastError"
+    error?.name ===
+    "CastError"
   ) {
     return sendError(
       res,
@@ -163,11 +257,13 @@ const sendControllerError = (
     error?.name ===
     "ValidationError"
   ) {
-    const errors = Object.values(
-      error.errors || {}
-    ).map(
-      (item) => item.message
-    );
+    const errors =
+      Object.values(
+        error.errors || {}
+      ).map(
+        (item) =>
+          item.message
+      );
 
     return res.status(400).json({
       success: false,
@@ -188,6 +284,114 @@ const sendControllerError = (
       "Internal server error"
   );
 };
+
+// =====================================================
+// SERIALIZATION
+// =====================================================
+
+const serializeDirectMessage = (
+  document
+) => {
+  const value =
+    asPlainObject(document);
+
+  if (!value) {
+    return null;
+  }
+
+  return {
+    ...value,
+
+    id:
+      value._id?.toString() ||
+      value.id?.toString() ||
+      "",
+
+    senderId:
+      getDocumentId(
+        value.sender ||
+        value.senderId
+      ),
+
+    receiverId:
+      getDocumentId(
+        value.receiver ||
+        value.receiverId
+      ),
+
+    message:
+      value.message ||
+      value.text ||
+      value.content ||
+      "",
+  };
+};
+
+const serializeRoomMessage = (
+  document
+) => {
+  const value =
+    asPlainObject(document);
+
+  if (!value) {
+    return null;
+  }
+
+  const bookingId =
+    getDocumentId(
+      value.bookingId
+    );
+
+  const roomId =
+    normalizeString(
+      value.roomId,
+      bookingId
+        ? `booking:${bookingId}`
+        : ""
+    );
+
+  return {
+    ...value,
+
+    id:
+      value._id?.toString() ||
+      value.id?.toString() ||
+      "",
+
+    bookingId,
+
+    roomId,
+
+    senderId:
+      getDocumentId(
+        value.senderId ||
+        value.sender
+      ),
+
+    receiverId:
+      getDocumentId(
+        value.receiverId ||
+        value.receiver
+      ),
+
+    message:
+      value.message ||
+      value.text ||
+      value.content ||
+      "",
+
+    isRead:
+      value.isRead === true ||
+      value.read === true,
+
+    delivered:
+      value.delivered === true,
+  };
+};
+
+// =====================================================
+// SOCKET HELPERS
+// =====================================================
 
 const emitSocketEvent = (
   roomNames,
@@ -211,12 +415,288 @@ const emitSocketEvent = (
     ),
   ];
 
-  for (const roomName of uniqueRooms) {
+  for (
+    const roomName of
+    uniqueRooms
+  ) {
     io.to(roomName).emit(
       eventName,
       data
     );
   }
+};
+
+const emitMessageCreated = (
+  message
+) => {
+  if (!message) {
+    return;
+  }
+
+  const rooms = [
+    message.roomId,
+
+    message.bookingId
+      ? `booking:${message.bookingId}`
+      : "",
+
+    message.bookingId,
+
+    message.senderId
+      ? `user:${message.senderId}`
+      : "",
+
+    message.senderId
+      ? `provider:${message.senderId}`
+      : "",
+
+    message.receiverId
+      ? `user:${message.receiverId}`
+      : "",
+
+    message.receiverId
+      ? `provider:${message.receiverId}`
+      : "",
+  ];
+
+  emitSocketEvent(
+    rooms,
+    "newMessage",
+    message
+  );
+
+  emitSocketEvent(
+    rooms,
+    "receiveMessage",
+    message
+  );
+
+  emitSocketEvent(
+    rooms,
+    "newRoomMessage",
+    message
+  );
+
+  if (message.receiverId) {
+    emitSocketEvent(
+      [
+        `user:${message.receiverId}`,
+        `provider:${message.receiverId}`,
+      ],
+      "newMessageNotification",
+      message
+    );
+  }
+};
+
+const emitReadReceipt = (
+  message
+) => {
+  if (!message) {
+    return;
+  }
+
+  const rooms = [
+    message.roomId,
+
+    message.bookingId
+      ? `booking:${message.bookingId}`
+      : "",
+
+    message.senderId
+      ? `user:${message.senderId}`
+      : "",
+
+    message.senderId
+      ? `provider:${message.senderId}`
+      : "",
+
+    message.receiverId
+      ? `user:${message.receiverId}`
+      : "",
+
+    message.receiverId
+      ? `provider:${message.receiverId}`
+      : "",
+  ];
+
+  emitSocketEvent(
+    rooms,
+    "messageRead",
+    message
+  );
+};
+
+// =====================================================
+// BOOKING ACCESS HELPERS
+// =====================================================
+
+const getBookingForChat =
+  async (bookingId) => {
+    if (
+      !bookingId ||
+      !isValidObjectId(
+        bookingId
+      )
+    ) {
+      return null;
+    }
+
+    return Booking.findById(
+      bookingId
+    )
+      .populate(
+        "user",
+        "firstName lastName name fullName email phone mobile profileImage role isOnline"
+      )
+      .populate(
+        "customer",
+        "firstName lastName name fullName email phone mobile profileImage role isOnline"
+      )
+      .populate(
+        "provider",
+        "firstName lastName name fullName email phone mobile profileImage role businessName shopName isOnline"
+      )
+      .populate(
+        "service",
+        "name title image imageUrl images"
+      );
+  };
+
+const getBookingParticipantData = (
+  booking,
+  currentUserId
+) => {
+  const customer =
+    booking?.customer ||
+    booking?.user;
+
+  const provider =
+    booking?.provider;
+
+  const customerId =
+    getDocumentId(customer);
+
+  const providerId =
+    getDocumentId(provider);
+
+  const isCustomer =
+    customerId ===
+    currentUserId;
+
+  const isProvider =
+    providerId ===
+    currentUserId;
+
+  return {
+    customer,
+    provider,
+    customerId,
+    providerId,
+    isCustomer,
+    isProvider,
+    hasAccess:
+      isCustomer ||
+      isProvider,
+    otherUser:
+      isCustomer
+        ? provider
+        : customer,
+    otherUserId:
+      isCustomer
+        ? providerId
+        : customerId,
+  };
+};
+
+const validateBookingChatAccess =
+  async ({
+    bookingId,
+    currentUserId,
+    role,
+  }) => {
+    const booking =
+      await getBookingForChat(
+        bookingId
+      );
+
+    if (!booking) {
+      return {
+        success: false,
+        statusCode: 404,
+        message:
+          "Booking not found",
+      };
+    }
+
+    const participantData =
+      getBookingParticipantData(
+        booking,
+        currentUserId
+      );
+
+    const isAdmin =
+      role === "admin";
+
+    if (
+      !participantData.hasAccess &&
+      !isAdmin
+    ) {
+      return {
+        success: false,
+        statusCode: 403,
+        message:
+          "You do not have access to this booking chat",
+      };
+    }
+
+    if (
+      booking.chatEnabled ===
+      false
+    ) {
+      return {
+        success: false,
+        statusCode: 403,
+        message:
+          "Chat is disabled for this booking",
+      };
+    }
+
+    return {
+      success: true,
+      booking,
+      participantData,
+    };
+  };
+
+// =====================================================
+// MESSAGE QUERY HELPERS
+// =====================================================
+
+const populateRoomMessageQuery = (
+  query
+) => {
+  return query
+    .populate(
+      "bookingId",
+      "bookingNumber status chatRoomId chatEnabled"
+    )
+    .populate(
+      "senderId",
+      "firstName lastName name fullName email phone mobile profileImage role businessName shopName isOnline"
+    )
+    .populate(
+      "receiverId",
+      "firstName lastName name fullName email phone mobile profileImage role businessName shopName isOnline"
+    )
+    .populate(
+      "sender",
+      "firstName lastName name fullName email phone mobile profileImage role businessName shopName isOnline"
+    )
+    .populate(
+      "receiver",
+      "firstName lastName name fullName email phone mobile profileImage role businessName shopName isOnline"
+    );
 };
 
 // =====================================================
@@ -245,294 +725,199 @@ export const getUserRooms = async (
       );
     }
 
-    const directChats =
-      await Chat.find({
+    const bookings =
+      await Booking.find({
         $or: [
           {
-            sender: userId,
+            user: userId,
           },
           {
-            receiver: userId,
+            customer: userId,
+          },
+          {
+            provider: userId,
           },
         ],
+
+        chatEnabled: {
+          $ne: false,
+        },
+
+        deletedAt: null,
       })
         .populate(
-          "sender",
-          [
-            "firstName",
-            "lastName",
-            "name",
-            "fullName",
-            "email",
-            "phone",
-            "mobile",
-            "profileImage",
-            "role",
-            "businessName",
-            "shopName",
-            "isOnline",
-          ].join(" ")
+          "user",
+          "firstName lastName name fullName email phone mobile profileImage role isOnline"
         )
         .populate(
-          "receiver",
-          [
-            "firstName",
-            "lastName",
-            "name",
-            "fullName",
-            "email",
-            "phone",
-            "mobile",
-            "profileImage",
-            "role",
-            "businessName",
-            "shopName",
-            "isOnline",
-          ].join(" ")
+          "customer",
+          "firstName lastName name fullName email phone mobile profileImage role isOnline"
+        )
+        .populate(
+          "provider",
+          "firstName lastName name fullName email phone mobile profileImage role businessName shopName isOnline"
+        )
+        .populate(
+          "service",
+          "name title image imageUrl images"
         )
         .sort({
-          createdAt: -1,
+          updatedAt: -1,
         });
 
-    const directRoomMap =
-      new Map();
+    const rooms = [];
 
     for (
-      const chatDocument of
-      directChats
+      const booking of
+      bookings
     ) {
-      const chat =
-        serializeDirectMessage(
-          chatDocument
+      const participantData =
+        getBookingParticipantData(
+          booking,
+          userId
         );
 
-      if (!chat) {
-        continue;
-      }
+      const bookingId =
+        booking._id.toString();
 
-      const senderId =
-        chat.senderId;
+      const roomId =
+        normalizeRoomId(
+          booking.chatRoomId ||
+          bookingId
+        );
 
-      const receiverId =
-        chat.receiverId;
+      const latestMessageDocument =
+        await populateRoomMessageQuery(
+          Message.findOne({
+            bookingId:
+              booking._id,
 
-      const otherUser =
-        senderId === userId
-          ? chat.receiver
-          : chat.sender;
+            $or: [
+              {
+                senderId:
+                  userId,
+              },
+              {
+                receiverId:
+                  userId,
+              },
+            ],
 
-      const otherUserId =
-        senderId === userId
-          ? receiverId
-          : senderId;
-
-      if (!otherUserId) {
-        continue;
-      }
-
-      if (
-        directRoomMap.has(
-          otherUserId
-        )
-      ) {
-        continue;
-      }
-
-      directRoomMap.set(
-        otherUserId,
-        {
-          id:
-            `direct:$otherUserId`,
-
-          roomId:
-            `direct:$otherUserId`,
-
-          type:
-            "direct",
-
-          participantId:
-            otherUserId,
-
-          user:
-            otherUser,
-
-          participant:
-            otherUser,
-
-          lastMessage:
-            chat.message || "",
-
-          lastMessageAt:
-            chat.createdAt ||
-            chat.updatedAt,
-
-          unreadCount: 0,
-
-          latestMessage:
-            chat,
-        }
-      );
-    }
-
-    let roomMessages = [];
-
-    try {
-      roomMessages =
-        await Message.find({
-          $or: [
-            {
-              senderId: userId,
-            },
-            {
-              receiverId: userId,
-            },
-          ],
-        })
-          .populate(
-            "senderId",
-            [
-              "firstName",
-              "lastName",
-              "name",
-              "fullName",
-              "email",
-              "phone",
-              "mobile",
-              "profileImage",
-              "role",
-              "businessName",
-              "shopName",
-              "isOnline",
-            ].join(" ")
-          )
-          .populate(
-            "receiverId",
-            [
-              "firstName",
-              "lastName",
-              "name",
-              "fullName",
-              "email",
-              "phone",
-              "mobile",
-              "profileImage",
-              "role",
-              "businessName",
-              "shopName",
-              "isOnline",
-            ].join(" ")
-          )
-          .sort({
+            deletedAt: null,
+          }).sort({
             createdAt: -1,
-          });
-    } catch (roomError) {
-      console.error(
-        "Room message lookup error:",
-        roomError.message
-      );
-
-      roomMessages = [];
-    }
-
-    const bookingRoomMap =
-      new Map();
-
-    for (
-      const messageDocument of
-      roomMessages
-    ) {
-      const message =
-        serializeRoomMessage(
-          messageDocument
+          })
         );
 
-      if (
-        !message ||
-        !message.roomId
-      ) {
-        continue;
-      }
+      const latestMessage =
+        serializeRoomMessage(
+          latestMessageDocument
+        );
 
-      if (
-        bookingRoomMap.has(
-          message.roomId
-        )
-      ) {
-        continue;
-      }
-
-      const senderId =
-        message.senderId;
-
-      const receiverId =
-        message.receiverId;
-
-      const otherUser =
-        senderId === userId
-          ? message.receiverId
-          : message.senderId;
-
-      const otherUserId =
-        senderId === userId
-          ? receiverId
-          : senderId;
-
-      bookingRoomMap.set(
-        message.roomId,
-        {
-          id:
-            message.roomId,
-
-          roomId:
-            message.roomId,
-
+      const unreadCount =
+        await Message.countDocuments({
           bookingId:
-            message.roomId,
+            booking._id,
 
-          type:
-            "booking",
+          receiverId:
+            userId,
 
-          participantId:
-            otherUserId,
+          isRead: {
+            $ne: true,
+          },
 
-          user:
-            otherUser,
+          read: {
+            $ne: true,
+          },
 
-          participant:
-            otherUser,
+          deletedForReceiver: {
+            $ne: true,
+          },
 
-          lastMessage:
-            message.message || "",
+          deletedAt: null,
+        });
 
-          lastMessageAt:
-            message.createdAt ||
-            message.updatedAt,
+      const bookingValue =
+        asPlainObject(booking);
 
-          unreadCount: 0,
+      rooms.push({
+        id: roomId,
+        roomId,
+        bookingId,
 
-          latestMessage:
-            message,
-        }
-      );
+        bookingNumber:
+          booking.bookingNumber ||
+          "",
+
+        type: "booking",
+
+        status:
+          booking.status,
+
+        chatEnabled:
+          booking.chatEnabled !==
+          false,
+
+        participantId:
+          participantData
+            .otherUserId,
+
+        participant:
+          participantData
+            .otherUser,
+
+        user:
+          participantData
+            .otherUser,
+
+        customer:
+          bookingValue.customer ||
+          bookingValue.user,
+
+        provider:
+          bookingValue.provider,
+
+        service:
+          bookingValue.service,
+
+        lastMessage:
+          latestMessage?.message ||
+          "",
+
+        lastMessageAt:
+          latestMessage?.createdAt ||
+          booking.updatedAt ||
+          booking.createdAt,
+
+        unreadCount,
+
+        latestMessage,
+      });
     }
 
-    const rooms = [
-      ...bookingRoomMap.values(),
-      ...directRoomMap.values(),
-    ].sort(
-      (first, second) => {
+    rooms.sort(
+      (
+        firstRoom,
+        secondRoom
+      ) => {
         const firstDate =
           new Date(
-            first.lastMessageAt || 0
+            firstRoom
+              .lastMessageAt ||
+            0
           ).getTime();
 
         const secondDate =
           new Date(
-            second.lastMessageAt || 0
+            secondRoom
+              .lastMessageAt ||
+            0
           ).getTime();
 
-        return secondDate -
-            firstDate;
+        return (
+          secondDate -
+          firstDate
+        );
       }
     );
 
@@ -555,7 +940,7 @@ export const getUserRooms = async (
 };
 
 // =====================================================
-// SEND ROOM MESSAGE
+// SEND BOOKING ROOM MESSAGE
 //
 // POST /api/chat/room
 // POST /api/provider/chat/room
@@ -566,13 +951,18 @@ export const sendRoomMessage = async (
   res
 ) => {
   try {
-    const authenticatedUserId =
+    const senderId =
       getAuthenticatedUserId(req);
 
+    const senderRole =
+      getAuthenticatedUserRole(
+        req
+      );
+
     if (
-      !authenticatedUserId ||
+      !senderId ||
       !isValidObjectId(
-        authenticatedUserId
+        senderId
       )
     ) {
       return sendError(
@@ -582,41 +972,54 @@ export const sendRoomMessage = async (
       );
     }
 
-    const roomId =
+    const requestedRoomId =
       normalizeString(
-        req.body.roomId
+        req.body.roomId ||
+        req.body.chatRoomId
       );
 
-    const receiverId =
-      normalizeString(
-        req.body.receiverId
+    const bookingId =
+      extractBookingId(
+        requestedRoomId,
+        req.body.bookingId
       );
-
-    const message =
-      normalizeString(
-        req.body.message ||
-          req.body.text ||
-          req.body.content
-      );
-
-    if (!roomId) {
-      return sendError(
-        res,
-        400,
-        "Room ID is required"
-      );
-    }
 
     if (
-      !receiverId ||
-      !isValidObjectId(receiverId)
+      !bookingId ||
+      !isValidObjectId(
+        bookingId
+      )
     ) {
       return sendError(
         res,
         400,
-        "A valid receiver ID is required"
+        "A valid booking ID is required"
       );
     }
+
+    const access =
+      await validateBookingChatAccess({
+        bookingId,
+        currentUserId:
+          senderId,
+        role:
+          senderRole,
+      });
+
+    if (!access.success) {
+      return sendError(
+        res,
+        access.statusCode,
+        access.message
+      );
+    }
+
+    const message =
+      normalizeString(
+        req.body.message ||
+        req.body.text ||
+        req.body.content
+      );
 
     if (!message) {
       return sendError(
@@ -627,8 +1030,42 @@ export const sendRoomMessage = async (
     }
 
     if (
+      message.length > 5000
+    ) {
+      return sendError(
+        res,
+        400,
+        "Message cannot exceed 5000 characters"
+      );
+    }
+
+    const requestedReceiverId =
+      normalizeString(
+        req.body.receiverId ||
+        req.body.receiver
+      );
+
+    const receiverId =
+      requestedReceiverId ||
+      access.participantData
+        .otherUserId;
+
+    if (
+      !receiverId ||
+      !isValidObjectId(
+        receiverId
+      )
+    ) {
+      return sendError(
+        res,
+        400,
+        "A valid receiver ID is required"
+      );
+    }
+
+    if (
       receiverId ===
-      authenticatedUserId
+      senderId
     ) {
       return sendError(
         res,
@@ -637,123 +1074,92 @@ export const sendRoomMessage = async (
       );
     }
 
-    const messageData = {
-      roomId,
-
-      senderId:
-        authenticatedUserId,
-
-      receiverId,
-
-      message,
-    };
-
-    const schemaPaths =
-      Message.schema?.paths || {};
+    const allowedReceiverIds = [
+      access.participantData
+        .customerId,
+      access.participantData
+        .providerId,
+    ];
 
     if (
-      schemaPaths.sender &&
-      !schemaPaths.senderId
+      senderRole !== "admin" &&
+      !allowedReceiverIds.includes(
+        receiverId
+      )
     ) {
-      messageData.sender =
-        authenticatedUserId;
-
-      delete messageData.senderId;
+      return sendError(
+        res,
+        403,
+        "Receiver is not a participant in this booking"
+      );
     }
 
-    if (
-      schemaPaths.receiver &&
-      !schemaPaths.receiverId
-    ) {
-      messageData.receiver =
-        receiverId;
+    const roomId =
+      normalizeRoomId(
+        access.booking.chatRoomId ||
+        requestedRoomId ||
+        bookingId
+      );
 
-      delete messageData.receiverId;
-    }
-
-    if (
-      schemaPaths.text &&
-      !schemaPaths.message
-    ) {
-      messageData.text =
-        message;
-
-      delete messageData.message;
-    }
-
-    if (
-      schemaPaths.content &&
-      !schemaPaths.message &&
-      !schemaPaths.text
-    ) {
-      messageData.content =
-        message;
-
-      delete messageData.message;
-    }
+    const messageType =
+      normalizeString(
+        req.body.messageType,
+        "text"
+      ).toLowerCase();
 
     const createdMessage =
-      await Message.create(
-        messageData
-      );
+      await Message.create({
+        bookingId,
+        roomId,
+        senderId,
+        receiverId,
 
-    let populatedMessage =
-      createdMessage;
+        sender:
+          senderId,
 
-    try {
-      populatedMessage =
-        await Message.findById(
+        receiver:
+          receiverId,
+
+        message,
+        text: message,
+        content: message,
+
+        messageType,
+
+        senderRole:
+          senderRole === "user"
+            ? "customer"
+            : senderRole,
+
+        isRead: false,
+        read: false,
+
+        delivered: true,
+        deliveredAt:
+          new Date(),
+      });
+
+    const populatedMessage =
+      await populateRoomMessageQuery(
+        Message.findById(
           createdMessage._id
         )
-          .populate(
-            "senderId",
-            "firstName lastName name fullName email phone profileImage role"
-          )
-          .populate(
-            "receiverId",
-            "firstName lastName name fullName email phone profileImage role"
-          );
-    } catch (populateError) {
-      console.error(
-        "Room message population error:",
-        populateError.message
       );
-    }
 
     const data =
       serializeRoomMessage(
         populatedMessage ||
-          createdMessage
+        createdMessage
       );
 
-    emitSocketEvent(
-      [
-        roomId,
-        `room:${roomId}`,
-        `user:${authenticatedUserId}`,
-        `user:${receiverId}`,
-        `provider:${authenticatedUserId}`,
-        `provider:${receiverId}`,
-      ],
-      "newRoomMessage",
-      data
-    );
-
-    emitSocketEvent(
-      [
-        roomId,
-        `room:${roomId}`,
-      ],
-      "newMessage",
-      data
-    );
+    emitMessageCreated(data);
 
     return res.status(201).json({
       success: true,
       message:
         "Room message sent successfully",
-      chatMessage:
-        data,
+      chatMessage: data,
+      savedMessage: data,
       data,
     });
   } catch (error) {
@@ -766,7 +1172,7 @@ export const sendRoomMessage = async (
 };
 
 // =====================================================
-// GET ROOM MESSAGES
+// GET BOOKING ROOM MESSAGES
 //
 // GET /api/chat/room/:roomId
 // GET /api/provider/chat/room/:roomId
@@ -777,13 +1183,18 @@ export const getRoomMessages = async (
   res
 ) => {
   try {
-    const authenticatedUserId =
+    const currentUserId =
       getAuthenticatedUserId(req);
 
+    const currentRole =
+      getAuthenticatedUserRole(
+        req
+      );
+
     if (
-      !authenticatedUserId ||
+      !currentUserId ||
       !isValidObjectId(
-        authenticatedUserId
+        currentUserId
       )
     ) {
       return sendError(
@@ -793,67 +1204,136 @@ export const getRoomMessages = async (
       );
     }
 
-    const roomId =
+    const requestedRoomId =
       normalizeString(
         req.params.roomId
       );
 
-    if (!roomId) {
+    const bookingId =
+      extractBookingId(
+        requestedRoomId,
+        req.query.bookingId
+      );
+
+    if (
+      !bookingId ||
+      !isValidObjectId(
+        bookingId
+      )
+    ) {
       return sendError(
         res,
         400,
-        "Room ID is required"
+        "A valid booking room is required"
       );
     }
 
-    const participantFilter = {
-      $or: [
-        {
-          senderId:
-            authenticatedUserId,
-        },
-        {
-          receiverId:
-            authenticatedUserId,
-        },
-      ],
+    const access =
+      await validateBookingChatAccess({
+        bookingId,
+        currentUserId,
+        role:
+          currentRole,
+      });
+
+    if (!access.success) {
+      return sendError(
+        res,
+        access.statusCode,
+        access.message
+      );
+    }
+
+    const {
+      page,
+      limit,
+      skip,
+    } = getPagination(req);
+
+    const roomId =
+      normalizeRoomId(
+        access.booking.chatRoomId ||
+        requestedRoomId ||
+        bookingId
+      );
+
+    const accessFilter =
+      currentRole === "admin"
+        ? {}
+        : {
+            $or: [
+              {
+                senderId:
+                  currentUserId,
+              },
+              {
+                receiverId:
+                  currentUserId,
+              },
+            ],
+          };
+
+    const filter = {
+      bookingId,
+
+      deletedAt: null,
+
+      ...accessFilter,
     };
 
-    const query = {
-      roomId,
-      ...participantFilter,
-    };
+    const [
+      total,
+      messages,
+    ] = await Promise.all([
+      Message.countDocuments(
+        filter
+      ),
 
-    const messages =
-      await Message.find(query)
-        .populate(
-          "senderId",
-          "firstName lastName name fullName email phone profileImage role"
-        )
-        .populate(
-          "receiverId",
-          "firstName lastName name fullName email phone profileImage role"
-        )
-        .sort({
-          createdAt: 1,
-        });
+      populateRoomMessageQuery(
+        Message.find(filter)
+          .sort({
+            createdAt: -1,
+          })
+          .skip(skip)
+          .limit(limit)
+      ),
+    ]);
 
-    const data = messages
-      .map(
-        serializeRoomMessage
-      )
-      .filter(Boolean);
+    const data =
+      messages
+        .reverse()
+        .map(
+          serializeRoomMessage
+        )
+        .filter(Boolean);
 
     return res.status(200).json({
       success: true,
       message:
         "Room messages fetched successfully",
       roomId,
-      messages:
-        data,
+      bookingId,
+      messages: data,
       data,
-      count:
-        data.length,
+      count: data.length,
+
+      pagination: {
+        page,
+        limit,
+        total,
+
+        totalPages:
+          Math.ceil(
+            total / limit
+          ),
+
+        hasNextPage:
+          page * limit <
+          total,
+
+        hasPreviousPage:
+          page > 1,
+      },
     });
   } catch (error) {
     return sendControllerError(
@@ -863,6 +1343,370 @@ export const getRoomMessages = async (
     );
   }
 };
+
+// =====================================================
+// MARK ONE MESSAGE AS READ
+//
+// PATCH /api/chat/read/:messageId
+// PUT /api/chat/read/:messageId
+// =====================================================
+
+export const markMessageAsRead =
+  async (req, res) => {
+    try {
+      const userId =
+        getAuthenticatedUserId(req);
+
+      const messageId =
+        normalizeString(
+          req.params.messageId
+        );
+
+      if (
+        !userId ||
+        !isValidObjectId(userId)
+      ) {
+        return sendError(
+          res,
+          401,
+          "Authentication required"
+        );
+      }
+
+      if (
+        !messageId ||
+        !isValidObjectId(
+          messageId
+        )
+      ) {
+        return sendError(
+          res,
+          400,
+          "A valid message ID is required"
+        );
+      }
+
+      let message =
+        await Message.findById(
+          messageId
+        );
+
+      if (!message) {
+        return sendError(
+          res,
+          404,
+          "Message not found"
+        );
+      }
+
+      const receiverId =
+        getDocumentId(
+          message.receiverId ||
+          message.receiver
+        );
+
+      if (
+        receiverId !== userId
+      ) {
+        return sendError(
+          res,
+          403,
+          "Only the receiver can mark this message as read"
+        );
+      }
+
+      const now = new Date();
+
+      message.isRead = true;
+      message.read = true;
+      message.readAt =
+        message.readAt || now;
+
+      message.delivered = true;
+      message.deliveredAt =
+        message.deliveredAt ||
+        now;
+
+      await message.save();
+
+      message =
+        await populateRoomMessageQuery(
+          Message.findById(
+            message._id
+          )
+        );
+
+      const data =
+        serializeRoomMessage(
+          message
+        );
+
+      emitReadReceipt(data);
+
+      return res.status(200).json({
+        success: true,
+        message:
+          "Message marked as read",
+        chatMessage: data,
+        data,
+      });
+    } catch (error) {
+      return sendControllerError(
+        res,
+        "Mark Message Read Error",
+        error
+      );
+    }
+  };
+
+// =====================================================
+// MARK ALL ROOM MESSAGES AS READ
+//
+// PATCH /api/chat/room/:roomId/read
+// PUT /api/chat/room/:roomId/read
+// =====================================================
+
+export const markRoomMessagesAsRead =
+  async (req, res) => {
+    try {
+      const userId =
+        getAuthenticatedUserId(req);
+
+      const role =
+        getAuthenticatedUserRole(
+          req
+        );
+
+      if (
+        !userId ||
+        !isValidObjectId(userId)
+      ) {
+        return sendError(
+          res,
+          401,
+          "Authentication required"
+        );
+      }
+
+      const requestedRoomId =
+        normalizeString(
+          req.params.roomId
+        );
+
+      const bookingId =
+        extractBookingId(
+          requestedRoomId,
+          req.body.bookingId ||
+          req.query.bookingId
+        );
+
+      if (
+        !bookingId ||
+        !isValidObjectId(
+          bookingId
+        )
+      ) {
+        return sendError(
+          res,
+          400,
+          "A valid booking room is required"
+        );
+      }
+
+      const access =
+        await validateBookingChatAccess({
+          bookingId,
+          currentUserId:
+            userId,
+          role,
+        });
+
+      if (!access.success) {
+        return sendError(
+          res,
+          access.statusCode,
+          access.message
+        );
+      }
+
+      const now = new Date();
+
+      const result =
+        await Message.updateMany(
+          {
+            bookingId,
+
+            receiverId:
+              userId,
+
+            isRead: {
+              $ne: true,
+            },
+
+            deletedAt: null,
+          },
+          {
+            $set: {
+              isRead: true,
+              read: true,
+              readAt: now,
+              delivered: true,
+              deliveredAt: now,
+            },
+          }
+        );
+
+      const roomId =
+        normalizeRoomId(
+          access.booking
+            .chatRoomId ||
+          requestedRoomId ||
+          bookingId
+        );
+
+      const receipt = {
+        roomId,
+        bookingId,
+        receiverId:
+          userId,
+        readAt: now,
+
+        modifiedCount:
+          result.modifiedCount ||
+          0,
+      };
+
+      emitSocketEvent(
+        [
+          roomId,
+          `booking:${bookingId}`,
+
+          `user:${
+            access.participantData
+              .otherUserId
+          }`,
+
+          `provider:${
+            access.participantData
+              .otherUserId
+          }`,
+        ],
+        "roomMessagesRead",
+        receipt
+      );
+
+      return res.status(200).json({
+        success: true,
+        message:
+          "Room messages marked as read",
+
+        roomId,
+        bookingId,
+
+        modifiedCount:
+          result.modifiedCount ||
+          0,
+
+        data: receipt,
+      });
+    } catch (error) {
+      return sendControllerError(
+        res,
+        "Mark Room Read Error",
+        error
+      );
+    }
+  };
+
+// =====================================================
+// GET UNREAD MESSAGE COUNT
+//
+// GET /api/chat/unread-count
+// =====================================================
+
+export const getUnreadMessageCount =
+  async (req, res) => {
+    try {
+      const userId =
+        getAuthenticatedUserId(req);
+
+      if (
+        !userId ||
+        !isValidObjectId(userId)
+      ) {
+        return sendError(
+          res,
+          401,
+          "Authentication required"
+        );
+      }
+
+      const bookingId =
+        normalizeString(
+          req.query.bookingId
+        );
+
+      const filter = {
+        receiverId:
+          userId,
+
+        isRead: {
+          $ne: true,
+        },
+
+        read: {
+          $ne: true,
+        },
+
+        deletedForReceiver: {
+          $ne: true,
+        },
+
+        deletedAt: null,
+      };
+
+      if (bookingId) {
+        if (
+          !isValidObjectId(
+            bookingId
+          )
+        ) {
+          return sendError(
+            res,
+            400,
+            "Invalid booking identifier"
+          );
+        }
+
+        filter.bookingId =
+          bookingId;
+      }
+
+      const count =
+        await Message.countDocuments(
+          filter
+        );
+
+      return res.status(200).json({
+        success: true,
+        message:
+          "Unread message count fetched successfully",
+        count,
+        unreadCount: count,
+
+        data: {
+          count,
+          unreadCount: count,
+        },
+      });
+    } catch (error) {
+      return sendControllerError(
+        res,
+        "Unread Message Count Error",
+        error
+      );
+    }
+  };
 
 // =====================================================
 // SEND DIRECT MESSAGE
@@ -893,19 +1737,21 @@ export const sendMessage = async (
     const receiverId =
       normalizeString(
         req.body.receiverId ||
-          req.body.receiver
+        req.body.receiver
       );
 
     const message =
       normalizeString(
         req.body.message ||
-          req.body.text ||
-          req.body.content
+        req.body.text ||
+        req.body.content
       );
 
     if (
       !receiverId ||
-      !isValidObjectId(receiverId)
+      !isValidObjectId(
+        receiverId
+      )
     ) {
       return sendError(
         res,
@@ -919,6 +1765,16 @@ export const sendMessage = async (
         res,
         400,
         "Message is required"
+      );
+    }
+
+    if (
+      message.length > 5000
+    ) {
+      return sendError(
+        res,
+        400,
+        "Message cannot exceed 5000 characters"
       );
     }
 
@@ -949,16 +1805,17 @@ export const sendMessage = async (
       )
         .populate(
           "sender",
-          "firstName lastName name fullName email phone profileImage role"
+          "firstName lastName name fullName email phone mobile profileImage role businessName shopName isOnline"
         )
         .populate(
           "receiver",
-          "firstName lastName name fullName email phone profileImage role"
+          "firstName lastName name fullName email phone mobile profileImage role businessName shopName isOnline"
         );
 
     const data =
       serializeDirectMessage(
-        populatedChat || chat
+        populatedChat ||
+        chat
       );
 
     emitSocketEvent(
@@ -976,8 +1833,7 @@ export const sendMessage = async (
       success: true,
       message:
         "Message sent successfully",
-      chat:
-        data,
+      chat: data,
       data,
     });
   } catch (error) {
@@ -1033,54 +1889,89 @@ export const getMessages = async (
       );
     }
 
-    const chats =
-      await Chat.find({
-        $or: [
-          {
-            sender:
-              authenticatedUserId,
+    const {
+      page,
+      limit,
+      skip,
+    } = getPagination(req);
 
-            receiver:
-              userId,
-          },
-          {
-            sender:
-              userId,
+    const filter = {
+      $or: [
+        {
+          sender:
+            authenticatedUserId,
 
-            receiver:
-              authenticatedUserId,
-          },
-        ],
-      })
+          receiver:
+            userId,
+        },
+        {
+          sender:
+            userId,
+
+          receiver:
+            authenticatedUserId,
+        },
+      ],
+    };
+
+    const [
+      total,
+      chats,
+    ] = await Promise.all([
+      Chat.countDocuments(
+        filter
+      ),
+
+      Chat.find(filter)
         .populate(
           "sender",
-          "firstName lastName name fullName email phone profileImage role"
+          "firstName lastName name fullName email phone mobile profileImage role businessName shopName isOnline"
         )
         .populate(
           "receiver",
-          "firstName lastName name fullName email phone profileImage role"
+          "firstName lastName name fullName email phone mobile profileImage role businessName shopName isOnline"
         )
         .sort({
-          createdAt: 1,
-        });
+          createdAt: -1,
+        })
+        .skip(skip)
+        .limit(limit),
+    ]);
 
-    const data = chats
-      .map(
-        serializeDirectMessage
-      )
-      .filter(Boolean);
+    const data =
+      chats
+        .reverse()
+        .map(
+          serializeDirectMessage
+        )
+        .filter(Boolean);
 
     return res.status(200).json({
       success: true,
       message:
         "Messages fetched successfully",
-      messages:
-        data,
-      chats:
-        data,
+      messages: data,
+      chats: data,
       data,
-      count:
-        data.length,
+      count: data.length,
+
+      pagination: {
+        page,
+        limit,
+        total,
+
+        totalPages:
+          Math.ceil(
+            total / limit
+          ),
+
+        hasNextPage:
+          page * limit <
+          total,
+
+        hasPreviousPage:
+          page > 1,
+      },
     });
   } catch (error) {
     return sendControllerError(

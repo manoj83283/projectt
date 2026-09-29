@@ -9,6 +9,7 @@ const { Schema } = mongoose;
 export const BOOKING_STATUSES = Object.freeze({
   PENDING: "pending",
   ACCEPTED: "accepted",
+  OTP_VERIFIED: "otp_verified",
   REJECTED: "rejected",
   IN_PROGRESS: "in_progress",
   COMPLETED: "completed",
@@ -77,7 +78,7 @@ const statusHistorySchema = new Schema(
 );
 
 // =====================================================
-// GEOJSON LOCATION SCHEMA
+// GEOLOCATION SCHEMA
 // =====================================================
 
 const locationPointSchema = new Schema(
@@ -101,15 +102,21 @@ const locationPointSchema = new Schema(
             return false;
           }
 
-          const longitude =
-            Number(value[0]);
+          const longitude = Number(
+            value[0]
+          );
 
-          const latitude =
-            Number(value[1]);
+          const latitude = Number(
+            value[1]
+          );
 
           return (
-            Number.isFinite(longitude) &&
-            Number.isFinite(latitude) &&
+            Number.isFinite(
+              longitude
+            ) &&
+            Number.isFinite(
+              latitude
+            ) &&
             longitude >= -180 &&
             longitude <= 180 &&
             latitude >= -90 &&
@@ -133,9 +140,9 @@ const locationPointSchema = new Schema(
 
 const bookingSchema = new Schema(
   {
-    // -------------------------------------------------
+    // =================================================
     // CUSTOMER
-    // -------------------------------------------------
+    // =================================================
 
     user: {
       type: Schema.Types.ObjectId,
@@ -154,9 +161,9 @@ const bookingSchema = new Schema(
       index: true,
     },
 
-    // -------------------------------------------------
+    // =================================================
     // SERVICE AND PROVIDER
-    // -------------------------------------------------
+    // =================================================
 
     service: {
       type: Schema.Types.ObjectId,
@@ -178,9 +185,9 @@ const bookingSchema = new Schema(
       index: true,
     },
 
-    // -------------------------------------------------
-    // BOOKING IDENTIFICATION
-    // -------------------------------------------------
+    // =================================================
+    // IDENTIFICATION
+    // =================================================
 
     bookingNumber: {
       type: String,
@@ -191,9 +198,9 @@ const bookingSchema = new Schema(
       index: true,
     },
 
-    // -------------------------------------------------
-    // BOOKING SCHEDULE
-    // -------------------------------------------------
+    // =================================================
+    // SCHEDULE
+    // =================================================
 
     bookingDate: {
       type: Date,
@@ -226,6 +233,15 @@ const bookingSchema = new Schema(
       default: "",
     },
 
+    durationMinutes: {
+      type: Number,
+      default: 0,
+      min: [
+        0,
+        "Duration cannot be negative",
+      ],
+    },
+
     hoursBooked: {
       type: Number,
       default: 1,
@@ -235,9 +251,9 @@ const bookingSchema = new Schema(
       ],
     },
 
-    // -------------------------------------------------
-    // CUSTOMER BOOKING DETAILS
-    // -------------------------------------------------
+    // =================================================
+    // CONTACT INFORMATION
+    // =================================================
 
     contactNumber: {
       type: String,
@@ -259,6 +275,10 @@ const bookingSchema = new Schema(
         "Guest count cannot be negative",
       ],
     },
+
+    // =================================================
+    // SERVICE ADDRESS
+    // =================================================
 
     locationType: {
       type: String,
@@ -283,30 +303,6 @@ const bookingSchema = new Schema(
       trim: true,
       default: "",
     },
-
-    notes: {
-      type: String,
-      trim: true,
-      default: "",
-      maxlength: [
-        2000,
-        "Notes cannot exceed 2000 characters",
-      ],
-    },
-
-    specialInstructions: {
-      type: String,
-      trim: true,
-      default: "",
-      maxlength: [
-        2000,
-        "Special instructions cannot exceed 2000 characters",
-      ],
-    },
-
-    // -------------------------------------------------
-    // ADDRESS AND LOCATION
-    // -------------------------------------------------
 
     address: {
       type: String,
@@ -336,9 +332,33 @@ const bookingSchema = new Schema(
       }),
     },
 
-    // -------------------------------------------------
+    // =================================================
+    // NOTES
+    // =================================================
+
+    notes: {
+      type: String,
+      trim: true,
+      default: "",
+      maxlength: [
+        2000,
+        "Notes cannot exceed 2000 characters",
+      ],
+    },
+
+    specialInstructions: {
+      type: String,
+      trim: true,
+      default: "",
+      maxlength: [
+        2000,
+        "Special instructions cannot exceed 2000 characters",
+      ],
+    },
+
+    // =================================================
     // PRICING
-    // -------------------------------------------------
+    // =================================================
 
     pricePerHour: {
       type: Number,
@@ -430,9 +450,9 @@ const bookingSchema = new Schema(
       default: "",
     },
 
-    // -------------------------------------------------
+    // =================================================
     // PAYMENT
-    // -------------------------------------------------
+    // =================================================
 
     paymentMethod: {
       type: String,
@@ -452,7 +472,6 @@ const bookingSchema = new Schema(
       default:
         PAYMENT_STATUSES.PENDING,
       lowercase: true,
-      index: true,
     },
 
     paymentId: {
@@ -472,9 +491,9 @@ const bookingSchema = new Schema(
       default: null,
     },
 
-    // -------------------------------------------------
+    // =================================================
     // BOOKING STATUS
-    // -------------------------------------------------
+    // =================================================
 
     status: {
       type: String,
@@ -512,9 +531,96 @@ const bookingSchema = new Schema(
       ],
     },
 
-    // -------------------------------------------------
-    // STATUS TIMELINE
-    // -------------------------------------------------
+    // =================================================
+    // PROVIDER ARRIVAL
+    // =================================================
+
+    providerArrived: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+
+    providerArrivedAt: {
+      type: Date,
+      default: null,
+    },
+
+    providerArrivalLocation: {
+      type: locationPointSchema,
+
+      default: () => ({
+        type: "Point",
+        coordinates: [0, 0],
+      }),
+    },
+
+    providerArrivalDistanceMeters: {
+      type: Number,
+      default: null,
+      min: [
+        0,
+        "Provider arrival distance cannot be negative",
+      ],
+    },
+
+    providerArrivalVerified: {
+      type: Boolean,
+      default: false,
+    },
+
+    // =================================================
+    // SERVICE VERIFICATION OTP
+    // =================================================
+
+    serviceOtpHash: {
+      type: String,
+      trim: true,
+      default: "",
+      select: false,
+    },
+
+    serviceOtpDisplay: {
+      type: String,
+      trim: true,
+      default: "",
+      select: false,
+    },
+
+    otpVerified: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+
+    otpVerifiedAt: {
+      type: Date,
+      default: null,
+    },
+
+    otpVerifiedBy: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+
+    otpAttempts: {
+      type: Number,
+      default: 0,
+      min: [
+        0,
+        "OTP attempts cannot be negative",
+      ],
+    },
+
+    otpLockedUntil: {
+      type: Date,
+      default: null,
+    },
+
+    // =================================================
+    // STATUS TIMESTAMPS
+    // =================================================
 
     acceptedAt: {
       type: Date,
@@ -541,9 +647,31 @@ const bookingSchema = new Schema(
       default: null,
     },
 
-    // -------------------------------------------------
-    // RATING AND REVIEW
-    // -------------------------------------------------
+    // =================================================
+    // INVOICE
+    // =================================================
+
+    invoiceNumber: {
+      type: String,
+      trim: true,
+      uppercase: true,
+      default: "",
+    },
+
+    invoiceGeneratedAt: {
+      type: Date,
+      default: null,
+    },
+
+    invoiceUrl: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+
+    // =================================================
+    // RATING
+    // =================================================
 
     rating: {
       type: Number,
@@ -573,9 +701,9 @@ const bookingSchema = new Schema(
       default: null,
     },
 
-    // -------------------------------------------------
+    // =================================================
     // CHAT
-    // -------------------------------------------------
+    // =================================================
 
     chatRoomId: {
       type: String,
@@ -589,9 +717,14 @@ const bookingSchema = new Schema(
       default: true,
     },
 
-    // -------------------------------------------------
+    chatClosedAt: {
+      type: Date,
+      default: null,
+    },
+
+    // =================================================
     // SOFT DELETE
-    // -------------------------------------------------
+    // =================================================
 
     isCustomerDeleted: {
       type: Boolean,
@@ -606,7 +739,6 @@ const bookingSchema = new Schema(
     deletedAt: {
       type: Date,
       default: null,
-      index: true,
     },
   },
   {
@@ -685,8 +817,9 @@ bookingSchema
 bookingSchema
   .virtual("isTerminal")
   .get(function getIsTerminal() {
-    return TERMINAL_BOOKING_STATUSES
-      .includes(this.status);
+    return TERMINAL_BOOKING_STATUSES.includes(
+      this.status
+    );
   });
 
 bookingSchema
@@ -717,11 +850,36 @@ bookingSchema
   });
 
 bookingSchema
+  .virtual("canProviderMarkArrived")
+  .get(
+    function canProviderMarkArrived() {
+      return (
+        this.status ===
+          BOOKING_STATUSES.ACCEPTED &&
+        this.providerArrived !== true
+      );
+    }
+  );
+
+bookingSchema
+  .virtual("canVerifyOtp")
+  .get(function canVerifyOtp() {
+    return (
+      this.status ===
+        BOOKING_STATUSES.ACCEPTED &&
+      this.providerArrived === true &&
+      this.otpVerified !== true
+    );
+  });
+
+bookingSchema
   .virtual("canStart")
   .get(function canStart() {
     return (
       this.status ===
-      BOOKING_STATUSES.ACCEPTED
+        BOOKING_STATUSES.OTP_VERIFIED &&
+      this.providerArrived === true &&
+      this.otpVerified === true
     );
   });
 
@@ -733,6 +891,63 @@ bookingSchema
       BOOKING_STATUSES.IN_PROGRESS
     );
   });
+
+bookingSchema
+  .virtual("isOtpAvailable")
+  .get(function getIsOtpAvailable() {
+    return (
+      this.status ===
+        BOOKING_STATUSES.ACCEPTED &&
+      this.otpVerified !== true
+    );
+  });
+
+bookingSchema
+  .virtual("serviceDurationMinutes")
+  .get(
+    function getServiceDurationMinutes() {
+      if (
+        !this.startedAt ||
+        !this.completedAt
+      ) {
+        return Number(
+          this.durationMinutes || 0
+        );
+      }
+
+      const startedTime =
+        new Date(
+          this.startedAt
+        ).getTime();
+
+      const completedTime =
+        new Date(
+          this.completedAt
+        ).getTime();
+
+      if (
+        Number.isNaN(
+          startedTime
+        ) ||
+        Number.isNaN(
+          completedTime
+        )
+      ) {
+        return 0;
+      }
+
+      return Math.max(
+        0,
+        Math.round(
+          (
+            completedTime -
+            startedTime
+          ) /
+            60000
+        )
+      );
+    }
+  );
 
 // =====================================================
 // DOCUMENT METHODS
@@ -764,7 +979,9 @@ bookingSchema.methods.addStatusHistory =
     if (
       !Object.values(
         BOOKING_STATUSES
-      ).includes(normalizedStatus)
+      ).includes(
+        normalizedStatus
+      )
     ) {
       throw new Error(
         `Invalid booking status: ${normalizedStatus}`
@@ -772,16 +989,12 @@ bookingSchema.methods.addStatusHistory =
     }
 
     this.statusHistory.push({
-      status:
-        normalizedStatus,
-
+      status: normalizedStatus,
       changedBy:
         changedBy || null,
-
       note:
         note?.toString().trim() ||
         "",
-
       changedAt,
     });
 
@@ -819,6 +1032,96 @@ bookingSchema.methods.isAssignedToProvider =
       this.provider?.toString() ===
       providerId.toString()
     );
+  };
+
+bookingSchema.methods.isOtpLocked =
+  function isOtpLocked() {
+    if (!this.otpLockedUntil) {
+      return false;
+    }
+
+    return (
+      new Date(
+        this.otpLockedUntil
+      ).getTime() > Date.now()
+    );
+  };
+
+bookingSchema.methods.markProviderArrived =
+  function markProviderArrived({
+    latitude,
+    longitude,
+    distanceMeters = null,
+    locationVerified = false,
+    changedBy = null,
+  }) {
+    if (
+      this.status !==
+      BOOKING_STATUSES.ACCEPTED
+    ) {
+      throw new Error(
+        "Provider arrival can only be marked after booking acceptance"
+      );
+    }
+
+    const normalizedLatitude =
+      Number(latitude);
+
+    const normalizedLongitude =
+      Number(longitude);
+
+    if (
+      !Number.isFinite(
+        normalizedLatitude
+      ) ||
+      normalizedLatitude < -90 ||
+      normalizedLatitude > 90 ||
+      !Number.isFinite(
+        normalizedLongitude
+      ) ||
+      normalizedLongitude < -180 ||
+      normalizedLongitude > 180
+    ) {
+      throw new Error(
+        "Valid Provider arrival coordinates are required"
+      );
+    }
+
+    const now = new Date();
+
+    this.providerArrived = true;
+    this.providerArrivedAt = now;
+
+    this.providerArrivalLocation = {
+      type: "Point",
+      coordinates: [
+        normalizedLongitude,
+        normalizedLatitude,
+      ],
+    };
+
+    this.providerArrivalDistanceMeters =
+      distanceMeters === null
+        ? null
+        : Math.max(
+            0,
+            Number(
+              distanceMeters || 0
+            )
+          );
+
+    this.providerArrivalVerified =
+      locationVerified === true;
+
+    this.addStatusHistory({
+      status: this.status,
+      changedBy,
+      note:
+        "Provider arrived at the service location",
+      changedAt: now,
+    });
+
+    return this;
   };
 
 // =====================================================
@@ -877,9 +1180,16 @@ bookingSchema.pre(
         "couponCode",
         "rejectionReason",
         "cancellationReason",
+        "invoiceNumber",
+        "invoiceUrl",
+        "paymentId",
+        "transactionId",
       ];
 
-      for (const field of stringFields) {
+      for (
+        const field of
+        stringFields
+      ) {
         this[field] =
           typeof this[field] ===
           "string"
@@ -900,6 +1210,14 @@ bookingSchema.pre(
           0,
           Number(
             this.guestCount || 0
+          )
+        );
+
+      this.durationMinutes =
+        Math.max(
+          0,
+          Number(
+            this.durationMinutes || 0
           )
         );
 
@@ -945,7 +1263,9 @@ bookingSchema.pre(
 
       if (
         !this.subtotal ||
-        Number(this.subtotal) <= 0
+        Number(
+          this.subtotal
+        ) <= 0
       ) {
         if (
           this.pricePerHour > 0
@@ -981,7 +1301,9 @@ bookingSchema.pre(
 
       if (
         !this.totalPrice ||
-        Number(this.totalPrice) <= 0
+        Number(
+          this.totalPrice
+        ) <= 0
       ) {
         this.totalPrice =
           Number(
@@ -992,7 +1314,9 @@ bookingSchema.pre(
 
       if (
         !this.totalAmount ||
-        Number(this.totalAmount) <= 0
+        Number(
+          this.totalAmount
+        ) <= 0
       ) {
         this.totalAmount =
           Number(
@@ -1014,6 +1338,14 @@ bookingSchema.pre(
           0,
           Number(
             this.totalAmount || 0
+          )
+        );
+
+      this.otpAttempts =
+        Math.max(
+          0,
+          Number(
+            this.otpAttempts || 0
           )
         );
 
@@ -1059,7 +1391,15 @@ bookingSchema.pre(
         this._id
       ) {
         this.chatRoomId =
-          this._id.toString();
+          `booking:${this._id.toString()}`;
+      } else if (
+        this.chatRoomId &&
+        !this.chatRoomId.startsWith(
+          "booking:"
+        )
+      ) {
+        this.chatRoomId =
+          `booking:${this.chatRoomId}`;
       }
 
       if (
@@ -1082,6 +1422,14 @@ bookingSchema.pre(
         )
       ) {
         this.statusHistory = [];
+      }
+
+      if (
+        this.providerArrived &&
+        !this.providerArrivedAt
+      ) {
+        this.providerArrivedAt =
+          new Date();
       }
 
       if (
@@ -1112,7 +1460,7 @@ bookingSchema.pre(
 );
 
 // =====================================================
-// STATUS TIMESTAMP SYNCHRONIZATION
+// STATUS VALIDATION AND TIMESTAMP SYNCHRONIZATION
 // =====================================================
 
 bookingSchema.pre(
@@ -1122,7 +1470,9 @@ bookingSchema.pre(
   ) {
     try {
       if (
-        !this.isModified("status")
+        !this.isModified(
+          "status"
+        )
       ) {
         return next();
       }
@@ -1135,24 +1485,118 @@ bookingSchema.pre(
 
         case BOOKING_STATUSES.ACCEPTED:
           this.acceptedAt =
-            this.acceptedAt || now;
+            this.acceptedAt ||
+            now;
 
-          this.rejectionReason = "";
+          this.rejectionReason =
+            "";
+
+          break;
+
+        case BOOKING_STATUSES.OTP_VERIFIED:
+          if (
+            this.providerArrived !==
+            true
+          ) {
+            return next(
+              new Error(
+                "Provider must arrive at the service location before OTP verification"
+              )
+            );
+          }
+
+          if (!this.otpVerified) {
+            return next(
+              new Error(
+                "Service OTP must be verified before setting OTP verified status"
+              )
+            );
+          }
+
+          this.otpVerifiedAt =
+            this.otpVerifiedAt ||
+            now;
+
           break;
 
         case BOOKING_STATUSES.REJECTED:
           this.rejectedAt =
-            this.rejectedAt || now;
+            this.rejectedAt ||
+            now;
+
           break;
 
         case BOOKING_STATUSES.IN_PROGRESS:
+          if (
+            this.providerArrived !==
+            true
+          ) {
+            return next(
+              new Error(
+                "Provider must arrive at the service location before starting the service"
+              )
+            );
+          }
+
+          if (!this.otpVerified) {
+            return next(
+              new Error(
+                "Service OTP must be verified before starting the service"
+              )
+            );
+          }
+
           this.startedAt =
-            this.startedAt || now;
+            this.startedAt ||
+            now;
+
           break;
 
         case BOOKING_STATUSES.COMPLETED:
+          if (!this.startedAt) {
+            return next(
+              new Error(
+                "Service must be started before it can be completed"
+              )
+            );
+          }
+
           this.completedAt =
-            this.completedAt || now;
+            this.completedAt ||
+            now;
+
+          if (this.startedAt) {
+            const startedTime =
+              new Date(
+                this.startedAt
+              ).getTime();
+
+            const completedTime =
+              new Date(
+                this.completedAt
+              ).getTime();
+
+            if (
+              !Number.isNaN(
+                startedTime
+              ) &&
+              !Number.isNaN(
+                completedTime
+              )
+            ) {
+              this.durationMinutes =
+                Math.max(
+                  0,
+                  Math.round(
+                    (
+                      completedTime -
+                      startedTime
+                    ) /
+                      60000
+                  )
+                );
+            }
+          }
 
           if (
             this.paymentMethod ===
@@ -1164,13 +1608,28 @@ bookingSchema.pre(
               PAYMENT_STATUSES.PAID;
 
             this.paidAt =
-              this.paidAt || now;
+              this.paidAt ||
+              now;
           }
+
+          if (
+            !this.invoiceNumber
+          ) {
+            this.invoiceNumber =
+              `INV-${this.bookingNumber}`;
+          }
+
+          this.invoiceGeneratedAt =
+            this.invoiceGeneratedAt ||
+            now;
+
           break;
 
         case BOOKING_STATUSES.CANCELLED:
           this.cancelledAt =
-            this.cancelledAt || now;
+            this.cancelledAt ||
+            now;
+
           break;
 
         default:
@@ -1185,7 +1644,80 @@ bookingSchema.pre(
 );
 
 // =====================================================
-// SOFT-DELETE QUERY MIDDLEWARE
+// RESET ARRIVAL WHEN PROVIDER CHANGES
+// =====================================================
+
+bookingSchema.pre(
+  "save",
+  function synchronizeProviderChange(
+    next
+  ) {
+    try {
+      if (
+        !this.isNew &&
+        this.isModified(
+          "provider"
+        )
+      ) {
+        this.providerArrived =
+          false;
+
+        this.providerArrivedAt =
+          null;
+
+        this.providerArrivalDistanceMeters =
+          null;
+
+        this.providerArrivalVerified =
+          false;
+
+        this.providerArrivalLocation = {
+          type: "Point",
+          coordinates: [0, 0],
+        };
+      }
+
+      return next();
+    } catch (error) {
+      return next(error);
+    }
+  }
+);
+
+// =====================================================
+// HIDE SENSITIVE OTP FIELDS
+// =====================================================
+
+const hideSensitiveBookingFields = (
+  document,
+  returnedObject
+) => {
+  delete returnedObject.serviceOtpHash;
+  delete returnedObject.serviceOtpDisplay;
+
+  return returnedObject;
+};
+
+bookingSchema.set(
+  "toJSON",
+  {
+    virtuals: true,
+    transform:
+      hideSensitiveBookingFields,
+  }
+);
+
+bookingSchema.set(
+  "toObject",
+  {
+    virtuals: true,
+    transform:
+      hideSensitiveBookingFields,
+  }
+);
+
+// =====================================================
+// SOFT DELETE FILTER
 // =====================================================
 
 bookingSchema.pre(
@@ -1241,6 +1773,7 @@ bookingSchema.index({
 bookingSchema.index({
   provider: 1,
   status: 1,
+  providerArrived: 1,
   createdAt: -1,
 });
 
@@ -1283,8 +1816,27 @@ bookingSchema.index({
   bookingTime: 1,
 });
 
+bookingSchema.index(
+  {
+    chatRoomId: 1,
+  },
+  {
+    sparse: true,
+  }
+);
+
 bookingSchema.index({
   locationPoint: "2dsphere",
+});
+
+bookingSchema.index({
+  providerArrivalLocation:
+    "2dsphere",
+});
+
+bookingSchema.index({
+  otpVerified: 1,
+  status: 1,
 });
 
 // =====================================================

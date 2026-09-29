@@ -13,15 +13,6 @@ class BookingRepository {
   // =====================================================
   // CREATE BOOKING
   // =====================================================
-  //
-  // The backend derives:
-  // - Provider ID from Service.provider
-  // - Pricing from the Service document
-  // - Booking ID from MongoDB
-  //
-  // providerId and amount remain in the method signature
-  // only for compatibility with older calling code.
-  // =====================================================
 
   Future<BookingModel> createBooking({
     required String serviceId,
@@ -56,7 +47,7 @@ class BookingRepository {
   }
 
   // =====================================================
-  // MY BOOKINGS
+  // CUSTOMER BOOKINGS
   // =====================================================
 
   Future<List<BookingModel>> getMyBookings({
@@ -72,25 +63,7 @@ class BookingRepository {
   }
 
   // =====================================================
-  // BOOKING DETAILS
-  // =====================================================
-
-  Future<BookingModel> getBookingById(
-    String bookingId,
-  ) {
-    return _bookingService.getBookingById(
-      bookingId,
-    );
-  }
-
-  // =====================================================
   // PROVIDER BOOKINGS
-  // =====================================================
-  //
-  // Retained for shared compatibility.
-  // The dedicated Provider application normally calls:
-  //
-  // GET /api/provider/bookings
   // =====================================================
 
   Future<List<BookingModel>>
@@ -118,7 +91,45 @@ class BookingRepository {
   }
 
   // =====================================================
-  // UPDATE BOOKING STATUS
+  // BOOKING DETAILS
+  // =====================================================
+
+  Future<BookingModel> getBookingById(
+    String bookingId,
+  ) {
+    return _bookingService.getBookingById(
+      bookingId,
+    );
+  }
+
+  // =====================================================
+  // SERVICE OTP
+  // =====================================================
+
+  Future<String?> getServiceOtp(
+    String bookingId,
+  ) {
+    return _bookingService.getServiceOtp(
+      bookingId,
+    );
+  }
+
+  // =====================================================
+  // VERIFY OTP
+  // =====================================================
+
+  Future<BookingModel> verifyServiceOtp({
+    required String bookingId,
+    required String otp,
+  }) {
+    return _bookingService.verifyServiceOtp(
+      bookingId: bookingId,
+      otp: otp,
+    );
+  }
+
+  // =====================================================
+  // STATUS UPDATE
   // =====================================================
 
   Future<BookingModel>
@@ -137,11 +148,6 @@ class BookingRepository {
     );
   }
 
-  // =====================================================
-  // UPDATE STATUS
-  // Backward compatibility for BookingProvider
-  // =====================================================
-
   Future<BookingModel> updateStatus({
     required String bookingId,
     required String status,
@@ -157,7 +163,7 @@ class BookingRepository {
   }
 
   // =====================================================
-  // ACCEPT BOOKING
+  // ACCEPT
   // =====================================================
 
   Future<bool> acceptBooking(
@@ -169,7 +175,7 @@ class BookingRepository {
   }
 
   // =====================================================
-  // CONFIRM BOOKING
+  // CONFIRM
   // =====================================================
 
   Future<bool> confirmBooking(
@@ -181,7 +187,7 @@ class BookingRepository {
   }
 
   // =====================================================
-  // START BOOKING
+  // START
   // =====================================================
 
   Future<bool> startBooking(
@@ -193,7 +199,7 @@ class BookingRepository {
   }
 
   // =====================================================
-  // COMPLETE BOOKING
+  // COMPLETE
   // =====================================================
 
   Future<bool> completeBooking(
@@ -205,7 +211,7 @@ class BookingRepository {
   }
 
   // =====================================================
-  // REJECT BOOKING
+  // REJECT
   // =====================================================
 
   Future<bool> rejectBooking({
@@ -219,7 +225,7 @@ class BookingRepository {
   }
 
   // =====================================================
-  // CANCEL BOOKING
+  // CANCEL
   // =====================================================
 
   Future<bool> cancelBooking({
@@ -233,11 +239,7 @@ class BookingRepository {
   }
 
   // =====================================================
-  // RESCHEDULE BOOKING
-  // =====================================================
-  //
-  // Requires:
-  // PATCH /api/bookings/:id/reschedule
+  // RESCHEDULE
   // =====================================================
 
   Future<bool> rescheduleBooking({
@@ -256,11 +258,20 @@ class BookingRepository {
   }
 
   // =====================================================
-  // TRACK BOOKING
+  // INVOICE
   // =====================================================
-  //
-  // Requires:
-  // GET /api/bookings/:id/track
+
+  Future<Map<String, dynamic>>
+      getInvoice(
+    String bookingId,
+  ) {
+    return _bookingService.getInvoice(
+      bookingId,
+    );
+  }
+
+  // =====================================================
+  // TRACK
   // =====================================================
 
   Future<Map<String, dynamic>>
@@ -273,11 +284,7 @@ class BookingRepository {
   }
 
   // =====================================================
-  // DELETE BOOKING
-  // =====================================================
-  //
-  // Requires:
-  // DELETE /api/bookings/:id
+  // DELETE
   // =====================================================
 
   Future<bool> deleteBooking(

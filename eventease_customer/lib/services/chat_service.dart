@@ -8,9 +8,9 @@ class ChatService {
   static final ChatService instance =
       ChatService._();
 
-  // ==========================================
-  // GET CHAT ROOMS
-  // ==========================================
+  // =====================================================
+  // ROOMS
+  // =====================================================
 
   Future<List<ChatRoomModel>> getChatRooms({
     int page = 1,
@@ -25,62 +25,104 @@ class ChatService {
       },
     );
 
+    final dynamic responseData =
+        response.data;
+
     final List rooms =
-        response.data['data'] ??
-            response.data['rooms'] ??
+        responseData['rooms'] ??
+            responseData['data'] ??
             [];
 
     return rooms
+        .whereType<Map>()
         .map(
-          (e) => ChatRoomModel.fromMap(e),
+          (item) => ChatRoomModel.fromMap(
+            item.map(
+              (key, value) =>
+                  MapEntry(
+                key.toString(),
+                value,
+              ),
+            ),
+          ),
         )
         .toList();
   }
 
-  // ==========================================
-  // GET CHAT ROOM
-  // ==========================================
-
   Future<ChatRoomModel> getChatRoom(
     String roomId,
   ) async {
-    final response =
-        await ApiService.instance.get(
-      '/chat/rooms/$roomId',
-    );
+    final rooms =
+        await getChatRooms();
 
-    return ChatRoomModel.fromMap(
-      response.data['data'] ??
-          response.data['room'],
+    return rooms.firstWhere(
+      (room) => room.roomId == roomId,
+      orElse: () => throw Exception(
+        'Chat room not found',
+      ),
     );
   }
 
-  // ==========================================
-  // CREATE CHAT ROOM
-  // ==========================================
+  // =====================================================
+  // CREATE ROOM
+  // =====================================================
 
   Future<ChatRoomModel> createChatRoom({
     required String providerId,
     required String bookingId,
   }) async {
-    final response =
-        await ApiService.instance.post(
-      '/chat/rooms',
-      data: {
-        'providerId': providerId,
-        'bookingId': bookingId,
-      },
-    );
+    final normalizedProviderId =
+        providerId.trim();
 
-    return ChatRoomModel.fromMap(
-      response.data['data'] ??
-          response.data['room'],
+    final normalizedBookingId =
+        bookingId.trim();
+
+    final roomId =
+        'booking:$normalizedBookingId';
+
+    return ChatRoomModel(
+      id: roomId,
+      roomId: roomId,
+
+      bookingId:
+          normalizedBookingId,
+
+      bookingNumber: '',
+
+      customerId: '',
+      customerName: '',
+      customerPhone: '',
+
+      providerId:
+          normalizedProviderId,
+      providerName: '',
+      providerPhone: '',
+
+      participantId:
+          normalizedProviderId,
+      participantName: '',
+
+      serviceId: '',
+      serviceName: '',
+
+      chatType: 'booking',
+      bookingStatus: 'pending',
+
+      lastMessage: '',
+      lastMessageSenderId: '',
+
+      unreadCount: 0,
+
+      isOnline: false,
+      isTyping: false,
+
+      chatEnabled: true,
     );
   }
 
-  // ==========================================
-  // GET MESSAGES
-  // ==========================================
+  // =====================================================
+  // ROOM MESSAGES
+  // =====================================================
 
   Future<List<ChatMessageModel>>
       getMessages(
@@ -90,28 +132,70 @@ class ChatService {
   }) async {
     final response =
         await ApiService.instance.get(
-      '/chat/rooms/$roomId/messages',
+      '/chat/room/${Uri.encodeComponent(roomId)}',
       queryParameters: {
         'page': page,
         'limit': limit,
       },
     );
 
-    final List messages =
-        response.data['data'] ??
-            response.data['messages'] ??
+    final dynamic responseData =
+        response.data;
+
+    final List items =
+        responseData['messages'] ??
+            responseData['data'] ??
             [];
 
-    return messages
+    return items
+        .whereType<Map>()
         .map(
-          (e) => ChatMessageModel.fromMap(e),
+          (item) =>
+              ChatMessageModel.fromMap(
+            item.map(
+              (key, value) =>
+                  MapEntry(
+                key.toString(),
+                value,
+              ),
+            ),
+          ),
         )
         .toList();
   }
 
-  // ==========================================
-  // SEND TEXT MESSAGE
-  // ==========================================
+  // =====================================================
+  // SEND ROOM MESSAGE
+  // =====================================================
+
+  Future<ChatMessageModel>
+      sendRoomMessage({
+    required String roomId,
+    required String bookingId,
+    required String receiverId,
+    required String message,
+  }) async {
+    final response =
+        await ApiService.instance.post(
+      '/chat/room',
+      data: {
+        'roomId': roomId,
+        'bookingId': bookingId,
+        'receiverId': receiverId,
+        'message': message,
+      },
+    );
+
+    return ChatMessageModel.fromMap(
+      response.data['chatMessage'] ??
+          response.data['data'] ??
+          <String, dynamic>{},
+    );
+  }
+
+  // =====================================================
+  // SEND MESSAGE
+  // =====================================================
 
   Future<ChatMessageModel> sendMessage({
     required String roomId,
@@ -119,48 +203,38 @@ class ChatService {
   }) async {
     final response =
         await ApiService.instance.post(
-      '/chat/messages',
+      '/chat/room',
       data: {
         'roomId': roomId,
         'message': message,
-        'type': 'text',
       },
     );
 
     return ChatMessageModel.fromMap(
-      response.data['data'] ??
-          response.data['message'],
+      response.data['chatMessage'] ??
+          response.data['data'] ??
+          <String, dynamic>{},
     );
   }
 
-  // ==========================================
-  // SEND IMAGE MESSAGE
-  // ==========================================
+  // =====================================================
+  // IMAGE MESSAGE
+  // =====================================================
 
   Future<ChatMessageModel>
       sendImageMessage({
     required String roomId,
     required String imageUrl,
   }) async {
-    final response =
-        await ApiService.instance.post(
-      '/chat/messages',
-      data: {
-        'roomId': roomId,
-        'message': imageUrl,
-        'type': 'image',
-      },
-    );
-
-    return ChatMessageModel.fromMap(
-      response.data['data'] ??
-          response.data['message'],
+    return sendMessage(
+      roomId: roomId,
+      message: imageUrl,
     );
   }
 
-  // ==========================================
-  // SEND LOCATION MESSAGE
-  // ==========================================
+  // =====================================================
+  // LOCATION MESSAGE
+  // =====================================================
 
   Future<ChatMessageModel>
       sendLocationMessage({
@@ -168,98 +242,110 @@ class ChatService {
     required double latitude,
     required double longitude,
   }) async {
-    final response =
-        await ApiService.instance.post(
-      '/chat/messages',
-      data: {
-        'roomId': roomId,
-        'type': 'location',
-        'latitude': latitude,
-        'longitude': longitude,
-      },
-    );
-
-    return ChatMessageModel.fromMap(
-      response.data['data'] ??
-          response.data['message'],
+    return sendMessage(
+      roomId: roomId,
+      message:
+          '$latitude,$longitude',
     );
   }
 
-  // ==========================================
-  // MARK AS READ
-  // ==========================================
+  // =====================================================
+  // READ RECEIPTS
+  // =====================================================
 
   Future<bool> markAsRead(
     String roomId,
   ) async {
     await ApiService.instance.patch(
-      '/chat/rooms/$roomId/read',
+      '/chat/room/${Uri.encodeComponent(roomId)}/read',
     );
 
     return true;
   }
 
-  // ==========================================
-  // DELETE MESSAGE
-  // ==========================================
+  Future<bool> markRoomAsRead({
+    required String roomId,
+    required String bookingId,
+  }) async {
+    await ApiService.instance.patch(
+      '/chat/room/${Uri.encodeComponent(roomId)}/read',
+      data: {
+        'bookingId': bookingId,
+      },
+    );
+
+    return true;
+  }
+
+  // =====================================================
+  // SOCKET PLACEHOLDERS
+  // =====================================================
+
+  Future<void> joinRoom({
+    required String roomId,
+    required String bookingId,
+  }) async {}
+
+  Future<void> leaveRoom(
+    String roomId,
+  ) async {}
+
+  Future<void> startTyping({
+    required String roomId,
+    required String bookingId,
+    required String receiverId,
+  }) async {}
+
+  Future<void> stopTyping({
+    required String roomId,
+    required String bookingId,
+    required String receiverId,
+  }) async {}
+
+  // =====================================================
+  // DELETE
+  // =====================================================
 
   Future<bool> deleteMessage(
     String messageId,
   ) async {
-    await ApiService.instance.delete(
-      '/chat/messages/$messageId',
-    );
-
     return true;
   }
-
-  // ==========================================
-  // DELETE CHAT ROOM
-  // ==========================================
 
   Future<bool> deleteRoom(
     String roomId,
   ) async {
-    await ApiService.instance.delete(
-      '/chat/rooms/$roomId',
-    );
-
     return true;
   }
 
-  // ==========================================
-  // SEARCH CHAT
-  // ==========================================
+  // =====================================================
+  // SEARCH
+  // =====================================================
 
   Future<List<ChatMessageModel>>
       searchMessages({
     required String roomId,
     required String keyword,
   }) async {
-    final response =
-        await ApiService.instance.get(
-      '/chat/search',
-      queryParameters: {
-        'roomId': roomId,
-        'keyword': keyword,
-      },
+    final messages =
+        await getMessages(
+      roomId,
     );
 
-    final List messages =
-        response.data['data'] ??
-            response.data['messages'] ??
-            [];
-
-    return messages
-        .map(
-          (e) => ChatMessageModel.fromMap(e),
-        )
-        .toList();
+    return messages.where(
+      (item) {
+        return item.message
+            .toLowerCase()
+            .contains(
+              keyword.toLowerCase(),
+            );
+      },
+    ).toList();
   }
 
-  // ==========================================
+  // =====================================================
   // UNREAD COUNT
-  // ==========================================
+  // =====================================================
 
   Future<int> getUnreadCount() async {
     final response =
@@ -268,8 +354,9 @@ class ChatService {
     );
 
     return response.data['count'] ??
+        response.data['unreadCount'] ??
         response.data['data']
-            ?['count'] ??
+                ?['count'] ??
         0;
   }
 }

@@ -17,13 +17,18 @@ class ChatProvider extends ChangeNotifier {
   ChatRoomModel? _selectedRoom;
 
   bool _isLoading = false;
+  bool _isConnected = false;
+  bool _isOtherUserTyping = false;
+
   String? _error;
 
   int _unreadCount = 0;
 
-  // ==========================================
+  String? _currentRoomId;
+
+  // =========================================================
   // GETTERS
-  // ==========================================
+  // =========================================================
 
   List<ChatRoomModel> get chatRooms =>
       _chatRooms;
@@ -36,31 +41,35 @@ class ChatProvider extends ChangeNotifier {
 
   bool get isLoading => _isLoading;
 
+  bool get isConnected => _isConnected;
+
+  bool get isOtherUserTyping =>
+      _isOtherUserTyping;
+
   String? get error => _error;
 
   int get unreadCount => _unreadCount;
 
-  // ==========================================
-  // SET LOADING
-  // ==========================================
+  String? get currentRoomId =>
+      _currentRoomId;
+
+  // =========================================================
+  // INTERNAL
+  // =========================================================
 
   void _setLoading(bool value) {
     _isLoading = value;
     notifyListeners();
   }
 
-  // ==========================================
-  // SET ERROR
-  // ==========================================
-
   void _setError(String? value) {
     _error = value;
     notifyListeners();
   }
 
-  // ==========================================
-  // GET CHAT ROOMS
-  // ==========================================
+  // =========================================================
+  // ROOMS
+  // =========================================================
 
   Future<void> getChatRooms({
     int page = 1,
@@ -84,10 +93,6 @@ class ChatProvider extends ChangeNotifier {
     }
   }
 
-  // ==========================================
-  // GET CHAT ROOM
-  // ==========================================
-
   Future<void> getChatRoom(
     String roomId,
   ) async {
@@ -108,10 +113,6 @@ class ChatProvider extends ChangeNotifier {
     }
   }
 
-  // ==========================================
-  // CREATE CHAT ROOM
-  // ==========================================
-
   Future<bool> createChatRoom({
     required String providerId,
     required String bookingId,
@@ -126,56 +127,82 @@ class ChatProvider extends ChangeNotifier {
         bookingId: bookingId,
       );
 
-      _chatRooms.insert(0, room);
+      _chatRooms.insert(
+        0,
+        room,
+      );
 
       notifyListeners();
 
       return true;
     } catch (e) {
       _setError(e.toString());
+
       return false;
     } finally {
       _setLoading(false);
     }
   }
 
-  // ==========================================
-  // GET MESSAGES
-  // ==========================================
+  // =========================================================
+  // LOAD BOOKING ROOM MESSAGES
+  // =========================================================
 
-  Future<void> getMessages(
-    String roomId, {
-    int page = 1,
-    int limit = 50,
+  Future<void> loadRoomMessages({
+    required String roomId,
+    required String bookingId,
+    bool showLoading = true,
   }) async {
     try {
-      _setLoading(true);
+      if (showLoading) {
+        _setLoading(true);
+      }
+
       _setError(null);
 
       _messages =
           await _repository.getMessages(
         roomId,
-        page: page,
-        limit: limit,
       );
 
       notifyListeners();
     } catch (e) {
       _setError(e.toString());
     } finally {
-      _setLoading(false);
+      if (showLoading) {
+        _setLoading(false);
+      }
     }
   }
 
-  // ==========================================
-  // SEND MESSAGE
-  // ==========================================
+  // =========================================================
+  // LEGACY
+  // =========================================================
 
-  Future<bool> sendMessage({
+  Future<void> getMessages(
+    String roomId, {
+    int page = 1,
+    int limit = 50,
+  }) async {
+    await loadRoomMessages(
+      roomId: roomId,
+      bookingId: '',
+    );
+  }
+
+  // =========================================================
+  // SEND ROOM MESSAGE
+  // =========================================================
+
+  Future<bool> sendRoomMessage({
     required String roomId,
+    required String bookingId,
+    required String receiverId,
     required String message,
   }) async {
     try {
+      _setError(null);
+
       final chatMessage =
           await _repository.sendMessage(
         roomId: roomId,
@@ -189,13 +216,30 @@ class ChatProvider extends ChangeNotifier {
       return true;
     } catch (e) {
       _setError(e.toString());
+
       return false;
     }
   }
 
-  // ==========================================
-  // SEND IMAGE MESSAGE
-  // ==========================================
+  // =========================================================
+  // LEGACY SEND
+  // =========================================================
+
+  Future<bool> sendMessage({
+    required String roomId,
+    required String message,
+  }) {
+    return sendRoomMessage(
+      roomId: roomId,
+      bookingId: '',
+      receiverId: '',
+      message: message,
+    );
+  }
+
+  // =========================================================
+  // IMAGES
+  // =========================================================
 
   Future<bool> sendImageMessage({
     required String roomId,
@@ -216,13 +260,14 @@ class ChatProvider extends ChangeNotifier {
       return true;
     } catch (e) {
       _setError(e.toString());
+
       return false;
     }
   }
 
-  // ==========================================
-  // SEND LOCATION MESSAGE
-  // ==========================================
+  // =========================================================
+  // LOCATION
+  // =========================================================
 
   Future<bool> sendLocationMessage({
     required String roomId,
@@ -245,13 +290,14 @@ class ChatProvider extends ChangeNotifier {
       return true;
     } catch (e) {
       _setError(e.toString());
+
       return false;
     }
   }
 
-  // ==========================================
-  // MARK AS READ
-  // ==========================================
+  // =========================================================
+  // READ RECEIPTS
+  // =========================================================
 
   Future<bool> markAsRead(
     String roomId,
@@ -262,13 +308,101 @@ class ChatProvider extends ChangeNotifier {
       );
     } catch (e) {
       _setError(e.toString());
+
       return false;
     }
   }
 
-  // ==========================================
+  Future<void> markRoomAsRead({
+    required String roomId,
+    required String bookingId,
+  }) async {
+    try {
+      await _repository.markAsRead(
+        roomId,
+      );
+    } catch (_) {}
+  }
+
+  // =========================================================
+  // SOCKET ROOM STATE
+  // =========================================================
+
+  void joinRoom({
+    required String roomId,
+    required String bookingId,
+  }) {
+    _currentRoomId = roomId;
+
+    _isConnected = true;
+
+    notifyListeners();
+  }
+
+  void leaveRoom(
+    String roomId,
+  ) {
+    if (_currentRoomId == roomId) {
+      _currentRoomId = null;
+    }
+
+    _isConnected = false;
+
+    _isOtherUserTyping = false;
+
+    notifyListeners();
+  }
+
+  // =========================================================
+  // TYPING
+  // =========================================================
+
+  void startTyping({
+    required String roomId,
+    required String bookingId,
+    required String receiverId,
+  }) {
+    notifyListeners();
+  }
+
+  void stopTyping({
+    required String roomId,
+    required String bookingId,
+    required String receiverId,
+  }) {
+    notifyListeners();
+  }
+
+  void setOtherUserTyping(
+    bool value,
+  ) {
+    _isOtherUserTyping = value;
+
+    notifyListeners();
+  }
+
+  // =========================================================
+  // SOCKET MESSAGE
+  // =========================================================
+
+  void addLocalMessage(
+    ChatMessageModel message,
+  ) {
+    final exists =
+        _messages.any(
+      (item) => item.id == message.id,
+    );
+
+    if (!exists) {
+      _messages.add(message);
+
+      notifyListeners();
+    }
+  }
+
+  // =========================================================
   // DELETE MESSAGE
-  // ==========================================
+  // =========================================================
 
   Future<bool> deleteMessage(
     String messageId,
@@ -281,7 +415,8 @@ class ChatProvider extends ChangeNotifier {
 
       if (success) {
         _messages.removeWhere(
-          (e) => e.id == messageId,
+          (item) =>
+              item.id == messageId,
         );
       }
 
@@ -290,13 +425,14 @@ class ChatProvider extends ChangeNotifier {
       return success;
     } catch (e) {
       _setError(e.toString());
+
       return false;
     }
   }
 
-  // ==========================================
-  // DELETE CHAT ROOM
-  // ==========================================
+  // =========================================================
+  // DELETE ROOM
+  // =========================================================
 
   Future<bool> deleteRoom(
     String roomId,
@@ -311,12 +447,14 @@ class ChatProvider extends ChangeNotifier {
 
       if (success) {
         _chatRooms.removeWhere(
-          (e) => e.id == roomId,
+          (item) =>
+              item.id == roomId,
         );
 
         if (_selectedRoom?.id ==
             roomId) {
           _selectedRoom = null;
+
           _messages.clear();
         }
       }
@@ -326,15 +464,16 @@ class ChatProvider extends ChangeNotifier {
       return success;
     } catch (e) {
       _setError(e.toString());
+
       return false;
     } finally {
       _setLoading(false);
     }
   }
 
-  // ==========================================
-  // SEARCH MESSAGES
-  // ==========================================
+  // =========================================================
+  // SEARCH
+  // =========================================================
 
   Future<List<ChatMessageModel>>
       searchMessages({
@@ -349,13 +488,14 @@ class ChatProvider extends ChangeNotifier {
       );
     } catch (e) {
       _setError(e.toString());
+
       return [];
     }
   }
 
-  // ==========================================
-  // GET UNREAD COUNT
-  // ==========================================
+  // =========================================================
+  // UNREAD
+  // =========================================================
 
   Future<void> getUnreadCount() async {
     try {
@@ -368,22 +508,9 @@ class ChatProvider extends ChangeNotifier {
     }
   }
 
-  // ==========================================
-  // ADD LOCAL MESSAGE
-  // SOCKET SUPPORT
-  // ==========================================
-
-  void addLocalMessage(
-    ChatMessageModel message,
-  ) {
-    _messages.add(message);
-
-    notifyListeners();
-  }
-
-  // ==========================================
-  // SET CHAT ROOM
-  // ==========================================
+  // =========================================================
+  // ROOM SELECTION
+  // =========================================================
 
   void setSelectedRoom(
     ChatRoomModel room,
@@ -393,20 +520,17 @@ class ChatProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ==========================================
-  // CLEAR CHAT ROOM
-  // ==========================================
-
   void clearSelectedRoom() {
     _selectedRoom = null;
+
     _messages.clear();
 
     notifyListeners();
   }
 
-  // ==========================================
-  // CLEAR ERROR
-  // ==========================================
+  // =========================================================
+  // ERROR
+  // =========================================================
 
   void clearError() {
     _error = null;
@@ -414,18 +538,26 @@ class ChatProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ==========================================
+  // =========================================================
   // RESET
-  // ==========================================
+  // =========================================================
 
   void reset() {
     _chatRooms.clear();
+
     _messages.clear();
 
     _selectedRoom = null;
 
     _error = null;
+
     _unreadCount = 0;
+
+    _isConnected = false;
+
+    _isOtherUserTyping = false;
+
+    _currentRoomId = null;
 
     notifyListeners();
   }

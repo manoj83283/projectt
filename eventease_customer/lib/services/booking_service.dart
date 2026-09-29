@@ -6,16 +6,13 @@ import 'auth_service.dart';
 class BookingService {
   BookingService._();
 
-  static final BookingService instance =
-      BookingService._();
+  static final BookingService instance = BookingService._();
 
   // =====================================================
   // RESPONSE HELPERS
   // =====================================================
 
-  dynamic _responseData(
-    dynamic response,
-  ) {
+  dynamic _responseData(dynamic response) {
     try {
       return response.data;
     } catch (_) {
@@ -23,52 +20,29 @@ class BookingService {
     }
   }
 
-  Map<String, dynamic> _asMap(
-    dynamic value,
-  ) {
+  Map<String, dynamic> _asMap(dynamic value) {
     if (value is Map<String, dynamic>) {
       return value;
     }
 
     if (value is Map) {
       return value.map(
-        (
-          key,
-          dynamic item,
-        ) {
-          return MapEntry(
-            key.toString(),
-            item,
-          );
-        },
+        (key, dynamic item) => MapEntry(
+          key.toString(),
+          item,
+        ),
       );
     }
 
     return <String, dynamic>{};
   }
 
-  dynamic _extractSingle(
-    dynamic response,
-  ) {
-    final dynamic responseData =
-        _responseData(response);
+  dynamic _extractSingle(dynamic response) {
+    final dynamic responseData = _responseData(response);
 
     if (responseData is Map) {
-      final map = _asMap(
-        responseData,
-      );
+      final map = _asMap(responseData);
 
-      /*
-       * The backend commonly returns:
-       *
-       * {
-       *   "success": true,
-       *   "booking": {...},
-       *   "data": {...}
-       * }
-       *
-       * Prefer specifically named objects first.
-       */
       return map['booking'] ??
           map['order'] ??
           map['result'] ??
@@ -79,26 +53,17 @@ class BookingService {
     return responseData;
   }
 
-  List<dynamic> _extractList(
-    dynamic response,
-  ) {
-    final dynamic responseData =
-        _responseData(response);
+  List<dynamic> _extractList(dynamic response) {
+    final dynamic responseData = _responseData(response);
 
     if (responseData is List) {
       return responseData;
     }
 
     if (responseData is Map) {
-      final map = _asMap(
-        responseData,
-      );
+      final map = _asMap(responseData);
 
-      /*
-       * Prefer specifically named lists before `data`.
-       */
-      final dynamic list =
-          map['bookings'] ??
+      final dynamic list = map['bookings'] ??
           map['orders'] ??
           map['items'] ??
           map['results'] ??
@@ -108,21 +73,10 @@ class BookingService {
         return list;
       }
 
-      /*
-       * Some APIs wrap lists one level deeper:
-       *
-       * {
-       *   "data": {
-       *     "bookings": [...]
-       *   }
-       * }
-       */
       if (list is Map) {
-        final nestedMap =
-            _asMap(list);
+        final nestedMap = _asMap(list);
 
-        final dynamic nestedList =
-            nestedMap['bookings'] ??
+        final dynamic nestedList = nestedMap['bookings'] ??
             nestedMap['orders'] ??
             nestedMap['items'] ??
             nestedMap['results'];
@@ -136,21 +90,13 @@ class BookingService {
     return <dynamic>[];
   }
 
-  Map<String, dynamic> _extractMap(
-    dynamic response,
-  ) {
-    final dynamic responseData =
-        _responseData(response);
+  Map<String, dynamic> _extractMap(dynamic response) {
+    final dynamic responseData = _responseData(response);
 
     if (responseData is Map) {
-      final map = _asMap(
-        responseData,
-      );
+      final map = _asMap(responseData);
 
-      final dynamic payload =
-          map['data'] ??
-          map['result'] ??
-          map;
+      final dynamic payload = map['data'] ?? map['result'] ?? map;
 
       if (payload is Map) {
         return _asMap(payload);
@@ -164,8 +110,7 @@ class BookingService {
     String value,
     String fieldName,
   ) {
-    final normalizedValue =
-        value.trim();
+    final normalizedValue = value.trim();
 
     if (normalizedValue.isEmpty) {
       throw ArgumentError(
@@ -176,9 +121,7 @@ class BookingService {
     return normalizedValue;
   }
 
-  String _normalizeStatus(
-    String value,
-  ) {
+  String _normalizeStatus(String value) {
     return value
         .trim()
         .toLowerCase()
@@ -186,15 +129,11 @@ class BookingService {
         .replaceAll(' ', '_');
   }
 
-  int _normalizePage(
-    int page,
-  ) {
+  int _normalizePage(int page) {
     return page < 1 ? 1 : page;
   }
 
-  int _normalizeLimit(
-    int limit,
-  ) {
+  int _normalizeLimit(int limit) {
     if (limit < 1) {
       return 20;
     }
@@ -211,13 +150,11 @@ class BookingService {
   // =====================================================
 
   Future<void> _ensureAuthenticated() async {
-    await AuthService.instance
-        .ensureAuthenticated();
+    await AuthService.instance.ensureAuthenticated();
 
     if (!ApiService.instance.hasAuthToken) {
       throw Exception(
-        'Authentication token is unavailable. '
-        'Please sign in again.',
+        'Authentication token is unavailable. Please sign in again.',
       );
     }
   }
@@ -226,9 +163,7 @@ class BookingService {
   // MODEL CONVERSION
   // =====================================================
 
-  OrderModel _orderFromResponse(
-    dynamic response,
-  ) {
+  OrderModel _orderFromResponse(dynamic response) {
     final map = _asMap(
       _extractSingle(response),
     );
@@ -242,9 +177,7 @@ class BookingService {
     return OrderModel.fromMap(map);
   }
 
-  BookingModel _bookingFromResponse(
-    dynamic response,
-  ) {
+  BookingModel _bookingFromResponse(dynamic response) {
     final map = _asMap(
       _extractSingle(response),
     );
@@ -255,8 +188,7 @@ class BookingService {
       );
     }
 
-    final booking =
-        BookingModel.fromMap(map);
+    final booking = BookingModel.fromMap(map);
 
     if (booking.id.trim().isEmpty) {
       throw const FormatException(
@@ -267,39 +199,27 @@ class BookingService {
     return booking;
   }
 
-  List<OrderModel> _ordersFromResponse(
-    dynamic response,
-  ) {
+  List<OrderModel> _ordersFromResponse(dynamic response) {
     return _extractList(response)
         .whereType<Map>()
         .map(
-          (item) {
-            return OrderModel.fromMap(
-              _asMap(item),
-            );
-          },
+          (item) => OrderModel.fromMap(
+            _asMap(item),
+          ),
         )
         .toList();
   }
 
-  List<BookingModel>
-      _bookingsFromResponse(
-    dynamic response,
-  ) {
+  List<BookingModel> _bookingsFromResponse(dynamic response) {
     return _extractList(response)
         .whereType<Map>()
         .map(
-          (item) {
-            return BookingModel.fromMap(
-              _asMap(item),
-            );
-          },
+          (item) => BookingModel.fromMap(
+            _asMap(item),
+          ),
         )
         .where(
-          (booking) =>
-              booking.id
-                  .trim()
-                  .isNotEmpty,
+          (booking) => booking.id.trim().isNotEmpty,
         )
         .toList();
   }
@@ -317,32 +237,23 @@ class BookingService {
   }) async {
     await _ensureAuthenticated();
 
-    final normalizedBookingId =
-        _normalizeId(
+    final normalizedBookingId = _normalizeId(
       bookingId,
       'Booking ID',
     );
 
-    final response =
-        await ApiService.instance.post(
+    final response = await ApiService.instance.post(
       '/orders',
       data: {
-        'bookingId':
-            normalizedBookingId,
+        'bookingId': normalizedBookingId,
         'amount': amount,
-        'paymentMethod':
-            paymentMethod
-                .trim()
-                .toUpperCase(),
-        if (notes != null &&
-            notes.trim().isNotEmpty)
+        'paymentMethod': paymentMethod.trim().toUpperCase(),
+        if (notes != null && notes.trim().isNotEmpty)
           'notes': notes.trim(),
       },
     );
 
-    return _orderFromResponse(
-      response,
-    );
+    return _orderFromResponse(response);
   }
 
   // =====================================================
@@ -356,19 +267,15 @@ class BookingService {
   }) async {
     await _ensureAuthenticated();
 
-    final response =
-        await ApiService.instance.get(
+    final response = await ApiService.instance.get(
       '/orders/my',
       queryParameters: {
         'page': _normalizePage(page),
-        'limit':
-            _normalizeLimit(limit),
+        'limit': _normalizeLimit(limit),
       },
     );
 
-    return _ordersFromResponse(
-      response,
-    );
+    return _ordersFromResponse(response);
   }
 
   // =====================================================
@@ -381,20 +288,16 @@ class BookingService {
   ) async {
     await _ensureAuthenticated();
 
-    final normalizedOrderId =
-        _normalizeId(
+    final normalizedOrderId = _normalizeId(
       orderId,
       'Order ID',
     );
 
-    final response =
-        await ApiService.instance.get(
+    final response = await ApiService.instance.get(
       '/orders/$normalizedOrderId',
     );
 
-    return _orderFromResponse(
-      response,
-    );
+    return _orderFromResponse(response);
   }
 
   // =====================================================
@@ -402,18 +305,14 @@ class BookingService {
   // GET /api/orders/history
   // =====================================================
 
-  Future<List<OrderModel>>
-      getOrderHistory() async {
+  Future<List<OrderModel>> getOrderHistory() async {
     await _ensureAuthenticated();
 
-    final response =
-        await ApiService.instance.get(
+    final response = await ApiService.instance.get(
       '/orders/history',
     );
 
-    return _ordersFromResponse(
-      response,
-    );
+    return _ordersFromResponse(response);
   }
 
   // =====================================================
@@ -421,20 +320,17 @@ class BookingService {
   // GET /api/orders/:id/track
   // =====================================================
 
-  Future<Map<String, dynamic>>
-      trackOrder(
+  Future<Map<String, dynamic>> trackOrder(
     String orderId,
   ) async {
     await _ensureAuthenticated();
 
-    final normalizedOrderId =
-        _normalizeId(
+    final normalizedOrderId = _normalizeId(
       orderId,
       'Order ID',
     );
 
-    final response =
-        await ApiService.instance.get(
+    final response = await ApiService.instance.get(
       '/orders/$normalizedOrderId/track',
     );
 
@@ -452,14 +348,12 @@ class BookingService {
   }) async {
     await _ensureAuthenticated();
 
-    final normalizedOrderId =
-        _normalizeId(
+    final normalizedOrderId = _normalizeId(
       orderId,
       'Order ID',
     );
 
-    final normalizedStatus =
-        _normalizeStatus(status);
+    final normalizedStatus = _normalizeStatus(status);
 
     if (normalizedStatus.isEmpty) {
       throw ArgumentError(
@@ -467,17 +361,14 @@ class BookingService {
       );
     }
 
-    final response =
-        await ApiService.instance.patch(
+    final response = await ApiService.instance.patch(
       '/orders/$normalizedOrderId/status',
       data: {
         'status': normalizedStatus,
       },
     );
 
-    return _orderFromResponse(
-      response,
-    );
+    return _orderFromResponse(response);
   }
 
   // =====================================================
@@ -491,8 +382,7 @@ class BookingService {
   }) async {
     await _ensureAuthenticated();
 
-    final normalizedOrderId =
-        _normalizeId(
+    final normalizedOrderId = _normalizeId(
       orderId,
       'Order ID',
     );
@@ -500,8 +390,7 @@ class BookingService {
     await ApiService.instance.patch(
       '/orders/$normalizedOrderId/cancel',
       data: {
-        if (reason != null &&
-            reason.trim().isNotEmpty)
+        if (reason != null && reason.trim().isNotEmpty)
           'reason': reason.trim(),
       },
     );
@@ -519,8 +408,7 @@ class BookingService {
   ) async {
     await _ensureAuthenticated();
 
-    final normalizedOrderId =
-        _normalizeId(
+    final normalizedOrderId = _normalizeId(
       orderId,
       'Order ID',
     );
@@ -542,8 +430,7 @@ class BookingService {
   ) async {
     await _ensureAuthenticated();
 
-    final normalizedOrderId =
-        _normalizeId(
+    final normalizedOrderId = _normalizeId(
       orderId,
       'Order ID',
     );
@@ -565,8 +452,7 @@ class BookingService {
   ) async {
     await _ensureAuthenticated();
 
-    final normalizedOrderId =
-        _normalizeId(
+    final normalizedOrderId = _normalizeId(
       orderId,
       'Order ID',
     );
@@ -588,8 +474,7 @@ class BookingService {
   ) async {
     await _ensureAuthenticated();
 
-    final normalizedOrderId =
-        _normalizeId(
+    final normalizedOrderId = _normalizeId(
       orderId,
       'Order ID',
     );
@@ -611,8 +496,7 @@ class BookingService {
   ) async {
     await _ensureAuthenticated();
 
-    final normalizedOrderId =
-        _normalizeId(
+    final normalizedOrderId = _normalizeId(
       orderId,
       'Order ID',
     );
@@ -629,26 +513,21 @@ class BookingService {
   // GET /api/orders/provider
   // =====================================================
 
-  Future<List<OrderModel>>
-      getProviderOrders({
+  Future<List<OrderModel>> getProviderOrders({
     int page = 1,
     int limit = 20,
   }) async {
     await _ensureAuthenticated();
 
-    final response =
-        await ApiService.instance.get(
+    final response = await ApiService.instance.get(
       '/orders/provider',
       queryParameters: {
         'page': _normalizePage(page),
-        'limit':
-            _normalizeLimit(limit),
+        'limit': _normalizeLimit(limit),
       },
     );
 
-    return _ordersFromResponse(
-      response,
-    );
+    return _ordersFromResponse(response);
   }
 
   // =====================================================
@@ -660,21 +539,8 @@ class BookingService {
     required String serviceId,
     DateTime? bookingDate,
     String? bookingTime,
-
-    /*
-     * Retained for compatibility with older call sites.
-     * The backend calculates the actual amount using
-     * the Service document.
-     */
     double? amount,
-
-    /*
-     * Retained for compatibility but intentionally not
-     * submitted to the backend. The backend obtains the
-     * Provider ID from Service.provider.
-     */
     String? providerId,
-
     String? address,
     double? latitude,
     double? longitude,
@@ -686,8 +552,7 @@ class BookingService {
   }) async {
     await _ensureAuthenticated();
 
-    final normalizedServiceId =
-        _normalizeId(
+    final normalizedServiceId = _normalizeId(
       serviceId,
       'Service ID',
     );
@@ -698,14 +563,9 @@ class BookingService {
       );
     }
 
-    final normalizedAddress =
-        address?.trim() ??
-        data?['address']
-            ?.toString()
-            .trim() ??
-        data?['location']
-            ?.toString()
-            .trim() ??
+    final normalizedAddress = address?.trim() ??
+        data?['address']?.toString().trim() ??
+        data?['location']?.toString().trim() ??
         '';
 
     if (normalizedAddress.isEmpty) {
@@ -714,107 +574,50 @@ class BookingService {
       );
     }
 
-    final normalizedTime =
-        bookingTime?.trim() ?? '';
+    final normalizedTime = bookingTime?.trim() ?? '';
 
     final normalizedPaymentMethod =
-        paymentMethod
-            .trim()
-            .toUpperCase();
+        paymentMethod.trim().toUpperCase();
 
-    final resolvedHours =
-        hoursBooked < 1
-            ? 1
-            : hoursBooked;
+    final resolvedHours = hoursBooked < 1 ? 1 : hoursBooked;
 
-    /*
-     * The payload intentionally excludes:
-     *
-     * providerId
-     * amount
-     *
-     * The backend derives the Provider ID and price from
-     * the selected Service document. This prevents incorrect
-     * Provider assignment and client-side price manipulation.
-     */
-    final payload =
-        <String, dynamic>{
+    final rawLocation =
+        data?['location']?.toString().trim() ?? '';
+
+    final rawPaymentMethod =
+        data?['paymentMethod']?.toString().trim() ?? '';
+
+    final payload = <String, dynamic>{
       ...?data,
-
-      'serviceId':
-          normalizedServiceId,
-
-      'bookingDate':
-          bookingDate
-              .toIso8601String(),
-
-      // Backward compatibility for existing backend code.
-      'date':
-          bookingDate
-              .toIso8601String(),
-
+      'serviceId': normalizedServiceId,
+      'bookingDate': bookingDate.toIso8601String(),
+      'date': bookingDate.toIso8601String(),
       if (normalizedTime.isNotEmpty)
-        'bookingTime':
-            normalizedTime,
-
-      'address':
-          normalizedAddress,
-
-      'location':
-          data?['location']
-                  ?.toString()
-                  .trim()
-                  .isNotEmpty ==
-              true
-          ? data!['location']
-              .toString()
-              .trim()
+        'bookingTime': normalizedTime,
+      'address': normalizedAddress,
+      'location': rawLocation.isNotEmpty
+          ? rawLocation
           : normalizedAddress,
-
-      'hoursBooked':
-          data?['hoursBooked'] ??
-          resolvedHours,
-
-      'paymentMethod':
-          data?['paymentMethod']
-                  ?.toString()
-                  .trim()
-                  .toUpperCase() ??
-              normalizedPaymentMethod,
-
-      if (latitude != null)
-        'latitude': latitude,
-
-      if (longitude != null)
-        'longitude': longitude,
-
-      if (notes != null &&
-          notes.trim().isNotEmpty)
+      'hoursBooked': data?['hoursBooked'] ?? resolvedHours,
+      'paymentMethod': rawPaymentMethod.isNotEmpty
+          ? rawPaymentMethod.toUpperCase()
+          : normalizedPaymentMethod,
+      if (latitude != null) 'latitude': latitude,
+      if (longitude != null) 'longitude': longitude,
+      if (notes != null && notes.trim().isNotEmpty)
         'notes': notes.trim(),
-
       if (couponCode != null &&
           couponCode.trim().isNotEmpty)
-        'couponCode':
-            couponCode
-                .trim()
-                .toUpperCase(),
+        'couponCode': couponCode.trim().toUpperCase(),
     };
 
-    final response =
-        await ApiService.instance.post(
+    final response = await ApiService.instance.post(
       '/bookings',
       data: payload,
     );
 
-    final booking =
-        _bookingFromResponse(
-      response,
-    );
+    final booking = _bookingFromResponse(response);
 
-    /*
-     * A successful confirmation screen must use this real
-     * backend booking ID. Never generate a local ID in the UI.
-     */
     if (booking.id.trim().isEmpty) {
       throw const FormatException(
         'The backend did not return a valid MongoDB booking ID.',
@@ -829,31 +632,24 @@ class BookingService {
   // GET /api/bookings/my-bookings
   // =====================================================
 
-  Future<List<BookingModel>>
-      getMyBookings({
+  Future<List<BookingModel>> getMyBookings({
     int page = 1,
     int limit = 20,
     String? status,
   }) async {
     await _ensureAuthenticated();
 
-    final response =
-        await ApiService.instance.get(
+    final response = await ApiService.instance.get(
       '/bookings/my-bookings',
       queryParameters: {
         'page': _normalizePage(page),
-        'limit':
-            _normalizeLimit(limit),
-        if (status != null &&
-            status.trim().isNotEmpty)
-          'status':
-              _normalizeStatus(status),
+        'limit': _normalizeLimit(limit),
+        if (status != null && status.trim().isNotEmpty)
+          'status': _normalizeStatus(status),
       },
     );
 
-    return _bookingsFromResponse(
-      response,
-    );
+    return _bookingsFromResponse(response);
   }
 
   // =====================================================
@@ -866,56 +662,41 @@ class BookingService {
   ) async {
     await _ensureAuthenticated();
 
-    final normalizedBookingId =
-        _normalizeId(
+    final normalizedBookingId = _normalizeId(
       bookingId,
       'Booking ID',
     );
 
-    final response =
-        await ApiService.instance.get(
+    final response = await ApiService.instance.get(
       '/bookings/$normalizedBookingId',
     );
 
-    return _bookingFromResponse(
-      response,
-    );
+    return _bookingFromResponse(response);
   }
 
   // =====================================================
   // PROVIDER BOOKINGS
   // GET /api/bookings/provider
-  //
-  // This method is maintained for shared compatibility.
-  // The Provider application normally calls:
-  // GET /api/provider/bookings
   // =====================================================
 
-  Future<List<BookingModel>>
-      getProviderBookings({
+  Future<List<BookingModel>> getProviderBookings({
     int page = 1,
     int limit = 20,
     String? status,
   }) async {
     await _ensureAuthenticated();
 
-    final response =
-        await ApiService.instance.get(
+    final response = await ApiService.instance.get(
       '/bookings/provider',
       queryParameters: {
         'page': _normalizePage(page),
-        'limit':
-            _normalizeLimit(limit),
-        if (status != null &&
-            status.trim().isNotEmpty)
-          'status':
-              _normalizeStatus(status),
+        'limit': _normalizeLimit(limit),
+        if (status != null && status.trim().isNotEmpty)
+          'status': _normalizeStatus(status),
       },
     );
 
-    return _bookingsFromResponse(
-      response,
-    );
+    return _bookingsFromResponse(response);
   }
 
   // =====================================================
@@ -923,12 +704,10 @@ class BookingService {
   // GET /api/bookings/history
   // =====================================================
 
-  Future<List<BookingModel>>
-      getBookingHistory() async {
+  Future<List<BookingModel>> getBookingHistory() async {
     await _ensureAuthenticated();
 
-    final response =
-        await ApiService.instance.get(
+    final response = await ApiService.instance.get(
       '/bookings/history',
       queryParameters: const {
         'page': 1,
@@ -936,9 +715,7 @@ class BookingService {
       },
     );
 
-    return _bookingsFromResponse(
-      response,
-    );
+    return _bookingsFromResponse(response);
   }
 
   // =====================================================
@@ -946,8 +723,7 @@ class BookingService {
   // PATCH /api/bookings/:id/status
   // =====================================================
 
-  Future<BookingModel>
-      updateBookingStatus({
+  Future<BookingModel> updateBookingStatus({
     required String bookingId,
     required String status,
     String? reason,
@@ -955,14 +731,12 @@ class BookingService {
   }) async {
     await _ensureAuthenticated();
 
-    final normalizedBookingId =
-        _normalizeId(
+    final normalizedBookingId = _normalizeId(
       bookingId,
       'Booking ID',
     );
 
-    final normalizedStatus =
-        _normalizeStatus(status);
+    final normalizedStatus = _normalizeStatus(status);
 
     if (normalizedStatus.isEmpty) {
       throw ArgumentError(
@@ -970,24 +744,18 @@ class BookingService {
       );
     }
 
-    final response =
-        await ApiService.instance.patch(
+    final response = await ApiService.instance.patch(
       '/bookings/$normalizedBookingId/status',
       data: {
-        'status':
-            normalizedStatus,
-        if (reason != null &&
-            reason.trim().isNotEmpty)
+        'status': normalizedStatus,
+        if (reason != null && reason.trim().isNotEmpty)
           'reason': reason.trim(),
-        if (note != null &&
-            note.trim().isNotEmpty)
+        if (note != null && note.trim().isNotEmpty)
           'note': note.trim(),
       },
     );
 
-    return _bookingFromResponse(
-      response,
-    );
+    return _bookingFromResponse(response);
   }
 
   // =====================================================
@@ -1000,8 +768,7 @@ class BookingService {
   ) async {
     await _ensureAuthenticated();
 
-    final normalizedBookingId =
-        _normalizeId(
+    final normalizedBookingId = _normalizeId(
       bookingId,
       'Booking ID',
     );
@@ -1023,8 +790,7 @@ class BookingService {
   ) async {
     await _ensureAuthenticated();
 
-    final normalizedBookingId =
-        _normalizeId(
+    final normalizedBookingId = _normalizeId(
       bookingId,
       'Booking ID',
     );
@@ -1046,8 +812,7 @@ class BookingService {
   ) async {
     await _ensureAuthenticated();
 
-    final normalizedBookingId =
-        _normalizeId(
+    final normalizedBookingId = _normalizeId(
       bookingId,
       'Booking ID',
     );
@@ -1069,8 +834,7 @@ class BookingService {
   ) async {
     await _ensureAuthenticated();
 
-    final normalizedBookingId =
-        _normalizeId(
+    final normalizedBookingId = _normalizeId(
       bookingId,
       'Booking ID',
     );
@@ -1093,8 +857,7 @@ class BookingService {
   }) async {
     await _ensureAuthenticated();
 
-    final normalizedBookingId =
-        _normalizeId(
+    final normalizedBookingId = _normalizeId(
       bookingId,
       'Booking ID',
     );
@@ -1102,8 +865,7 @@ class BookingService {
     await ApiService.instance.patch(
       '/bookings/$normalizedBookingId/reject',
       data: {
-        if (reason != null &&
-            reason.trim().isNotEmpty)
+        if (reason != null && reason.trim().isNotEmpty)
           'reason': reason.trim(),
       },
     );
@@ -1122,8 +884,7 @@ class BookingService {
   }) async {
     await _ensureAuthenticated();
 
-    final normalizedBookingId =
-        _normalizeId(
+    final normalizedBookingId = _normalizeId(
       bookingId,
       'Booking ID',
     );
@@ -1131,8 +892,7 @@ class BookingService {
     await ApiService.instance.patch(
       '/bookings/$normalizedBookingId/cancel',
       data: {
-        if (reason != null &&
-            reason.trim().isNotEmpty)
+        if (reason != null && reason.trim().isNotEmpty)
           'reason': reason.trim(),
       },
     );
@@ -1142,8 +902,6 @@ class BookingService {
 
   // =====================================================
   // RESCHEDULE BOOKING
-  //
-  // This requires a corresponding backend route:
   // PATCH /api/bookings/:id/reschedule
   // =====================================================
 
@@ -1155,17 +913,14 @@ class BookingService {
   }) async {
     await _ensureAuthenticated();
 
-    final normalizedBookingId =
-        _normalizeId(
+    final normalizedBookingId = _normalizeId(
       bookingId,
       'Booking ID',
     );
 
     if (bookingDate == null &&
         (bookingTime == null ||
-            bookingTime
-                .trim()
-                .isEmpty)) {
+            bookingTime.trim().isEmpty)) {
       throw ArgumentError(
         'A new booking date or time is required.',
       );
@@ -1175,21 +930,13 @@ class BookingService {
       '/bookings/$normalizedBookingId/reschedule',
       data: {
         if (bookingDate != null)
-          'bookingDate':
-              bookingDate
-                  .toIso8601String(),
+          'bookingDate': bookingDate.toIso8601String(),
         if (bookingDate != null)
-          'date':
-              bookingDate
-                  .toIso8601String(),
+          'date': bookingDate.toIso8601String(),
         if (bookingTime != null &&
-            bookingTime
-                .trim()
-                .isNotEmpty)
-          'bookingTime':
-              bookingTime.trim(),
-        if (reason != null &&
-            reason.trim().isNotEmpty)
+            bookingTime.trim().isNotEmpty)
+          'bookingTime': bookingTime.trim(),
+        if (reason != null && reason.trim().isNotEmpty)
           'reason': reason.trim(),
       },
     );
@@ -1199,25 +946,20 @@ class BookingService {
 
   // =====================================================
   // TRACK BOOKING
-  //
-  // This requires a corresponding backend route:
   // GET /api/bookings/:id/track
   // =====================================================
 
-  Future<Map<String, dynamic>>
-      trackBooking({
+  Future<Map<String, dynamic>> trackBooking({
     required String bookingId,
   }) async {
     await _ensureAuthenticated();
 
-    final normalizedBookingId =
-        _normalizeId(
+    final normalizedBookingId = _normalizeId(
       bookingId,
       'Booking ID',
     );
 
-    final response =
-        await ApiService.instance.get(
+    final response = await ApiService.instance.get(
       '/bookings/$normalizedBookingId/track',
     );
 
@@ -1226,8 +968,6 @@ class BookingService {
 
   // =====================================================
   // DELETE BOOKING
-  //
-  // This requires a corresponding backend route:
   // DELETE /api/bookings/:id
   // =====================================================
 
@@ -1236,8 +976,7 @@ class BookingService {
   ) async {
     await _ensureAuthenticated();
 
-    final normalizedBookingId =
-        _normalizeId(
+    final normalizedBookingId = _normalizeId(
       bookingId,
       'Booking ID',
     );
@@ -1248,27 +987,166 @@ class BookingService {
 
     return true;
   }
+
+  // =====================================================
+  // GET SERVICE OTP
+  // GET /api/bookings/:id/service-otp
+  // =====================================================
+
+  Future<String?> getServiceOtp(
+    String bookingId,
+  ) async {
+    await _ensureAuthenticated();
+
+    final normalizedBookingId = _normalizeId(
+      bookingId,
+      'Booking ID',
+    );
+
+    final response = await ApiService.instance.get(
+      '/bookings/$normalizedBookingId/service-otp',
+    );
+
+    final dynamic responseData = _responseData(response);
+
+    if (responseData is! Map) {
+      throw const FormatException(
+        'The backend did not return valid OTP data.',
+      );
+    }
+
+    final responseMap = _asMap(responseData);
+
+    final dynamic nestedPayload = responseMap['data'];
+
+    final nestedMap = nestedPayload is Map
+        ? _asMap(nestedPayload)
+        : <String, dynamic>{};
+
+    final dynamic rawOtp = responseMap['otp'] ??
+        responseMap['serviceOtp'] ??
+        responseMap['code'] ??
+        nestedMap['otp'] ??
+        nestedMap['serviceOtp'] ??
+        nestedMap['code'];
+
+    final otp = rawOtp?.toString().trim();
+
+    if (otp == null || otp.isEmpty) {
+      final otpVerified = responseMap['otpVerified'] == true ||
+          nestedMap['otpVerified'] == true;
+
+      if (otpVerified) {
+        return null;
+      }
+
+      throw Exception(
+        responseMap['message']?.toString() ??
+            nestedMap['message']?.toString() ??
+            'Service OTP is unavailable.',
+      );
+    }
+
+    return otp;
+  }
+
+  // =====================================================
+  // VERIFY SERVICE OTP
+  // POST /api/bookings/:id/verify-service-otp
+  // =====================================================
+
+  Future<BookingModel> verifyServiceOtp({
+    required String bookingId,
+    required String otp,
+  }) async {
+    await _ensureAuthenticated();
+
+    final normalizedBookingId = _normalizeId(
+      bookingId,
+      'Booking ID',
+    );
+
+    final normalizedOtp = otp.trim();
+
+    if (normalizedOtp.length != 4 ||
+        int.tryParse(normalizedOtp) == null) {
+      throw ArgumentError(
+        'A valid 4-digit service OTP is required.',
+      );
+    }
+
+    final response = await ApiService.instance.post(
+      '/bookings/$normalizedBookingId/verify-service-otp',
+      data: {
+        'otp': normalizedOtp,
+      },
+    );
+
+    return _bookingFromResponse(response);
+  }
+
+  // =====================================================
+  // GET BOOKING INVOICE
+  // GET /api/bookings/:id/invoice
+  // =====================================================
+
+  Future<Map<String, dynamic>> getInvoice(
+    String bookingId,
+  ) async {
+    await _ensureAuthenticated();
+
+    final normalizedBookingId = _normalizeId(
+      bookingId,
+      'Booking ID',
+    );
+
+    final response = await ApiService.instance.get(
+      '/bookings/$normalizedBookingId/invoice',
+    );
+
+    final dynamic responseData = _responseData(response);
+
+    if (responseData is! Map) {
+      throw const FormatException(
+        'The backend did not return valid invoice data.',
+      );
+    }
+
+    final responseMap = _asMap(responseData);
+
+    final dynamic invoicePayload =
+        responseMap['invoice'] ??
+        responseMap['data'] ??
+        responseMap;
+
+    if (invoicePayload is! Map) {
+      throw const FormatException(
+        'The backend did not return valid invoice data.',
+      );
+    }
+
+    final invoice = _asMap(invoicePayload);
+
+    if (invoice.isEmpty) {
+      throw const FormatException(
+        'Invoice data is empty.',
+      );
+    }
+
+    return invoice;
+  }
 }
 
 // =====================================================
 // ORDER SERVICE BACKWARD COMPATIBILITY
 // =====================================================
-//
-// Existing code using:
-//
-// OrderService.instance
-//
-// continues to work.
-// =====================================================
 
 class OrderService {
   OrderService._();
 
-  static final OrderService instance =
-      OrderService._();
+  static final OrderService instance = OrderService._();
 
-  final BookingService _service =
-      BookingService.instance;
+  final BookingService _service = BookingService.instance;
 
   Future<OrderModel> createOrder({
     required String bookingId,
@@ -1279,8 +1157,7 @@ class OrderService {
     return _service.createOrder(
       bookingId: bookingId,
       amount: amount,
-      paymentMethod:
-          paymentMethod,
+      paymentMethod: paymentMethod,
       notes: notes,
     );
   }
@@ -1303,14 +1180,11 @@ class OrderService {
     );
   }
 
-  Future<List<OrderModel>>
-      getOrderHistory() {
-    return _service
-        .getOrderHistory();
+  Future<List<OrderModel>> getOrderHistory() {
+    return _service.getOrderHistory();
   }
 
-  Future<Map<String, dynamic>>
-      trackOrder(
+  Future<Map<String, dynamic>> trackOrder(
     String orderId,
   ) {
     return _service.trackOrder(
@@ -1378,13 +1252,11 @@ class OrderService {
     );
   }
 
-  Future<List<OrderModel>>
-      getProviderOrders({
+  Future<List<OrderModel>> getProviderOrders({
     int page = 1,
     int limit = 20,
   }) {
-    return _service
-        .getProviderOrders(
+    return _service.getProviderOrders(
       page: page,
       limit: limit,
     );

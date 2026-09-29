@@ -1,82 +1,124 @@
 import express from "express";
 
 import {
-  addToCart,
-  getMyCart,
-  updateCartItem,
-  removeCartItem,
-  clearCart,
-  getCartSummary,
-} from "../controllers/cartController.js";
+  sendMessage,
+  getMessages,
+  sendRoomMessage,
+  getRoomMessages,
+  getUserRooms,
+  markMessageAsRead,
+  markRoomMessagesAsRead,
+  getUnreadMessageCount,
+} from "../controllers/chatController.js";
 
 import {
   protect,
-  authorizeRoles,
 } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// =====================================================
-// CUSTOMER ONLY
-// =====================================================
+// =======================================================
+// ROOM CHAT ROUTES
+// KEEP ABOVE "/:userId"
+// =======================================================
 
-router.use(
+// =======================================================
+// CHAT ROOMS
+// =======================================================
+
+// GET /api/chat/rooms
+router.get(
+  "/rooms",
   protect,
-  authorizeRoles("user")
+  getUserRooms
 );
 
-// =====================================================
-// GET CART
-// =====================================================
+// =======================================================
+// UNREAD COUNT
+// =======================================================
 
+// GET /api/chat/unread-count
 router.get(
-  "/",
-  getMyCart
+  "/unread-count",
+  protect,
+  getUnreadMessageCount
 );
 
-// =====================================================
-// CART SUMMARY
-// =====================================================
+// =======================================================
+// SEND MESSAGE TO BOOKING ROOM
+// =======================================================
 
-router.get(
-  "/summary",
-  getCartSummary
-);
-
-// =====================================================
-// ADD ITEM TO CART
-// =====================================================
-
+// POST /api/chat/room
 router.post(
-  "/add",
-  addToCart
+  "/room",
+  protect,
+  sendRoomMessage
 );
 
-// =====================================================
-// UPDATE CART ITEM
-// =====================================================
+// =======================================================
+// GET BOOKING ROOM MESSAGES
+// =======================================================
 
+// GET /api/chat/room/:roomId
+router.get(
+  "/room/:roomId",
+  protect,
+  getRoomMessages
+);
+
+// =======================================================
+// READ RECEIPTS
+// =======================================================
+
+// PATCH /api/chat/read/:messageId
+router.patch(
+  "/read/:messageId",
+  protect,
+  markMessageAsRead
+);
+
+// PUT /api/chat/read/:messageId
 router.put(
-  "/item/:itemId",
-  updateCartItem
+  "/read/:messageId",
+  protect,
+  markMessageAsRead
 );
 
-// =====================================================
-// REMOVE CART ITEM
-// =====================================================
+// =======================================================
+// MARK ENTIRE ROOM READ
+// =======================================================
 
-router.delete(
-  "/item/:itemId",
-  removeCartItem
+// PATCH /api/chat/room/:roomId/read
+router.patch(
+  "/room/:roomId/read",
+  protect,
+  markRoomMessagesAsRead
 );
 
-// =====================================================
-// CLEAR WHOLE CART
-// =====================================================
+// PUT /api/chat/room/:roomId/read
+router.put(
+  "/room/:roomId/read",
+  protect,
+  markRoomMessagesAsRead
+);
 
-router.delete(
-  "/clear",
-  clearCart
+// =======================================================
+// USER TO USER CHAT
+// MUST REMAIN LAST
+// =======================================================
+
+// POST /api/chat
+router.post(
+  "/",
+  protect,
+  sendMessage
+);
+
+// GET /api/chat/:userId
+router.get(
+  "/:userId",
+  protect,
+  getMessages
 );
 
 export default router;

@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import mongoose from "mongoose";
 
 import Booking, {
@@ -11,6 +12,21 @@ import Notification from "../models/Notification.js";
 import { sendNotification } from "../utils/notification.js";
 
 // =====================================================
+// CONFIGURATION
+// =====================================================
+
+const MAX_OTP_ATTEMPTS = 5;
+const OTP_LOCK_MINUTES = 15;
+
+const PROVIDER_ARRIVAL_RADIUS_METERS = Math.max(
+  50,
+  Number.parseInt(
+    process.env.PROVIDER_ARRIVAL_RADIUS_METERS || "500",
+    10
+  ) || 500
+);
+
+// =====================================================
 // BOOKING STATUS TRANSITIONS
 // =====================================================
 
@@ -21,6 +37,10 @@ const PROVIDER_STATUS_TRANSITIONS = Object.freeze({
   ],
 
   [BOOKING_STATUSES.ACCEPTED]: [
+    BOOKING_STATUSES.CANCELLED,
+  ],
+
+  [BOOKING_STATUSES.OTP_VERIFIED]: [
     BOOKING_STATUSES.IN_PROGRESS,
     BOOKING_STATUSES.CANCELLED,
   ],
@@ -41,7 +61,7 @@ const CUSTOMER_CANCELLABLE_STATUSES = [
 ];
 
 // =====================================================
-// AUTH HELPERS
+// AUTHENTICATION HELPERS
 // =====================================================
 
 const getAuthenticatedUserId = (req) => {
@@ -70,7 +90,7 @@ const isAdmin = (req) => {
 };
 
 // =====================================================
-// NORMALIZATION HELPERS
+// VALUE HELPERS
 // =====================================================
 
 const normalizeString = (
@@ -84,10 +104,11 @@ const normalizeString = (
     return fallback;
   }
 
-  const normalizedValue =
-    value.toString().trim();
+  const normalized = value
+    .toString()
+    .trim();
 
-  return normalizedValue || fallback;
+  return normalized || fallback;
 };
 
 const normalizeNumber = (
@@ -102,10 +123,10 @@ const normalizeNumber = (
     return fallback;
   }
 
-  const parsedValue = Number(value);
+  const parsed = Number(value);
 
-  return Number.isFinite(parsedValue)
-    ? parsedValue
+  return Number.isFinite(parsed)
+    ? parsed
     : fallback;
 };
 
@@ -125,35 +146,99 @@ const normalizePositiveNumber = (
 const normalizeBookingStatus = (
   value
 ) => {
-  return normalizeString(value)
+  const status = normalizeString(value)
     .toLowerCase()
     .replaceAll("-", "_")
     .replaceAll(" ", "_");
+
+  switch (status) {
+    case "confirmed":
+    case "confirm":
+      return BOOKING_STATUSES.ACCEPTED;
+
+    case "inprogress":
+    case "processing":
+      return BOOKING_STATUSES.IN_PROGRESS;
+
+    case "canceled":
+      return BOOKING_STATUSES.CANCELLED;
+
+    default:
+      return status;
+  }
 };
 
 const normalizePaymentMethod = (
   value
 ) => {
-  const normalizedValue =
-    normalizeString(
-      value,
-      PAYMENT_METHODS.COD
-    ).toUpperCase();
+  const method = normalizeString(
+    value,
+    PAYMENT_METHODS.COD
+  ).toUpperCase();
 
   if (
     Object.values(
       PAYMENT_METHODS
-    ).includes(normalizedValue)
+    ).includes(method)
   ) {
-    return normalizedValue;
+    return method;
   }
 
   return PAYMENT_METHODS.COD;
 };
 
-const isValidObjectId = (value) => {
+const isValidObjectId = (
+  value
+) => {
   return mongoose.Types.ObjectId.isValid(
     value
+  );
+};
+
+const getDocumentId = (
+  value
+) => {
+  if (!value) {
+    return "";
+  }
+
+  if (value._id) {
+    return value._id.toString();
+  }
+
+  if (value.id) {
+    return value.id.toString();
+  }
+
+  return value.toString();
+};
+
+const getDisplayName = (
+  value
+) => {
+  if (!value) {
+    return "";
+  }
+
+  if (typeof value === "string") {
+    return value;
+  }
+
+  const fullName = [
+    value.firstName,
+    value.lastName,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .trim();
+
+  return (
+    value.businessName ||
+    value.shopName ||
+    value.name ||
+    value.fullName ||
+    fullName ||
+    ""
   );
 };
 
@@ -191,11 +276,50 @@ const getEndOfDay = (
   return result;
 };
 
+const calculateDurationMinutes = (
+  booking
+) => {
+  if (
+    !booking?.startedAt ||
+    !booking?.completedAt
+  ) {
+    return normalizePositiveNumber(
+      booking?.durationMinutes,
+      0
+    );
+  }
+
+  const startedAt = new Date(
+    booking.startedAt
+  ).getTime();
+
+  const completedAt = new Date(
+    booking.completedAt
+  ).getTime();
+
+  if (
+    Number.isNaN(startedAt) ||
+    Number.isNaN(completedAt)
+  ) {
+    return 0;
+  }
+
+  return Math.max(
+    0,
+    Math.round(
+      (completedAt - startedAt) /
+        60000
+    )
+  );
+};
+
 // =====================================================
 // PAGINATION
 // =====================================================
 
-const getPagination = (req) => {
+const getPagination = (
+  req
+) => {
   const page = Math.max(
     1,
     Math.floor(
@@ -233,53 +357,168 @@ const getPagination = (req) => {
 // =====================================================
 
 const normalizeLocationPoint = (
-  body
+  body = {}
 ) => {
-  const longitude = normalizeNumber(
+  const rawLongitude =
     body.longitude ??
-      body.lng ??
-      body.locationPoint
-        ?.coordinates?.[0],
+    body.lng ??
+    body.locationPoint
+      ?.coordinates?.[0];
+
+  const rawLatitude =
+    body.latitude ??
+    body.lat ??
+    body.locationPoint
+      ?.coordinates?.[1];
+
+  const hasCoordinates =
+    rawLongitude !== undefined &&
+    rawLongitude !== null &&
+    rawLongitude !== "" &&
+    rawLatitude !== undefined &&
+    rawLatitude !== null &&
+    rawLatitude !== "";
+
+  const longitude = normalizeNumber(
+    rawLongitude,
     0
   );
 
   const latitude = normalizeNumber(
-    body.latitude ??
-      body.lat ??
-      body.locationPoint
-        ?.coordinates?.[1],
+    rawLatitude,
     0
   );
 
   const validLongitude =
+    Number.isFinite(longitude) &&
     longitude >= -180 &&
     longitude <= 180;
 
   const validLatitude =
+    Number.isFinite(latitude) &&
     latitude >= -90 &&
     latitude <= 90;
 
-  if (
-    !validLongitude ||
-    !validLatitude
-  ) {
-    return {
-      type: "Point",
-      coordinates: [0, 0],
-    };
-  }
-
   return {
-    type: "Point",
-    coordinates: [
-      longitude,
-      latitude,
-    ],
+    point: {
+      type: "Point",
+
+      coordinates:
+        validLongitude &&
+        validLatitude
+          ? [
+              longitude,
+              latitude,
+            ]
+          : [0, 0],
+    },
+
+    latitude,
+    longitude,
+
+    isValid:
+      validLongitude &&
+      validLatitude,
+
+    hasCoordinates,
   };
 };
 
+const calculateDistanceMeters = ({
+  fromLatitude,
+  fromLongitude,
+  toLatitude,
+  toLongitude,
+}) => {
+  const values = [
+    fromLatitude,
+    fromLongitude,
+    toLatitude,
+    toLongitude,
+  ].map(Number);
+
+  if (
+    values.some(
+      (value) =>
+        !Number.isFinite(value)
+    )
+  ) {
+    return null;
+  }
+
+  const [
+    latitude1,
+    longitude1,
+    latitude2,
+    longitude2,
+  ] = values;
+
+  const earthRadiusMeters =
+    6371000;
+
+  const toRadians = (
+    degrees
+  ) => {
+    return (
+      degrees *
+      Math.PI /
+      180
+    );
+  };
+
+  const latitudeDifference =
+    toRadians(
+      latitude2 - latitude1
+    );
+
+  const longitudeDifference =
+    toRadians(
+      longitude2 - longitude1
+    );
+
+  const firstLatitude =
+    toRadians(latitude1);
+
+  const secondLatitude =
+    toRadians(latitude2);
+
+  const haversineValue =
+    Math.sin(
+      latitudeDifference / 2
+    ) ** 2 +
+    Math.cos(firstLatitude) *
+      Math.cos(secondLatitude) *
+      Math.sin(
+        longitudeDifference / 2
+      ) ** 2;
+
+  const boundedValue = Math.min(
+    1,
+    Math.max(
+      0,
+      haversineValue
+    )
+  );
+
+  const angularDistance =
+    2 *
+    Math.atan2(
+      Math.sqrt(
+        boundedValue
+      ),
+      Math.sqrt(
+        1 - boundedValue
+      )
+    );
+
+  return Math.round(
+    earthRadiusMeters *
+    angularDistance
+  );
+};
+
 // =====================================================
-// SERVICE PRICE HELPERS
+// SERVICE PRICING
 // =====================================================
 
 const getServicePricing = (
@@ -336,57 +575,145 @@ const getServicePricing = (
 };
 
 // =====================================================
-// DOCUMENT HELPERS
+// OTP HELPERS
 // =====================================================
 
-const getDocumentId = (value) => {
-  if (!value) {
-    return "";
+const getOtpSecret = () => {
+  const secret = normalizeString(
+    process.env.OTP_SECRET
+  );
+
+  if (!secret) {
+    const error = new Error(
+      "OTP_SECRET is not configured. Add OTP_SECRET to mobile_app_backend/.env and restart the backend."
+    );
+
+    error.code =
+      "OTP_SECRET_MISSING";
+
+    throw error;
   }
 
-  if (value._id) {
-    return value._id.toString();
+  if (
+    process.env.NODE_ENV ===
+      "production" &&
+    secret.length < 32
+  ) {
+    const error = new Error(
+      "OTP_SECRET must contain at least 32 characters in production."
+    );
+
+    error.code =
+      "OTP_SECRET_WEAK";
+
+    throw error;
   }
 
-  if (value.id) {
-    return value.id.toString();
-  }
-
-  return value.toString();
+  return secret;
 };
 
-const getDisplayName = (value) => {
-  if (!value) {
-    return "";
+const generateServiceOtp = () => {
+  return crypto
+    .randomInt(
+      1000,
+      10000
+    )
+    .toString();
+};
+
+const hashServiceOtp = (
+  bookingId,
+  otp
+) => {
+  const normalizedBookingId =
+    normalizeString(bookingId);
+
+  const normalizedOtp =
+    normalizeString(otp);
+
+  if (!normalizedBookingId) {
+    throw new Error(
+      "Booking ID is required to hash the service OTP"
+    );
   }
 
-  if (typeof value === "string") {
-    return value;
+  if (
+    !/^\d{4}$/.test(
+      normalizedOtp
+    )
+  ) {
+    throw new Error(
+      "A valid 4-digit service OTP is required"
+    );
   }
 
-  const fullName = [
-    value.firstName,
-    value.lastName,
-  ]
-    .filter(Boolean)
-    .join(" ")
-    .trim();
+  return crypto
+    .createHmac(
+      "sha256",
+      getOtpSecret()
+    )
+    .update(
+      `${normalizedBookingId}:${normalizedOtp}`,
+      "utf8"
+    )
+    .digest("hex");
+};
 
-  return (
-    value.businessName ||
-    value.shopName ||
-    value.name ||
-    value.fullName ||
-    fullName ||
-    ""
+const otpHashesMatch = (
+  storedHash,
+  providedHash
+) => {
+  if (
+    !storedHash ||
+    !providedHash
+  ) {
+    return false;
+  }
+
+  if (
+    !/^[a-f0-9]{64}$/i.test(
+      storedHash
+    ) ||
+    !/^[a-f0-9]{64}$/i.test(
+      providedHash
+    )
+  ) {
+    return false;
+  }
+
+  const storedBuffer =
+    Buffer.from(
+      storedHash,
+      "hex"
+    );
+
+  const providedBuffer =
+    Buffer.from(
+      providedHash,
+      "hex"
+    );
+
+  if (
+    storedBuffer.length === 0 ||
+    storedBuffer.length !==
+      providedBuffer.length
+  ) {
+    return false;
+  }
+
+  return crypto.timingSafeEqual(
+    storedBuffer,
+    providedBuffer
   );
 };
 
 // =====================================================
-// POPULATION HELPERS
+// POPULATION
 // =====================================================
 
-const populateBookingQuery = (query) => {
+const populateBookingQuery = (
+  query
+) => {
   return query
     .populate(
       "user",
@@ -488,7 +815,9 @@ const getPopulatedBooking = async (
   bookingId
 ) => {
   return populateBookingQuery(
-    Booking.findById(bookingId)
+    Booking.findById(
+      bookingId
+    )
   );
 };
 
@@ -496,7 +825,9 @@ const getPopulatedBooking = async (
 // SERIALIZATION
 // =====================================================
 
-const serializeBooking = (booking) => {
+const serializeBooking = (
+  booking
+) => {
   if (!booking) {
     return null;
   }
@@ -509,6 +840,9 @@ const serializeBooking = (booking) => {
         })
       : { ...booking };
 
+  delete bookingObject.serviceOtpHash;
+  delete bookingObject.serviceOtpDisplay;
+
   const customer =
     bookingObject.customer ||
     bookingObject.user;
@@ -519,10 +853,16 @@ const serializeBooking = (booking) => {
   const service =
     bookingObject.service;
 
+  const bookingId =
+    getDocumentId(
+      bookingObject
+    );
+
   const totalPrice =
     normalizePositiveNumber(
       bookingObject.totalPrice,
-      bookingObject.totalAmount || 0
+      bookingObject.totalAmount ||
+        0
     );
 
   const totalAmount =
@@ -531,31 +871,45 @@ const serializeBooking = (booking) => {
       totalPrice
     );
 
-  const bookingStatus =
+  const status =
     bookingObject.status ||
     bookingObject.bookingStatus ||
     BOOKING_STATUSES.PENDING;
 
+  const chatRoomId =
+    normalizeString(
+      bookingObject.chatRoomId,
+      bookingId
+        ? `booking:${bookingId}`
+        : ""
+    );
+
   return {
     ...bookingObject,
 
-    id: getDocumentId(
-      bookingObject
-    ),
+    id:
+      bookingId,
 
     customer,
 
-    customerId: getDocumentId(
-      customer
-    ),
+    customerId:
+      getDocumentId(customer),
 
-    customerName: getDisplayName(
-      customer
-    ),
+    customerName:
+      getDisplayName(customer),
 
-    providerId: getDocumentId(
-      provider
-    ),
+    customerPhone:
+      customer?.phone ||
+      customer?.mobile ||
+      bookingObject.contactNumber ||
+      "",
+
+    customerEmail:
+      customer?.email ||
+      "",
+
+    providerId:
+      getDocumentId(provider),
 
     providerName:
       getDisplayName(provider) ||
@@ -563,18 +917,22 @@ const serializeBooking = (booking) => {
       service?.businessName ||
       "",
 
-    serviceId: getDocumentId(
-      service
-    ),
+    providerPhone:
+      provider?.phone ||
+      provider?.mobile ||
+      "",
+
+    providerEmail:
+      provider?.email ||
+      "",
+
+    serviceId:
+      getDocumentId(service),
 
     serviceName:
       service?.name ||
       service?.title ||
       bookingObject.serviceName ||
-      "",
-
-    bookingNumber:
-      bookingObject.bookingNumber ||
       "",
 
     bookingDate:
@@ -585,10 +943,45 @@ const serializeBooking = (booking) => {
       bookingObject.date ||
       bookingObject.bookingDate,
 
-    status:
-      bookingStatus,
+    status,
 
-    bookingStatus,
+    bookingStatus:
+      status,
+
+    providerArrived:
+      bookingObject
+        .providerArrived === true,
+
+    providerArrivedAt:
+      bookingObject
+        .providerArrivedAt ||
+      null,
+
+    providerArrivalLocation:
+      bookingObject
+        .providerArrivalLocation ||
+      null,
+
+    providerArrivalDistanceMeters:
+      bookingObject
+        .providerArrivalDistanceMeters ??
+      null,
+
+    providerArrivalVerified:
+      bookingObject
+        .providerArrivalVerified ===
+      true,
+
+    otpVerified:
+      bookingObject
+        .otpVerified === true,
+
+    otpVerifiedAt:
+      bookingObject
+        .otpVerifiedAt ||
+      null,
+
+    chatRoomId,
 
     amount:
       normalizePositiveNumber(
@@ -599,19 +992,28 @@ const serializeBooking = (booking) => {
     gst:
       normalizePositiveNumber(
         bookingObject.gst,
-        bookingObject.taxAmount || 0
+        bookingObject.taxAmount ||
+          0
       ),
 
     serviceFee:
       normalizePositiveNumber(
         bookingObject.serviceFee,
-        bookingObject.platformFee || 0
+        bookingObject.platformFee ||
+          0
       ),
 
     discount:
       normalizePositiveNumber(
         bookingObject.discount,
-        bookingObject.discountAmount || 0
+        bookingObject
+          .discountAmount ||
+          0
+      ),
+
+    durationMinutes:
+      calculateDurationMinutes(
+        bookingObject
       ),
 
     totalPrice,
@@ -642,17 +1044,21 @@ const sendBookingResponse = (
     statusCode = 200,
     message =
       "Booking fetched successfully",
+    extra = {},
   } = {}
 ) => {
   const data =
     serializeBooking(booking);
 
-  return res.status(statusCode).json({
-    success: true,
-    message,
-    booking: data,
-    data,
-  });
+  return res
+    .status(statusCode)
+    .json({
+      success: true,
+      message,
+      booking: data,
+      data,
+      ...extra,
+    });
 };
 
 const sendBookingListResponse = (
@@ -665,9 +1071,9 @@ const sendBookingListResponse = (
     extra = {},
   } = {}
 ) => {
-  const data = bookings.map(
-    serializeBooking
-  );
+  const data = bookings
+    .map(serializeBooking)
+    .filter(Boolean);
 
   return res.status(200).json({
     success: true,
@@ -676,8 +1082,11 @@ const sendBookingListResponse = (
     data,
     count: data.length,
     ...extra,
+
     ...(pagination
-      ? { pagination }
+      ? {
+          pagination,
+        }
       : {}),
   });
 };
@@ -698,19 +1107,25 @@ const sendControllerError = (
   ) {
     const errors = Object.values(
       error.errors || {}
-    ).map((item) => item.message);
+    ).map(
+      (item) =>
+        item.message
+    );
 
     return res.status(400).json({
       success: false,
+
       message:
         errors[0] ||
         "Booking validation failed",
+
       errors,
     });
   }
 
   if (
-    error?.name === "CastError"
+    error?.name ===
+    "CastError"
   ) {
     return res.status(400).json({
       success: false,
@@ -719,9 +1134,7 @@ const sendControllerError = (
     });
   }
 
-  if (
-    error?.code === 11000
-  ) {
+  if (error?.code === 11000) {
     return res.status(409).json({
       success: false,
       message:
@@ -729,25 +1142,46 @@ const sendControllerError = (
     });
   }
 
+  if (
+    error?.code ===
+      "OTP_SECRET_MISSING" ||
+    error?.code ===
+      "OTP_SECRET_WEAK"
+  ) {
+    return res.status(500).json({
+      success: false,
+
+      message:
+        process.env.NODE_ENV ===
+        "production"
+          ? "Booking security configuration is unavailable"
+          : error.message,
+    });
+  }
+
   return res.status(500).json({
     success: false,
+
     message:
-      error?.message ||
-      "Internal server error",
+      process.env.NODE_ENV ===
+      "production"
+        ? "Internal server error"
+        : error?.message ||
+          "Internal server error",
   });
 };
 
 // =====================================================
-// SOCKET HELPERS
+// SOCKET.IO
 // =====================================================
 
 const emitBookingEvent = (
   eventName,
   booking
 ) => {
-  const socket = global.io;
+  const io = global.io;
 
-  if (!socket || !booking) {
+  if (!io || !booking) {
     return;
   }
 
@@ -767,104 +1201,176 @@ const emitBookingEvent = (
   const customerId =
     data.customerId;
 
-  socket.emit(
+  const refreshPayload = {
+    bookingId,
+    providerId,
+    customerId,
+
+    status:
+      data.status,
+
+    bookingStatus:
+      data.bookingStatus ||
+      data.status,
+
+    providerArrived:
+      data.providerArrived ===
+      true,
+
+    providerArrivedAt:
+      data.providerArrivedAt ||
+      null,
+
+    providerArrivalVerified:
+      data.providerArrivalVerified ===
+      true,
+
+    otpVerified:
+      data.otpVerified === true,
+
+    otpVerifiedAt:
+      data.otpVerifiedAt ||
+      null,
+
+    startedAt:
+      data.startedAt ||
+      null,
+
+    completedAt:
+      data.completedAt ||
+      null,
+
+    chatRoomId:
+      data.chatRoomId ||
+      (
+        bookingId
+          ? `booking:${bookingId}`
+          : ""
+      ),
+
+    updatedAt:
+      data.updatedAt ||
+      new Date().toISOString(),
+  };
+
+  io.emit(
     eventName,
     data
   );
 
-  socket.emit(
+  io.emit(
     "bookingUpdate",
     data
   );
 
-  socket.emit(
+  io.emit(
+    "bookingUpdated",
+    data
+  );
+
+  io.emit(
     "refreshBookings",
-    {
-      bookingId,
-      providerId,
-      customerId,
-      status: data.status,
-    }
+    refreshPayload
   );
-
-  socket.emit(
-    "refreshProviderDashboard",
-    {
-      providerId,
-      bookingId,
-    }
-  );
-
-  socket.emit(
-    "refreshCustomerBookings",
-    {
-      customerId,
-      bookingId,
-    }
-  );
-
-  socket
-    .to("admin")
-    .emit(
-      "refreshAdminBookings",
-      {
-        bookingId,
-        providerId,
-        customerId,
-      }
-    );
 
   if (providerId) {
-    socket
-      .to(`provider:${providerId}`)
-      .emit(
-        eventName,
-        data
-      );
+    const providerRoom =
+      `provider:${providerId}`;
 
-    socket
-      .to(`provider:${providerId}`)
-      .emit(
-        "bookingNotification",
-        {
-          title: "New Booking",
-          message:
-            `Booking ${data.bookingNumber || bookingId}`,
-          booking: data,
-        }
-      );
+    io.to(providerRoom).emit(
+      eventName,
+      data
+    );
+
+    io.to(providerRoom).emit(
+      "bookingUpdated",
+      data
+    );
+
+    io.to(providerRoom).emit(
+      "refreshProviderBookings",
+      refreshPayload
+    );
+
+    io.to(providerRoom).emit(
+      "refreshProviderOrders",
+      refreshPayload
+    );
+
+    io.to(providerRoom).emit(
+      "refreshProviderDashboard",
+      refreshPayload
+    );
+
+    io.to(providerRoom).emit(
+      "refreshProviderEarnings",
+      refreshPayload
+    );
   }
 
   if (customerId) {
-    socket
-      .to(`user:${customerId}`)
-      .emit(
-        "bookingUpdate",
-        data
-      );
+    const customerRoom =
+      `user:${customerId}`;
+
+    io.to(customerRoom).emit(
+      eventName,
+      data
+    );
+
+    io.to(customerRoom).emit(
+      "bookingUpdate",
+      data
+    );
+
+    io.to(customerRoom).emit(
+      "bookingUpdated",
+      data
+    );
+
+    io.to(customerRoom).emit(
+      "refreshCustomerBookings",
+      refreshPayload
+    );
+  }
+
+  io.to("admin").emit(
+    "refreshAdminBookings",
+    refreshPayload
+  );
+
+  io.to("admin").emit(
+    "refreshAdminDashboard",
+    refreshPayload
+  );
+
+  if (bookingId) {
+    io.to(
+      `booking:${bookingId}`
+    ).emit(
+      eventName,
+      data
+    );
+
+    io.to(
+      `booking:${bookingId}`
+    ).emit(
+      "bookingUpdated",
+      data
+    );
   }
 
   if (data.chatRoomId) {
-    socket
-      .to(data.chatRoomId)
-      .emit(
-        "bookingUpdate",
-        data
-      );
-  }
-
-  if (bookingId) {
-    socket
-      .to(bookingId)
-      .emit(
-        "bookingUpdate",
-        data
-      );
+    io.to(
+      data.chatRoomId
+    ).emit(
+      eventName,
+      data
+    );
   }
 };
 
 // =====================================================
-// DATABASE NOTIFICATION
+// DATABASE NOTIFICATIONS
 // =====================================================
 
 const createDatabaseNotification =
@@ -881,7 +1387,9 @@ const createDatabaseNotification =
 
     if (
       !recipientId ||
-      !isValidObjectId(recipientId)
+      !isValidObjectId(
+        recipientId
+      )
     ) {
       return null;
     }
@@ -898,26 +1406,39 @@ const createDatabaseNotification =
         title,
         message,
         type,
+
         booking:
-          bookingId || undefined,
+          bookingId ||
+          undefined,
+
         bookingId:
-          bookingId || undefined,
+          bookingId ||
+          undefined,
+
         referenceId:
-          bookingId || undefined,
+          bookingId ||
+          undefined,
+
         referenceType:
           "booking",
+
         isRead: false,
         read: false,
       };
 
       const schemaPaths =
-        Notification.schema?.paths || {};
+        Notification.schema
+          ?.paths || {};
 
       const supportedData = {};
 
       for (
-        const [key, value] of
-        Object.entries(candidateData)
+        const [
+          key,
+          value,
+        ] of Object.entries(
+          candidateData
+        )
       ) {
         if (
           schemaPaths[key] &&
@@ -925,7 +1446,8 @@ const createDatabaseNotification =
           value !== null &&
           value !== ""
         ) {
-          supportedData[key] = value;
+          supportedData[key] =
+            value;
         }
       }
 
@@ -934,10 +1456,6 @@ const createDatabaseNotification =
           supportedData
         ).length === 0
       ) {
-        console.warn(
-          "Notification model has no compatible fields."
-        );
-
         return null;
       }
 
@@ -948,14 +1466,18 @@ const createDatabaseNotification =
 
       if (global.io) {
         global.io
-          .to(`provider:${recipientId}`)
+          .to(
+            `provider:${recipientId}`
+          )
           .emit(
             "newNotification",
             notification
           );
 
         global.io
-          .to(`user:${recipientId}`)
+          .to(
+            `user:${recipientId}`
+          )
           .emit(
             "newNotification",
             notification
@@ -974,7 +1496,7 @@ const createDatabaseNotification =
   };
 
 // =====================================================
-// PUSH NOTIFICATION
+// PUSH NOTIFICATIONS
 // =====================================================
 
 const sendPushNotification =
@@ -984,17 +1506,17 @@ const sendPushNotification =
     message,
   }) => {
     try {
-      if (receiver?.fcmToken) {
-        await sendNotification(
-          receiver.fcmToken,
-          title,
-          message
-        );
-
-        return true;
+      if (!receiver?.fcmToken) {
+        return false;
       }
 
-      return false;
+      await sendNotification(
+        receiver.fcmToken,
+        title,
+        message
+      );
+
+      return true;
     } catch (error) {
       console.error(
         "Push Notification Error:",
@@ -1007,534 +1529,620 @@ const sendPushNotification =
 
 // =====================================================
 // CREATE BOOKING
-// POST /api/bookings
-// CUSTOMER
 // =====================================================
 
-export const createBooking = async (
-  req,
-  res
-) => {
-  try {
-    const customerId =
-      getAuthenticatedUserId(req);
+export const createBooking =
+  async (req, res) => {
+    try {
+      const customerId =
+        getAuthenticatedUserId(
+          req
+        );
 
-    if (
-      !customerId ||
-      !isValidObjectId(customerId)
-    ) {
-      return res.status(401).json({
-        success: false,
-        message:
-          "Authentication required",
-      });
-    }
-
-    if (isProvider(req)) {
-      return res.status(403).json({
-        success: false,
-        message:
-          "Provider accounts cannot create customer bookings",
-      });
-    }
-
-    const {
-      serviceId,
-      service,
-      bookingDate,
-      date,
-      bookingTime,
-      time,
-      notes,
-      specialInstructions,
-      address,
-      location,
-      hoursBooked = 1,
-      paymentMethod =
-        PAYMENT_METHODS.COD,
-      platformFee = 0,
-      taxAmount = 0,
-      gst = 0,
-      serviceFee = 0,
-      discountAmount = 0,
-      discount = 0,
-      couponCode = "",
-    } = req.body;
-
-    const resolvedServiceId =
-      normalizeString(
-        serviceId || service
-      );
-
-    if (
-      !resolvedServiceId ||
-      !isValidObjectId(
-        resolvedServiceId
-      )
-    ) {
-      return sendValidationError(
-        res,
-        "A valid serviceId is required",
-        ["serviceId"]
-      );
-    }
-
-    const rawBookingDate =
-      bookingDate || date;
-
-    if (!rawBookingDate) {
-      return sendValidationError(
-        res,
-        "Booking date is required",
-        ["bookingDate"]
-      );
-    }
-
-    const parsedBookingDate =
-      new Date(rawBookingDate);
-
-    if (
-      Number.isNaN(
-        parsedBookingDate.getTime()
-      )
-    ) {
-      return sendValidationError(
-        res,
-        "Booking date is invalid",
-        ["bookingDate"]
-      );
-    }
-
-    const resolvedAddress =
-      normalizeString(
-        address || location
-      );
-
-    if (!resolvedAddress) {
-      return sendValidationError(
-        res,
-        "Service address is required",
-        ["address"]
-      );
-    }
-
-    /*
-     * The Provider ID is intentionally obtained from the
-     * Service document. The Customer request cannot choose
-     * or override the Provider ID.
-     */
-    const serviceDocument =
-      await Service.findOne({
-        _id: resolvedServiceId,
-        isActive: {
-          $ne: false,
-        },
-        isAvailable: {
-          $ne: false,
-        },
-        approvalStatus: {
-          $in: [
-            "approved",
-            null,
-            "",
-          ],
-        },
-        deletedAt: null,
-      }).populate(
-        "provider",
-        [
-          "firstName",
-          "lastName",
-          "name",
-          "fullName",
-          "email",
-          "phone",
-          "mobile",
-          "fcmToken",
-          "businessName",
-          "shopName",
-        ].join(" ")
-      );
-
-    if (!serviceDocument) {
-      return res.status(404).json({
-        success: false,
-        message:
-          "Service is unavailable or does not exist",
-      });
-    }
-
-    const providerId =
-      getDocumentId(
-        serviceDocument.provider
-      );
-
-    if (
-      !providerId ||
-      !isValidObjectId(providerId)
-    ) {
-      return res.status(400).json({
-        success: false,
-        message:
-          "This service is not linked to a valid provider",
-      });
-    }
-
-    if (providerId === customerId) {
-      return res.status(400).json({
-        success: false,
-        message:
-          "You cannot book your own service",
-      });
-    }
-
-    const normalizedHours =
-      Math.max(
-        1,
-        Math.floor(
-          normalizeNumber(
-            hoursBooked,
-            1
-          )
+      if (
+        !customerId ||
+        !isValidObjectId(
+          customerId
         )
-      );
+      ) {
+        return res.status(401).json({
+          success: false,
+          message:
+            "Authentication required",
+        });
+      }
 
-    const {
-      unitPrice,
-      subtotal,
-    } = getServicePricing(
-      serviceDocument,
-      normalizedHours
-    );
+      if (isProvider(req)) {
+        return res.status(403).json({
+          success: false,
 
-    if (subtotal <= 0) {
-      return res.status(400).json({
-        success: false,
-        message:
-          "The selected service does not have a valid price",
-      });
-    }
+          message:
+            "Provider accounts cannot create customer bookings",
+        });
+      }
 
-    const normalizedPlatformFee =
-      normalizePositiveNumber(
-        platformFee ||
-          serviceFee,
-        0
-      );
+      const resolvedServiceId =
+        normalizeString(
+          req.body.serviceId ||
+          req.body.service
+        );
 
-    const normalizedTax =
-      normalizePositiveNumber(
-        taxAmount || gst,
-        0
-      );
+      if (
+        !resolvedServiceId ||
+        !isValidObjectId(
+          resolvedServiceId
+        )
+      ) {
+        return sendValidationError(
+          res,
+          "A valid serviceId is required",
+          ["serviceId"]
+        );
+      }
 
-    const normalizedDiscount =
-      normalizePositiveNumber(
-        discountAmount ||
-          discount,
-        0
-      );
+      const rawBookingDate =
+        req.body.bookingDate ||
+        req.body.date;
 
-    const totalAmount =
-      Math.max(
-        0,
-        subtotal +
-          normalizedPlatformFee +
-          normalizedTax -
-          normalizedDiscount
-      );
+      if (!rawBookingDate) {
+        return sendValidationError(
+          res,
+          "Booking date is required",
+          ["bookingDate"]
+        );
+      }
 
-    const booking =
-      new Booking({
-        user: customerId,
-        customer: customerId,
+      const parsedBookingDate =
+        new Date(
+          rawBookingDate
+        );
 
-        service:
-          serviceDocument._id,
+      if (
+        Number.isNaN(
+          parsedBookingDate
+            .getTime()
+        )
+      ) {
+        return sendValidationError(
+          res,
+          "Booking date is invalid",
+          ["bookingDate"]
+        );
+      }
 
-        provider:
-          providerId,
+      const resolvedAddress =
+        normalizeString(
+          req.body.address ||
+          req.body.location
+        );
 
-        bookingDate:
-          parsedBookingDate,
+      if (!resolvedAddress) {
+        return sendValidationError(
+          res,
+          "Service address is required",
+          ["address"]
+        );
+      }
 
-        date:
-          parsedBookingDate,
+      const serviceDocument =
+        await Service.findOne({
+          _id:
+            resolvedServiceId,
 
-        bookingTime:
-          normalizeString(
-            bookingTime || time
-          ),
+          isActive: {
+            $ne: false,
+          },
 
-        duration:
-          normalizeString(
-            req.body.duration
-          ),
+          isAvailable: {
+            $ne: false,
+          },
 
-        notes:
-          normalizeString(notes),
+          approvalStatus: {
+            $in: [
+              "approved",
+              null,
+              "",
+            ],
+          },
 
-        specialInstructions:
-          normalizeString(
-            specialInstructions
-          ),
+          deletedAt: null,
+        }).populate(
+          "provider",
+          [
+            "firstName",
+            "lastName",
+            "name",
+            "fullName",
+            "email",
+            "phone",
+            "mobile",
+            "fcmToken",
+            "businessName",
+            "shopName",
+          ].join(" ")
+        );
 
-        address:
-          resolvedAddress,
+      if (!serviceDocument) {
+        return res.status(404).json({
+          success: false,
 
-        location:
-          normalizeString(
-            location,
-            resolvedAddress
-          ),
+          message:
+            "Service is unavailable or does not exist",
+        });
+      }
 
-        locationPoint:
-          normalizeLocationPoint(
-            req.body
-          ),
+      const providerId =
+        getDocumentId(
+          serviceDocument.provider
+        );
 
-        hoursBooked:
-          normalizedHours,
+      if (
+        !providerId ||
+        !isValidObjectId(
+          providerId
+        )
+      ) {
+        return res.status(400).json({
+          success: false,
 
-        pricePerHour:
-          unitPrice,
+          message:
+            "This service is not linked to a valid provider",
+        });
+      }
 
-        basePrice:
-          normalizePositiveNumber(
-            serviceDocument.basePrice,
-            unitPrice
-          ),
+      if (
+        providerId ===
+        customerId
+      ) {
+        return res.status(400).json({
+          success: false,
 
-        subtotal,
+          message:
+            "You cannot book your own service",
+        });
+      }
 
-        platformFee:
-          normalizedPlatformFee,
+      const hoursBooked =
+        Math.max(
+          1,
+          Math.floor(
+            normalizeNumber(
+              req.body.hoursBooked,
+              1
+            )
+          )
+        );
 
-        taxAmount:
-          normalizedTax,
+      const pricing =
+        getServicePricing(
+          serviceDocument,
+          hoursBooked
+        );
 
-        discountAmount:
-          normalizedDiscount,
+      if (
+        pricing.subtotal <= 0
+      ) {
+        return res.status(400).json({
+          success: false,
 
-        totalPrice:
+          message:
+            "The selected service does not have a valid price",
+        });
+      }
+
+      const platformFee =
+        normalizePositiveNumber(
+          req.body.platformFee ??
+          req.body.serviceFee,
+          0
+        );
+
+      const taxAmount =
+        normalizePositiveNumber(
+          req.body.taxAmount ??
+          req.body.gst,
+          0
+        );
+
+      const discountAmount =
+        normalizePositiveNumber(
+          req.body.discountAmount ??
+          req.body.discount,
+          0
+        );
+
+      const totalAmount =
+        Math.max(
+          0,
+          pricing.subtotal +
+            platformFee +
+            taxAmount -
+            discountAmount
+        );
+
+      const customerLocation =
+        normalizeLocationPoint(
+          req.body
+        );
+
+      const booking =
+        new Booking({
+          user:
+            customerId,
+
+          customer:
+            customerId,
+
+          service:
+            serviceDocument._id,
+
+          provider:
+            providerId,
+
+          bookingDate:
+            parsedBookingDate,
+
+          date:
+            parsedBookingDate,
+
+          bookingTime:
+            normalizeString(
+              req.body.bookingTime ||
+              req.body.time
+            ),
+
+          duration:
+            normalizeString(
+              req.body.duration
+            ),
+
+          contactNumber:
+            normalizeString(
+              req.body.contactNumber ||
+              req.body.phone ||
+              req.body.mobile
+            ),
+
+          alternateContactNumber:
+            normalizeString(
+              req.body
+                .alternateContactNumber
+            ),
+
+          guestCount:
+            normalizePositiveNumber(
+              req.body.guestCount,
+              0
+            ),
+
+          locationType:
+            normalizeString(
+              req.body.locationType
+            ),
+
+          serviceLocationType:
+            normalizeString(
+              req.body
+                .serviceLocationType
+            ),
+
+          landmark:
+            normalizeString(
+              req.body.landmark
+            ),
+
+          nearbyLocation:
+            normalizeString(
+              req.body.nearbyLocation
+            ),
+
+          notes:
+            normalizeString(
+              req.body.notes
+            ),
+
+          specialInstructions:
+            normalizeString(
+              req.body
+                .specialInstructions
+            ),
+
+          address:
+            resolvedAddress,
+
+          location:
+            normalizeString(
+              req.body.location,
+              resolvedAddress
+            ),
+
+          locationPoint:
+            customerLocation.point,
+
+          hoursBooked,
+
+          pricePerHour:
+            pricing.unitPrice,
+
+          basePrice:
+            normalizePositiveNumber(
+              serviceDocument
+                .basePrice,
+              pricing.unitPrice
+            ),
+
+          subtotal:
+            pricing.subtotal,
+
+          platformFee,
+          taxAmount,
+          discountAmount,
+
+          totalPrice:
+            totalAmount,
+
           totalAmount,
 
-        totalAmount,
+          currency:
+            normalizeString(
+              serviceDocument
+                .currency,
+              "INR"
+            ).toUpperCase(),
 
-        currency:
-          normalizeString(
-            serviceDocument.currency,
-            "INR"
-          ).toUpperCase(),
+          couponCode:
+            normalizeString(
+              req.body.couponCode
+            ).toUpperCase(),
 
-        couponCode:
-          normalizeString(
-            couponCode
-          ).toUpperCase(),
+          paymentMethod:
+            normalizePaymentMethod(
+              req.body
+                .paymentMethod
+            ),
 
-        paymentMethod:
-          normalizePaymentMethod(
-            paymentMethod
-          ),
+          paymentStatus:
+            PAYMENT_STATUSES.PENDING,
 
-        paymentStatus:
-          PAYMENT_STATUSES.PENDING,
+          status:
+            BOOKING_STATUSES.PENDING,
 
-        status:
-          BOOKING_STATUSES.PENDING,
+          providerArrived:
+            false,
 
-        chatEnabled: true,
-      });
+          providerArrivedAt:
+            null,
 
-    /*
-     * Mongoose assigns _id when the model instance is created,
-     * so the same database booking ID is used for chat.
-     */
-    booking.chatRoomId =
-      booking._id.toString();
+          providerArrivalLocation: {
+            type: "Point",
+            coordinates: [0, 0],
+          },
 
-    if (!booking.bookingNumber) {
+          providerArrivalDistanceMeters:
+            null,
+
+          providerArrivalVerified:
+            false,
+
+          otpVerified:
+            false,
+
+          otpAttempts:
+            0,
+
+          chatEnabled:
+            true,
+        });
+
+      booking.chatRoomId =
+        `booking:${booking._id.toString()}`;
+
       booking.bookingNumber =
         `EB-${booking._id
           .toString()
           .slice(-8)
           .toUpperCase()}`;
-    }
 
-    await booking.save();
+      const serviceOtp =
+        generateServiceOtp();
 
-    const populatedBooking =
-      await getPopulatedBooking(
-        booking._id
+      booking.serviceOtpHash =
+        hashServiceOtp(
+          booking._id.toString(),
+          serviceOtp
+        );
+
+      booking.serviceOtpDisplay =
+        serviceOtp;
+
+      await booking.save();
+
+      const populatedBooking =
+        await getPopulatedBooking(
+          booking._id
+        );
+
+      const notificationMessage =
+        `New booking ${booking.bookingNumber} for ${
+          serviceDocument.name ||
+          serviceDocument.title ||
+          "service"
+        }.`;
+
+      await createDatabaseNotification({
+        recipient:
+          providerId,
+
+        sender:
+          customerId,
+
+        title:
+          "New Booking",
+
+        message:
+          notificationMessage,
+
+        booking,
+
+        type:
+          "booking",
+      });
+
+      await sendPushNotification({
+        receiver:
+          serviceDocument.provider,
+
+        title:
+          "New Booking",
+
+        message:
+          notificationMessage,
+      });
+
+      emitBookingEvent(
+        "newBooking",
+        populatedBooking ||
+        booking
       );
 
-    const notificationMessage =
-      `New booking ${
-        booking.bookingNumber
-      } for ${serviceDocument.name}.`;
-
-    await createDatabaseNotification({
-      recipient: providerId,
-      sender: customerId,
-      title: "New Booking",
-      message:
-        notificationMessage,
-      booking:
+      return sendBookingResponse(
+        res,
         populatedBooking ||
         booking,
-      type: "booking",
-    });
+        {
+          statusCode: 201,
 
-    await sendPushNotification({
-      receiver:
-        serviceDocument.provider,
-      title: "New Booking",
-      message:
-        notificationMessage,
-    });
-
-    emitBookingEvent(
-      "newBooking",
-      populatedBooking ||
-        booking
-    );
-
-    return sendBookingResponse(
-      res,
-      populatedBooking ||
-        booking,
-      {
-        statusCode: 201,
-        message:
-          "Booking created successfully",
-      }
-    );
-  } catch (error) {
-    return sendControllerError(
-      res,
-      "Create Booking Error",
-      error
-    );
-  }
-};
+          message:
+            "Booking created successfully",
+        }
+      );
+    } catch (error) {
+      return sendControllerError(
+        res,
+        "Create Booking Error",
+        error
+      );
+    }
+  };
 
 // =====================================================
 // GET CUSTOMER BOOKINGS
-// GET /api/bookings
-// GET /api/bookings/my
-// GET /api/bookings/my-bookings
-// GET /api/bookings/history
 // =====================================================
 
-export const getMyBookings = async (
-  req,
-  res
-) => {
-  try {
-    const customerId =
-      getAuthenticatedUserId(req);
+export const getMyBookings =
+  async (req, res) => {
+    try {
+      const customerId =
+        getAuthenticatedUserId(
+          req
+        );
 
-    if (
-      !customerId ||
-      !isValidObjectId(customerId)
-    ) {
-      return res.status(401).json({
-        success: false,
-        message:
-          "Authentication required",
-      });
-    }
-
-    const {
-      page,
-      limit,
-      skip,
-    } = getPagination(req);
-
-    const filter = {
-      $or: [
-        {
-          user: customerId,
-        },
-        {
-          customer: customerId,
-        },
-      ],
-
-      isCustomerDeleted: {
-        $ne: true,
-      },
-
-      deletedAt: null,
-    };
-
-    const requestedStatus =
-      normalizeBookingStatus(
-        req.query.status
-      );
-
-    if (requestedStatus) {
-      filter.status =
-        requestedStatus;
-    }
-
-    const total =
-      await Booking.countDocuments(
-        filter
-      );
-
-    const bookings =
-      await populateBookingQuery(
-        Booking.find(filter)
-          .sort({
-            createdAt: -1,
-          })
-          .skip(skip)
-          .limit(limit)
-      );
-
-    return sendBookingListResponse(
-      res,
-      bookings,
-      {
-        message:
-          "Customer bookings fetched successfully",
-
-        pagination: {
-          page,
-          limit,
-          total,
-
-          totalPages:
-            Math.ceil(
-              total / limit
-            ),
-
-          hasNextPage:
-            page * limit < total,
-
-          hasPreviousPage:
-            page > 1,
-        },
+      if (
+        !customerId ||
+        !isValidObjectId(
+          customerId
+        )
+      ) {
+        return res.status(401).json({
+          success: false,
+          message:
+            "Authentication required",
+        });
       }
-    );
-  } catch (error) {
-    return sendControllerError(
-      res,
-      "Get My Bookings Error",
-      error
-    );
-  }
-};
 
-// Existing controller compatibility.
+      const {
+        page,
+        limit,
+        skip,
+      } = getPagination(req);
+
+      const filter = {
+        $or: [
+          {
+            user:
+              customerId,
+          },
+          {
+            customer:
+              customerId,
+          },
+        ],
+
+        isCustomerDeleted: {
+          $ne: true,
+        },
+
+        deletedAt: null,
+      };
+
+      const requestedStatus =
+        normalizeBookingStatus(
+          req.query.status
+        );
+
+      if (requestedStatus) {
+        filter.status =
+          requestedStatus;
+      }
+
+      const [
+        total,
+        bookings,
+      ] = await Promise.all([
+        Booking.countDocuments(
+          filter
+        ),
+
+        populateBookingQuery(
+          Booking.find(filter)
+            .sort({
+              createdAt: -1,
+            })
+            .skip(skip)
+            .limit(limit)
+        ),
+      ]);
+
+      return sendBookingListResponse(
+        res,
+        bookings,
+        {
+          message:
+            "Customer bookings fetched successfully",
+
+          pagination: {
+            page,
+            limit,
+            total,
+
+            totalPages:
+              Math.ceil(
+                total / limit
+              ),
+
+            hasNextPage:
+              page * limit <
+              total,
+
+            hasPreviousPage:
+              page > 1,
+          },
+        }
+      );
+    } catch (error) {
+      return sendControllerError(
+        res,
+        "Get My Bookings Error",
+        error
+      );
+    }
+  };
+
 export const getBookings =
   getMyBookings;
 
 // =====================================================
 // GET PROVIDER BOOKINGS
-// GET /api/bookings/provider
-// GET /api/provider/bookings
 // =====================================================
 
 export const getProviderBookings =
@@ -1552,7 +2160,9 @@ export const getProviderBookings =
       }
 
       const authenticatedId =
-        getAuthenticatedUserId(req);
+        getAuthenticatedUserId(
+          req
+        );
 
       const requestedProviderId =
         normalizeString(
@@ -1570,7 +2180,9 @@ export const getProviderBookings =
 
       if (
         !providerId ||
-        !isValidObjectId(providerId)
+        !isValidObjectId(
+          providerId
+        )
       ) {
         return res.status(400).json({
           success: false,
@@ -1586,7 +2198,8 @@ export const getProviderBookings =
       } = getPagination(req);
 
       const filter = {
-        provider: providerId,
+        provider:
+          providerId,
 
         isProviderDeleted: {
           $ne: true,
@@ -1605,20 +2218,23 @@ export const getProviderBookings =
           requestedStatus;
       }
 
-      const total =
-        await Booking.countDocuments(
+      const [
+        total,
+        bookings,
+      ] = await Promise.all([
+        Booking.countDocuments(
           filter
-        );
+        ),
 
-      const bookings =
-        await populateBookingQuery(
+        populateBookingQuery(
           Booking.find(filter)
             .sort({
               createdAt: -1,
             })
             .skip(skip)
             .limit(limit)
-        );
+        ),
+      ]);
 
       return sendBookingListResponse(
         res,
@@ -1673,27 +2289,16 @@ export const getProviderTodayBookings =
         });
       }
 
-      const authenticatedId =
-        getAuthenticatedUserId(req);
-
-      const requestedProviderId =
-        normalizeString(
-          req.query.providerId
-        );
-
       const providerId =
-        isAdmin(req) &&
-        requestedProviderId &&
-        isValidObjectId(
-          requestedProviderId
-        )
-          ? requestedProviderId
-          : authenticatedId;
+        getAuthenticatedUserId(
+          req
+        );
 
       const bookings =
         await populateBookingQuery(
           Booking.find({
-            provider: providerId,
+            provider:
+              providerId,
 
             bookingDate: {
               $gte:
@@ -1719,13 +2324,13 @@ export const getProviderTodayBookings =
         bookings,
         {
           message:
-            "Today's provider bookings fetched successfully",
+            "Today's Provider bookings fetched successfully",
         }
       );
     } catch (error) {
       return sendControllerError(
         res,
-        "Get Provider Today Bookings Error",
+        "Get Today Bookings Error",
         error
       );
     }
@@ -1749,36 +2354,27 @@ export const getProviderUpcomingBookings =
         });
       }
 
-      const authenticatedId =
-        getAuthenticatedUserId(req);
-
-      const requestedProviderId =
-        normalizeString(
-          req.query.providerId
-        );
-
       const providerId =
-        isAdmin(req) &&
-        requestedProviderId &&
-        isValidObjectId(
-          requestedProviderId
-        )
-          ? requestedProviderId
-          : authenticatedId;
+        getAuthenticatedUserId(
+          req
+        );
 
       const bookings =
         await populateBookingQuery(
           Booking.find({
-            provider: providerId,
+            provider:
+              providerId,
 
             bookingDate: {
-              $gte: new Date(),
+              $gte:
+                new Date(),
             },
 
             status: {
               $in: [
                 BOOKING_STATUSES.PENDING,
                 BOOKING_STATUSES.ACCEPTED,
+                BOOKING_STATUSES.OTP_VERIFIED,
                 BOOKING_STATUSES.IN_PROGRESS,
               ],
             },
@@ -1801,13 +2397,13 @@ export const getProviderUpcomingBookings =
         bookings,
         {
           message:
-            "Upcoming provider bookings fetched successfully",
+            "Upcoming Provider bookings fetched successfully",
         }
       );
     } catch (error) {
       return sendControllerError(
         res,
-        "Get Provider Upcoming Bookings Error",
+        "Get Upcoming Bookings Error",
         error
       );
     }
@@ -1832,7 +2428,9 @@ export const getProviderBookingAnalytics =
       }
 
       const authenticatedId =
-        getAuthenticatedUserId(req);
+        getAuthenticatedUserId(
+          req
+        );
 
       const requestedProviderId =
         normalizeString(
@@ -1850,7 +2448,9 @@ export const getProviderBookingAnalytics =
 
       if (
         !providerId ||
-        !isValidObjectId(providerId)
+        !isValidObjectId(
+          providerId
+        )
       ) {
         return res.status(400).json({
           success: false,
@@ -1859,22 +2459,18 @@ export const getProviderBookingAnalytics =
         });
       }
 
-      const providerObjectId =
-        new mongoose.Types.ObjectId(
-          providerId
-        );
-
       const statusResults =
         await Booking.aggregate([
           {
             $match: {
               provider:
-                providerObjectId,
+                new mongoose.Types.ObjectId(
+                  providerId
+                ),
 
               deletedAt: null,
             },
           },
-
           {
             $group: {
               _id: "$status",
@@ -1898,6 +2494,7 @@ export const getProviderBookingAnalytics =
       const counts = {
         pending: 0,
         accepted: 0,
+        otp_verified: 0,
         rejected: 0,
         in_progress: 0,
         completed: 0,
@@ -1938,7 +2535,8 @@ export const getProviderBookingAnalytics =
 
       const todayBookings =
         await Booking.countDocuments({
-          provider: providerId,
+          provider:
+            providerId,
 
           bookingDate: {
             $gte:
@@ -1953,41 +2551,74 @@ export const getProviderBookingAnalytics =
 
       const analytics = {
         totalBookings,
+
+        totalOrders:
+          totalBookings,
+
         todayBookings,
 
         pendingBookings:
           counts.pending,
 
+        pendingOrders:
+          counts.pending,
+
         acceptedBookings:
           counts.accepted,
 
-        rejectedBookings:
-          counts.rejected,
+        acceptedOrders:
+          counts.accepted,
+
+        otpVerifiedBookings:
+          counts.otp_verified,
+
+        otpVerifiedOrders:
+          counts.otp_verified,
 
         inProgressBookings:
+          counts.in_progress,
+
+        inProgressOrders:
           counts.in_progress,
 
         completedBookings:
           counts.completed,
 
+        completedOrders:
+          counts.completed,
+
         cancelledBookings:
           counts.cancelled,
 
+        cancelledOrders:
+          counts.cancelled,
+
+        rejectedBookings:
+          counts.rejected,
+
+        rejectedOrders:
+          counts.rejected,
+
         totalRevenue,
+
+        totalEarnings:
+          totalRevenue,
       };
 
       return res.status(200).json({
         success: true,
+
         message:
           "Booking analytics fetched successfully",
-        ...analytics,
+
         analytics,
         data: analytics,
+        ...analytics,
       });
     } catch (error) {
       return sendControllerError(
         res,
-        "Get Provider Booking Analytics Error",
+        "Booking Analytics Error",
         error
       );
     }
@@ -1997,89 +2628,997 @@ export const getProviderBookingAnalytics =
 // GET BOOKING BY ID
 // =====================================================
 
-export const getBookingById = async (
-  req,
-  res
-) => {
-  try {
-    const bookingId =
-      req.params.id;
+export const getBookingById =
+  async (req, res) => {
+    try {
+      const bookingId =
+        normalizeString(
+          req.params.id
+        );
 
-    if (
-      !isValidObjectId(bookingId)
-    ) {
-      return res.status(400).json({
-        success: false,
-        message:
-          "Invalid booking identifier",
-      });
-    }
+      if (
+        !isValidObjectId(
+          bookingId
+        )
+      ) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Invalid booking identifier",
+        });
+      }
 
-    const booking =
-      await getPopulatedBooking(
-        bookingId
-      );
+      const booking =
+        await getPopulatedBooking(
+          bookingId
+        );
 
-    if (!booking) {
-      return res.status(404).json({
-        success: false,
-        message:
-          "Booking not found",
-      });
-    }
+      if (!booking) {
+        return res.status(404).json({
+          success: false,
+          message:
+            "Booking not found",
+        });
+      }
 
-    const currentUserId =
-      getAuthenticatedUserId(req);
+      const currentUserId =
+        getAuthenticatedUserId(
+          req
+        );
 
-    const customerId =
-      getDocumentId(
-        booking.customer ||
+      const customerId =
+        getDocumentId(
+          booking.customer ||
           booking.user
+        );
+
+      const providerId =
+        getDocumentId(
+          booking.provider
+        );
+
+      const hasAccess =
+        currentUserId ===
+          customerId ||
+        currentUserId ===
+          providerId ||
+        isAdmin(req);
+
+      if (!hasAccess) {
+        return res.status(403).json({
+          success: false,
+          message:
+            "Access denied",
+        });
+      }
+
+      return sendBookingResponse(
+        res,
+        booking
       );
-
-    const providerId =
-      getDocumentId(
-        booking.provider
+    } catch (error) {
+      return sendControllerError(
+        res,
+        "Get Booking Error",
+        error
       );
-
-    const hasAccess =
-      currentUserId ===
-        customerId ||
-      currentUserId ===
-        providerId ||
-      isAdmin(req);
-
-    if (!hasAccess) {
-      return res.status(403).json({
-        success: false,
-        message:
-          "Access denied",
-      });
     }
+  };
 
-    return sendBookingResponse(
-      res,
-      booking
-    );
-  } catch (error) {
-    return sendControllerError(
-      res,
-      "Get Booking By ID Error",
-      error
-    );
-  }
-};
+// =====================================================
+// MARK PROVIDER ARRIVED
+// =====================================================
+
+export const markProviderArrived =
+  async (req, res) => {
+    try {
+      const bookingId =
+        normalizeString(
+          req.params.id
+        );
+
+      if (
+        !isValidObjectId(
+          bookingId
+        )
+      ) {
+        return res.status(400).json({
+          success: false,
+
+          message:
+            "Invalid booking identifier",
+        });
+      }
+
+      if (
+        !isProvider(req) &&
+        !isAdmin(req)
+      ) {
+        return res.status(403).json({
+          success: false,
+
+          message:
+            "Provider access required",
+        });
+      }
+
+      let booking =
+        await Booking.findById(
+          bookingId
+        );
+
+      if (!booking) {
+        return res.status(404).json({
+          success: false,
+          message:
+            "Booking not found",
+        });
+      }
+
+      const currentUserId =
+        getAuthenticatedUserId(
+          req
+        );
+
+      if (
+        !isAdmin(req) &&
+        booking.provider
+          ?.toString() !==
+          currentUserId
+      ) {
+        return res.status(403).json({
+          success: false,
+
+          message:
+            "This booking is not assigned to the logged-in Provider",
+        });
+      }
+
+      if (
+        booking.status !==
+        BOOKING_STATUSES.ACCEPTED
+      ) {
+        return res.status(400).json({
+          success: false,
+
+          message:
+            "Provider arrival can only be recorded for an accepted booking",
+
+          currentStatus:
+            booking.status,
+        });
+      }
+
+      if (
+        booking.providerArrived ===
+        true
+      ) {
+        booking =
+          await getPopulatedBooking(
+            booking._id
+          );
+
+        return sendBookingResponse(
+          res,
+          booking,
+          {
+            message:
+              "Provider arrival is already recorded",
+          }
+        );
+      }
+
+      const arrivalLocation =
+        normalizeLocationPoint(
+          req.body
+        );
+
+      if (
+        !arrivalLocation
+          .hasCoordinates ||
+        !arrivalLocation.isValid
+      ) {
+        return sendValidationError(
+          res,
+
+          "Valid Provider latitude and longitude are required",
+
+          [
+            "latitude",
+            "longitude",
+          ]
+        );
+      }
+
+      let distanceMeters =
+        null;
+
+      let locationVerified =
+        false;
+
+      const destinationCoordinates =
+        booking.locationPoint
+          ?.coordinates;
+
+      if (
+        Array.isArray(
+          destinationCoordinates
+        ) &&
+        destinationCoordinates
+          .length === 2
+      ) {
+        const destinationLongitude =
+          Number(
+            destinationCoordinates[0]
+          );
+
+        const destinationLatitude =
+          Number(
+            destinationCoordinates[1]
+          );
+
+        const hasDestination =
+          Number.isFinite(
+            destinationLongitude
+          ) &&
+          Number.isFinite(
+            destinationLatitude
+          ) &&
+          !(
+            destinationLongitude ===
+              0 &&
+            destinationLatitude ===
+              0
+          );
+
+        if (hasDestination) {
+          distanceMeters =
+            calculateDistanceMeters({
+              fromLatitude:
+                arrivalLocation
+                  .latitude,
+
+              fromLongitude:
+                arrivalLocation
+                  .longitude,
+
+              toLatitude:
+                destinationLatitude,
+
+              toLongitude:
+                destinationLongitude,
+            });
+
+          locationVerified =
+            distanceMeters !== null &&
+            distanceMeters <=
+              PROVIDER_ARRIVAL_RADIUS_METERS;
+        }
+      }
+
+      const now = new Date();
+
+      booking.providerArrived =
+        true;
+
+      booking.providerArrivedAt =
+        now;
+
+      booking.providerArrivalLocation =
+        arrivalLocation.point;
+
+      booking.providerArrivalDistanceMeters =
+        distanceMeters;
+
+      booking.providerArrivalVerified =
+        locationVerified;
+
+      if (
+        !Array.isArray(
+          booking.statusHistory
+        )
+      ) {
+        booking.statusHistory =
+          [];
+      }
+
+      booking.statusHistory.push({
+        status:
+          booking.status,
+
+        changedBy:
+          currentUserId,
+
+        note:
+          locationVerified
+            ? "Provider arrived at the verified service location"
+            : "Provider reported arrival at the service location",
+
+        changedAt:
+          now,
+      });
+
+      await booking.save();
+
+      booking =
+        await getPopulatedBooking(
+          booking._id
+        );
+
+      const customer =
+        booking.customer ||
+        booking.user;
+
+      const notificationMessage =
+        `The Provider has arrived for booking ${
+          booking.bookingNumber ||
+          booking._id
+        }. Confirm the Provider before sharing the service OTP.`;
+
+      await createDatabaseNotification({
+        recipient:
+          getDocumentId(
+            customer
+          ),
+
+        sender:
+          currentUserId,
+
+        title:
+          "Provider Arrived",
+
+        message:
+          notificationMessage,
+
+        booking,
+
+        type:
+          "booking",
+      });
+
+      await sendPushNotification({
+        receiver:
+          customer,
+
+        title:
+          "Provider Arrived",
+
+        message:
+          notificationMessage,
+      });
+
+      emitBookingEvent(
+        "providerArrived",
+        booking
+      );
+
+      return sendBookingResponse(
+        res,
+        booking,
+        {
+          message:
+            "Provider arrival updated successfully",
+
+          extra: {
+            providerArrived:
+              true,
+
+            providerArrivedAt:
+              now,
+
+            providerArrivalDistanceMeters:
+              distanceMeters,
+
+            providerArrivalVerified:
+              locationVerified,
+          },
+        }
+      );
+    } catch (error) {
+      return sendControllerError(
+        res,
+        "Provider Arrival Error",
+        error
+      );
+    }
+  };
+
+// =====================================================
+// GET CUSTOMER SERVICE OTP
+// =====================================================
+
+export const getServiceOtp =
+  async (req, res) => {
+    try {
+      const bookingId =
+        normalizeString(
+          req.params.id
+        );
+
+      if (
+        !isValidObjectId(
+          bookingId
+        )
+      ) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Invalid booking identifier",
+        });
+      }
+
+      const booking =
+        await Booking.findById(
+          bookingId
+        ).select(
+          [
+            "+serviceOtpDisplay",
+            "user",
+            "customer",
+            "status",
+            "otpVerified",
+            "otpVerifiedAt",
+            "providerArrived",
+            "providerArrivedAt",
+            "providerArrivalVerified",
+            "bookingNumber",
+          ].join(" ")
+        );
+
+      if (!booking) {
+        return res.status(404).json({
+          success: false,
+          message:
+            "Booking not found",
+        });
+      }
+
+      const currentUserId =
+        getAuthenticatedUserId(
+          req
+        );
+
+      const customerId =
+        booking.customer
+          ?.toString() ||
+        booking.user
+          ?.toString();
+
+      if (
+        currentUserId !==
+        customerId
+      ) {
+        return res.status(403).json({
+          success: false,
+
+          message:
+            "Only the customer can view the service OTP",
+        });
+      }
+
+      if (
+        booking.status ===
+        BOOKING_STATUSES.PENDING
+      ) {
+        return res.status(409).json({
+          success: false,
+
+          message:
+            "Service OTP will be available after the Provider accepts the booking",
+
+          otpAvailable:
+            false,
+        });
+      }
+
+      if (
+        [
+          BOOKING_STATUSES.CANCELLED,
+          BOOKING_STATUSES.REJECTED,
+          BOOKING_STATUSES.COMPLETED,
+        ].includes(
+          booking.status
+        )
+      ) {
+        return res.status(409).json({
+          success: false,
+
+          message:
+            "Service OTP is unavailable for this booking",
+
+          otpAvailable:
+            false,
+        });
+      }
+
+      if (
+        booking.otpVerified ===
+        true
+      ) {
+        const data = {
+          bookingId:
+            booking._id.toString(),
+
+          bookingNumber:
+            booking.bookingNumber,
+
+          otp: null,
+          serviceOtp: null,
+
+          otpAvailable:
+            false,
+
+          otpVerified:
+            true,
+
+          otpVerifiedAt:
+            booking.otpVerifiedAt,
+
+          providerArrived:
+            booking.providerArrived ===
+            true,
+
+          providerArrivedAt:
+            booking
+              .providerArrivedAt,
+
+          providerArrivalVerified:
+            booking
+              .providerArrivalVerified ===
+            true,
+        };
+
+        return res.status(200).json({
+          success: true,
+
+          message:
+            "Service OTP has already been verified",
+
+          ...data,
+          data,
+        });
+      }
+
+      if (
+        !booking.serviceOtpDisplay
+      ) {
+        return res.status(409).json({
+          success: false,
+
+          message:
+            "Service OTP is unavailable. Please contact support.",
+
+          otpAvailable:
+            false,
+        });
+      }
+
+      const data = {
+        bookingId:
+          booking._id.toString(),
+
+        bookingNumber:
+          booking.bookingNumber,
+
+        otp:
+          booking.serviceOtpDisplay,
+
+        serviceOtp:
+          booking.serviceOtpDisplay,
+
+        otpAvailable:
+          true,
+
+        otpVerified:
+          false,
+
+        providerArrived:
+          booking.providerArrived ===
+          true,
+
+        providerArrivedAt:
+          booking.providerArrivedAt,
+
+        providerArrivalVerified:
+          booking
+            .providerArrivalVerified ===
+          true,
+
+        warning:
+          "Share this OTP only after the Provider arrives and you confirm the Provider.",
+      };
+
+      return res.status(200).json({
+        success: true,
+
+        message:
+          "Service OTP fetched successfully",
+
+        ...data,
+        data,
+      });
+    } catch (error) {
+      return sendControllerError(
+        res,
+        "Get Service OTP Error",
+        error
+      );
+    }
+  };
+
+// =====================================================
+// VERIFY SERVICE OTP
+// =====================================================
+
+export const verifyServiceOtp =
+  async (req, res) => {
+    try {
+      const bookingId =
+        normalizeString(
+          req.params.id
+        );
+
+      if (
+        !isValidObjectId(
+          bookingId
+        )
+      ) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Invalid booking identifier",
+        });
+      }
+
+      if (
+        !isProvider(req) &&
+        !isAdmin(req)
+      ) {
+        return res.status(403).json({
+          success: false,
+          message:
+            "Provider access required",
+        });
+      }
+
+      const providedOtp =
+        normalizeString(
+          req.body.otp ||
+          req.body.serviceOtp
+        );
+
+      if (
+        !/^\d{4}$/.test(
+          providedOtp
+        )
+      ) {
+        return sendValidationError(
+          res,
+
+          "A valid 4-digit service OTP is required",
+
+          ["otp"]
+        );
+      }
+
+      let booking =
+        await Booking.findById(
+          bookingId
+        ).select(
+          [
+            "+serviceOtpHash",
+            "+serviceOtpDisplay",
+            "user",
+            "customer",
+            "provider",
+            "status",
+            "statusHistory",
+            "otpVerified",
+            "otpVerifiedAt",
+            "otpVerifiedBy",
+            "otpAttempts",
+            "otpLockedUntil",
+            "providerArrived",
+            "providerArrivedAt",
+            "providerArrivalLocation",
+            "providerArrivalDistanceMeters",
+            "providerArrivalVerified",
+            "bookingNumber",
+          ].join(" ")
+        );
+
+      if (!booking) {
+        return res.status(404).json({
+          success: false,
+          message:
+            "Booking not found",
+        });
+      }
+
+      const currentUserId =
+        getAuthenticatedUserId(
+          req
+        );
+
+      if (
+        !isAdmin(req) &&
+        booking.provider
+          ?.toString() !==
+          currentUserId
+      ) {
+        return res.status(403).json({
+          success: false,
+
+          message:
+            "This booking is not assigned to the logged-in Provider",
+        });
+      }
+
+      if (
+        booking.otpVerified ===
+        true
+      ) {
+        booking =
+          await getPopulatedBooking(
+            booking._id
+          );
+
+        return sendBookingResponse(
+          res,
+          booking,
+          {
+            message:
+              "Service OTP is already verified",
+
+            extra: {
+              otpVerified:
+                true,
+            },
+          }
+        );
+      }
+
+      if (
+        booking.status !==
+        BOOKING_STATUSES.ACCEPTED
+      ) {
+        return res.status(400).json({
+          success: false,
+
+          message:
+            "Service OTP can only be verified after the booking is accepted",
+
+          currentStatus:
+            booking.status,
+        });
+      }
+
+      if (
+        booking.providerArrived !==
+        true
+      ) {
+        return res.status(400).json({
+          success: false,
+
+          message:
+            "Mark arrival at the customer location before verifying the service OTP",
+
+          providerArrived:
+            false,
+
+          currentStatus:
+            booking.status,
+        });
+      }
+
+      if (
+        booking.otpLockedUntil &&
+        new Date(
+          booking.otpLockedUntil
+        ).getTime() >
+          Date.now()
+      ) {
+        return res.status(429).json({
+          success: false,
+
+          message:
+            "OTP verification is temporarily locked",
+
+          lockedUntil:
+            booking.otpLockedUntil,
+        });
+      }
+
+      const providedHash =
+        hashServiceOtp(
+          booking._id.toString(),
+          providedOtp
+        );
+
+      const isCorrectOtp =
+        otpHashesMatch(
+          booking.serviceOtpHash,
+          providedHash
+        );
+
+      if (!isCorrectOtp) {
+        booking.otpAttempts =
+          normalizePositiveNumber(
+            booking.otpAttempts,
+            0
+          ) + 1;
+
+        const attemptsRemaining =
+          Math.max(
+            0,
+            MAX_OTP_ATTEMPTS -
+              booking.otpAttempts
+          );
+
+        if (
+          booking.otpAttempts >=
+          MAX_OTP_ATTEMPTS
+        ) {
+          booking.otpLockedUntil =
+            new Date(
+              Date.now() +
+                OTP_LOCK_MINUTES *
+                  60 *
+                  1000
+            );
+
+          booking.otpAttempts =
+            0;
+        }
+
+        await booking.save();
+
+        return res.status(400).json({
+          success: false,
+
+          message:
+            attemptsRemaining === 0
+              ? `Too many incorrect attempts. Try again after ${OTP_LOCK_MINUTES} minutes.`
+              : "Invalid service OTP",
+
+          attemptsRemaining,
+
+          lockedUntil:
+            booking.otpLockedUntil,
+        });
+      }
+
+      const now = new Date();
+
+      booking.otpVerified =
+        true;
+
+      booking.otpVerifiedAt =
+        now;
+
+      booking.otpVerifiedBy =
+        currentUserId;
+
+      booking.otpAttempts =
+        0;
+
+      booking.otpLockedUntil =
+        null;
+
+      booking.status =
+        BOOKING_STATUSES.OTP_VERIFIED;
+
+      if (
+        !Array.isArray(
+          booking.statusHistory
+        )
+      ) {
+        booking.statusHistory =
+          [];
+      }
+
+      booking.statusHistory.push({
+        status:
+          BOOKING_STATUSES.OTP_VERIFIED,
+
+        changedBy:
+          currentUserId,
+
+        note:
+          "Customer service OTP verified",
+
+        changedAt:
+          now,
+      });
+
+      await booking.save();
+
+      booking =
+        await getPopulatedBooking(
+          booking._id
+        );
+
+      const customer =
+        booking.customer ||
+        booking.user;
+
+      const message =
+        `Service OTP for booking ${
+          booking.bookingNumber ||
+          booking._id
+        } was verified successfully.`;
+
+      await createDatabaseNotification({
+        recipient:
+          getDocumentId(
+            customer
+          ),
+
+        sender:
+          currentUserId,
+
+        title:
+          "Service OTP Verified",
+
+        message,
+
+        booking,
+
+        type:
+          "booking",
+      });
+
+      await sendPushNotification({
+        receiver:
+          customer,
+
+        title:
+          "Service OTP Verified",
+
+        message,
+      });
+
+      emitBookingEvent(
+        "bookingOtpVerified",
+        booking
+      );
+
+      return sendBookingResponse(
+        res,
+        booking,
+        {
+          message:
+            "Service OTP verified successfully",
+
+          extra: {
+            otpVerified:
+              true,
+
+            status:
+              BOOKING_STATUSES.OTP_VERIFIED,
+          },
+        }
+      );
+    } catch (error) {
+      return sendControllerError(
+        res,
+        "Verify Service OTP Error",
+        error
+      );
+    }
+  };
 
 // =====================================================
 // UPDATE BOOKING STATUS
-// PROVIDER OR ADMIN
 // =====================================================
 
 export const updateBookingStatus =
   async (req, res) => {
     try {
       const bookingId =
-        req.params.id;
+        normalizeString(
+          req.params.id
+        );
 
       if (
         !isValidObjectId(
@@ -2123,6 +3662,18 @@ export const updateBookingStatus =
         );
       }
 
+      if (
+        requestedStatus ===
+        BOOKING_STATUSES.OTP_VERIFIED
+      ) {
+        return res.status(400).json({
+          success: false,
+
+          message:
+            "Use the service OTP verification endpoint to verify the booking",
+        });
+      }
+
       let booking =
         await Booking.findById(
           bookingId
@@ -2137,7 +3688,9 @@ export const updateBookingStatus =
       }
 
       const currentUserId =
-        getAuthenticatedUserId(req);
+        getAuthenticatedUserId(
+          req
+        );
 
       if (
         !isAdmin(req) &&
@@ -2147,8 +3700,9 @@ export const updateBookingStatus =
       ) {
         return res.status(403).json({
           success: false,
+
           message:
-            "This booking does not belong to the logged-in provider",
+            "This booking does not belong to the logged-in Provider",
         });
       }
 
@@ -2195,6 +3749,68 @@ export const updateBookingStatus =
         });
       }
 
+      if (
+        requestedStatus ===
+        BOOKING_STATUSES.IN_PROGRESS
+      ) {
+        if (
+          booking.providerArrived !==
+          true
+        ) {
+          return res.status(400).json({
+            success: false,
+
+            message:
+              "Mark arrival at the customer location before starting the service",
+
+            providerArrived:
+              false,
+
+            currentStatus:
+              booking.status,
+          });
+        }
+
+        if (
+          booking.otpVerified !==
+            true ||
+          booking.status !==
+            BOOKING_STATUSES.OTP_VERIFIED
+        ) {
+          return res.status(400).json({
+            success: false,
+
+            message:
+              "Verify the customer service OTP before starting the service",
+
+            otpVerified:
+              booking.otpVerified ===
+              true,
+
+            currentStatus:
+              booking.status,
+          });
+        }
+      }
+
+      if (
+        requestedStatus ===
+          BOOKING_STATUSES.COMPLETED &&
+        !booking.startedAt
+      ) {
+        return res.status(400).json({
+          success: false,
+
+          message:
+            "The service must be started before it can be completed",
+
+          currentStatus:
+            booking.status,
+        });
+      }
+
+      const now = new Date();
+
       booking.status =
         requestedStatus;
 
@@ -2205,7 +3821,8 @@ export const updateBookingStatus =
         booking.rejectionReason =
           normalizeString(
             req.body.reason ||
-              req.body.rejectionReason
+            req.body.rejectionReason,
+            "Rejected by Provider"
           );
       }
 
@@ -2216,21 +3833,60 @@ export const updateBookingStatus =
         booking.cancellationReason =
           normalizeString(
             req.body.reason ||
-              req.body.cancellationReason
+            req.body
+              .cancellationReason,
+            "Cancelled by Provider"
           );
       }
 
       if (
         requestedStatus ===
-          BOOKING_STATUSES.COMPLETED &&
-        booking.paymentMethod ===
-          PAYMENT_METHODS.COD
+        BOOKING_STATUSES.COMPLETED
       ) {
-        booking.paymentStatus =
-          PAYMENT_STATUSES.PAID;
+        booking.completedAt =
+          now;
 
-        booking.paidAt =
-          new Date();
+        booking.durationMinutes =
+          calculateDurationMinutes({
+            startedAt:
+              booking.startedAt,
+
+            completedAt:
+              now,
+          });
+
+        if (
+          booking.paymentMethod ===
+          PAYMENT_METHODS.COD
+        ) {
+          booking.paymentStatus =
+            PAYMENT_STATUSES.PAID;
+
+          booking.paidAt =
+            booking.paidAt ||
+            now;
+        }
+
+        if (
+          !booking.invoiceNumber
+        ) {
+          booking.invoiceNumber =
+            `INV-${booking.bookingNumber}`;
+        }
+
+        booking.invoiceGeneratedAt =
+          booking
+            .invoiceGeneratedAt ||
+          now;
+      }
+
+      if (
+        !Array.isArray(
+          booking.statusHistory
+        )
+      ) {
+        booking.statusHistory =
+          [];
       }
 
       booking.statusHistory.push({
@@ -2243,11 +3899,12 @@ export const updateBookingStatus =
         note:
           normalizeString(
             req.body.note ||
-              req.body.reason
+            req.body.reason,
+            `Booking changed to ${requestedStatus}`
           ),
 
         changedAt:
-          new Date(),
+          now,
       });
 
       await booking.save();
@@ -2275,7 +3932,9 @@ export const updateBookingStatus =
 
       await createDatabaseNotification({
         recipient:
-          getDocumentId(customer),
+          getDocumentId(
+            customer
+          ),
 
         sender:
           currentUserId,
@@ -2303,8 +3962,42 @@ export const updateBookingStatus =
           notificationMessage,
       });
 
+      let socketEvent =
+        "bookingUpdated";
+
+      switch (requestedStatus) {
+        case BOOKING_STATUSES.ACCEPTED:
+          socketEvent =
+            "bookingAccepted";
+          break;
+
+        case BOOKING_STATUSES.REJECTED:
+          socketEvent =
+            "bookingRejected";
+          break;
+
+        case BOOKING_STATUSES.IN_PROGRESS:
+          socketEvent =
+            "bookingStarted";
+          break;
+
+        case BOOKING_STATUSES.COMPLETED:
+          socketEvent =
+            "bookingCompleted";
+          break;
+
+        case BOOKING_STATUSES.CANCELLED:
+          socketEvent =
+            "bookingCancelled";
+          break;
+
+        default:
+          socketEvent =
+            "bookingUpdated";
+      }
+
       emitBookingEvent(
-        "bookingUpdated",
+        socketEvent,
         booking
       );
 
@@ -2327,323 +4020,554 @@ export const updateBookingStatus =
 
 // =====================================================
 // CANCEL BOOKING
-// CUSTOMER OR ADMIN
 // =====================================================
 
-export const cancelBooking = async (
-  req,
-  res
-) => {
-  try {
-    const bookingId =
-      req.params.id;
+export const cancelBooking =
+  async (req, res) => {
+    try {
+      const bookingId =
+        normalizeString(
+          req.params.id
+        );
 
-    if (
-      !isValidObjectId(bookingId)
-    ) {
-      return res.status(400).json({
-        success: false,
-        message:
-          "Invalid booking identifier",
-      });
-    }
-
-    let booking =
-      await Booking.findById(
-        bookingId
-      );
-
-    if (!booking) {
-      return res.status(404).json({
-        success: false,
-        message:
-          "Booking not found",
-      });
-    }
-
-    const currentUserId =
-      getAuthenticatedUserId(req);
-
-    const bookingCustomerId =
-      booking.customer?.toString() ||
-      booking.user?.toString();
-
-    if (
-      bookingCustomerId !==
-        currentUserId &&
-      !isAdmin(req)
-    ) {
-      return res.status(403).json({
-        success: false,
-        message:
-          "You cannot cancel this booking",
-      });
-    }
-
-    if (
-      !CUSTOMER_CANCELLABLE_STATUSES.includes(
-        booking.status
-      )
-    ) {
-      return res.status(400).json({
-        success: false,
-
-        message:
-          `A ${booking.status} booking cannot be cancelled`,
-      });
-    }
-
-    booking.status =
-      BOOKING_STATUSES.CANCELLED;
-
-    booking.cancelledAt =
-      new Date();
-
-    booking.cancellationReason =
-      normalizeString(
-        req.body.reason ||
-          req.body.cancellationReason
-      );
-
-    booking.statusHistory.push({
-      status:
-        BOOKING_STATUSES.CANCELLED,
-
-      changedBy:
-        currentUserId,
-
-      note:
-        booking.cancellationReason ||
-        "Cancelled by customer",
-
-      changedAt:
-        new Date(),
-    });
-
-    await booking.save();
-
-    booking =
-      await getPopulatedBooking(
-        booking._id
-      );
-
-    const provider =
-      booking.provider;
-
-    const notificationMessage =
-      `Booking ${
-        booking.bookingNumber ||
-        booking._id
-      } was cancelled by the customer.`;
-
-    await createDatabaseNotification({
-      recipient:
-        getDocumentId(provider),
-
-      sender:
-        currentUserId,
-
-      title:
-        "Booking Cancelled",
-
-      message:
-        notificationMessage,
-
-      booking,
-
-      type:
-        "booking",
-    });
-
-    await sendPushNotification({
-      receiver:
-        provider,
-
-      title:
-        "Booking Cancelled",
-
-      message:
-        notificationMessage,
-    });
-
-    emitBookingEvent(
-      "bookingCancelled",
-      booking
-    );
-
-    return sendBookingResponse(
-      res,
-      booking,
-      {
-        message:
-          "Booking cancelled successfully",
+      if (
+        !isValidObjectId(
+          bookingId
+        )
+      ) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Invalid booking identifier",
+        });
       }
-    );
-  } catch (error) {
-    return sendControllerError(
-      res,
-      "Cancel Booking Error",
-      error
-    );
-  }
-};
 
-// =====================================================
-// RATE BOOKING
-// CUSTOMER
-// =====================================================
+      let booking =
+        await Booking.findById(
+          bookingId
+        );
 
-export const rateBooking = async (
-  req,
-  res
-) => {
-  try {
-    const bookingId =
-      req.params.id;
+      if (!booking) {
+        return res.status(404).json({
+          success: false,
+          message:
+            "Booking not found",
+        });
+      }
 
-    if (
-      !isValidObjectId(bookingId)
-    ) {
-      return res.status(400).json({
-        success: false,
-        message:
-          "Invalid booking identifier",
+      const currentUserId =
+        getAuthenticatedUserId(
+          req
+        );
+
+      const customerId =
+        booking.customer
+          ?.toString() ||
+        booking.user
+          ?.toString();
+
+      if (
+        customerId !==
+          currentUserId &&
+        !isAdmin(req)
+      ) {
+        return res.status(403).json({
+          success: false,
+
+          message:
+            "You cannot cancel this booking",
+        });
+      }
+
+      if (
+        !CUSTOMER_CANCELLABLE_STATUSES.includes(
+          booking.status
+        )
+      ) {
+        return res.status(400).json({
+          success: false,
+
+          message:
+            `A ${booking.status} booking cannot be cancelled`,
+        });
+      }
+
+      const now = new Date();
+
+      booking.status =
+        BOOKING_STATUSES.CANCELLED;
+
+      booking.cancelledAt =
+        now;
+
+      booking.cancellationReason =
+        normalizeString(
+          req.body.reason ||
+          req.body
+            .cancellationReason,
+          "Cancelled by customer"
+        );
+
+      if (
+        !Array.isArray(
+          booking.statusHistory
+        )
+      ) {
+        booking.statusHistory =
+          [];
+      }
+
+      booking.statusHistory.push({
+        status:
+          BOOKING_STATUSES.CANCELLED,
+
+        changedBy:
+          currentUserId,
+
+        note:
+          booking.cancellationReason,
+
+        changedAt:
+          now,
       });
-    }
 
-    const rating =
-      normalizeNumber(
-        req.body.rating,
-        0
-      );
+      await booking.save();
 
-    const review =
-      normalizeString(
-        req.body.review
-      );
+      booking =
+        await getPopulatedBooking(
+          booking._id
+        );
 
-    if (
-      rating < 1 ||
-      rating > 5
-    ) {
-      return sendValidationError(
-        res,
-        "Rating must be between 1 and 5",
-        ["rating"]
-      );
-    }
+      const provider =
+        booking.provider;
 
-    let booking =
-      await Booking.findById(
-        bookingId
-      );
-
-    if (!booking) {
-      return res.status(404).json({
-        success: false,
-        message:
-          "Booking not found",
-      });
-    }
-
-    const currentUserId =
-      getAuthenticatedUserId(req);
-
-    const bookingCustomerId =
-      booking.customer?.toString() ||
-      booking.user?.toString();
-
-    if (
-      bookingCustomerId !==
-      currentUserId
-    ) {
-      return res.status(403).json({
-        success: false,
-        message:
-          "You cannot rate this booking",
-      });
-    }
-
-    if (
-      booking.status !==
-      BOOKING_STATUSES.COMPLETED
-    ) {
-      return res.status(400).json({
-        success: false,
-        message:
-          "Only completed bookings can be rated",
-      });
-    }
-
-    if (
-      booking.rating !== null &&
-      booking.rating !== undefined
-    ) {
-      return res.status(409).json({
-        success: false,
-        message:
-          "This booking has already been rated",
-      });
-    }
-
-    booking.rating = rating;
-    booking.review = review;
-    booking.reviewedAt =
-      new Date();
-
-    await booking.save();
-
-    booking =
-      await getPopulatedBooking(
-        booking._id
-      );
-
-    const provider =
-      booking.provider;
-
-    await createDatabaseNotification({
-      recipient:
-        getDocumentId(provider),
-
-      sender:
-        currentUserId,
-
-      title:
-        "New Booking Review",
-
-      message:
+      const notificationMessage =
         `Booking ${
           booking.bookingNumber ||
           booking._id
-        } received a ${rating}-star rating.`,
+        } was cancelled by the customer.`;
 
-      booking,
+      await createDatabaseNotification({
+        recipient:
+          getDocumentId(
+            provider
+          ),
 
-      type:
-        "review",
-    });
+        sender:
+          currentUserId,
 
-    emitBookingEvent(
-      "bookingRated",
-      booking
-    );
+        title:
+          "Booking Cancelled",
 
-    return sendBookingResponse(
-      res,
-      booking,
-      {
         message:
-          "Rating submitted successfully",
+          notificationMessage,
+
+        booking,
+
+        type:
+          "booking",
+      });
+
+      await sendPushNotification({
+        receiver:
+          provider,
+
+        title:
+          "Booking Cancelled",
+
+        message:
+          notificationMessage,
+      });
+
+      emitBookingEvent(
+        "bookingCancelled",
+        booking
+      );
+
+      return sendBookingResponse(
+        res,
+        booking,
+        {
+          message:
+            "Booking cancelled successfully",
+        }
+      );
+    } catch (error) {
+      return sendControllerError(
+        res,
+        "Cancel Booking Error",
+        error
+      );
+    }
+  };
+
+// =====================================================
+// GET BOOKING INVOICE
+// =====================================================
+
+export const getBookingInvoice =
+  async (req, res) => {
+    try {
+      const bookingId =
+        normalizeString(
+          req.params.id
+        );
+
+      if (
+        !isValidObjectId(
+          bookingId
+        )
+      ) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Invalid booking identifier",
+        });
       }
-    );
-  } catch (error) {
-    return sendControllerError(
-      res,
-      "Rate Booking Error",
-      error
-    );
-  }
-};
+
+      const booking =
+        await getPopulatedBooking(
+          bookingId
+        );
+
+      if (!booking) {
+        return res.status(404).json({
+          success: false,
+          message:
+            "Booking not found",
+        });
+      }
+
+      const currentUserId =
+        getAuthenticatedUserId(
+          req
+        );
+
+      const customerId =
+        getDocumentId(
+          booking.customer ||
+          booking.user
+        );
+
+      const providerId =
+        getDocumentId(
+          booking.provider
+        );
+
+      const hasAccess =
+        currentUserId ===
+          customerId ||
+        currentUserId ===
+          providerId ||
+        isAdmin(req);
+
+      if (!hasAccess) {
+        return res.status(403).json({
+          success: false,
+          message:
+            "Access denied",
+        });
+      }
+
+      if (
+        booking.status !==
+        BOOKING_STATUSES.COMPLETED
+      ) {
+        return res.status(400).json({
+          success: false,
+
+          message:
+            "Invoice is available only for completed bookings",
+        });
+      }
+
+      const invoice = {
+        invoiceNumber:
+          booking.invoiceNumber ||
+          `INV-${booking.bookingNumber}`,
+
+        bookingId:
+          booking._id.toString(),
+
+        bookingNumber:
+          booking.bookingNumber,
+
+        customer:
+          booking.customer ||
+          booking.user,
+
+        provider:
+          booking.provider,
+
+        service:
+          booking.service,
+
+        bookingDate:
+          booking.bookingDate,
+
+        bookingTime:
+          booking.bookingTime,
+
+        startedAt:
+          booking.startedAt,
+
+        completedAt:
+          booking.completedAt,
+
+        durationMinutes:
+          calculateDurationMinutes(
+            booking
+          ),
+
+        address:
+          booking.address,
+
+        currency:
+          booking.currency,
+
+        basePrice:
+          normalizePositiveNumber(
+            booking.basePrice,
+            0
+          ),
+
+        subtotal:
+          normalizePositiveNumber(
+            booking.subtotal,
+            0
+          ),
+
+        platformFee:
+          normalizePositiveNumber(
+            booking.platformFee,
+            0
+          ),
+
+        taxAmount:
+          normalizePositiveNumber(
+            booking.taxAmount,
+            0
+          ),
+
+        discountAmount:
+          normalizePositiveNumber(
+            booking.discountAmount,
+            0
+          ),
+
+        totalAmount:
+          normalizePositiveNumber(
+            booking.totalAmount,
+            booking.totalPrice
+          ),
+
+        paymentMethod:
+          booking.paymentMethod,
+
+        paymentStatus:
+          booking.paymentStatus,
+
+        transactionId:
+          booking.transactionId,
+
+        paidAt:
+          booking.paidAt,
+
+        generatedAt:
+          booking
+            .invoiceGeneratedAt ||
+          booking.completedAt ||
+          new Date(),
+      };
+
+      return res.status(200).json({
+        success: true,
+
+        message:
+          "Booking invoice fetched successfully",
+
+        invoice,
+        data: invoice,
+      });
+    } catch (error) {
+      return sendControllerError(
+        res,
+        "Get Invoice Error",
+        error
+      );
+    }
+  };
+
+// =====================================================
+// RATE BOOKING
+// =====================================================
+
+export const rateBooking =
+  async (req, res) => {
+    try {
+      const bookingId =
+        normalizeString(
+          req.params.id
+        );
+
+      if (
+        !isValidObjectId(
+          bookingId
+        )
+      ) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Invalid booking identifier",
+        });
+      }
+
+      const rating =
+        normalizeNumber(
+          req.body.rating,
+          0
+        );
+
+      const review =
+        normalizeString(
+          req.body.review
+        );
+
+      if (
+        rating < 1 ||
+        rating > 5
+      ) {
+        return sendValidationError(
+          res,
+
+          "Rating must be between 1 and 5",
+
+          ["rating"]
+        );
+      }
+
+      let booking =
+        await Booking.findById(
+          bookingId
+        );
+
+      if (!booking) {
+        return res.status(404).json({
+          success: false,
+          message:
+            "Booking not found",
+        });
+      }
+
+      const currentUserId =
+        getAuthenticatedUserId(
+          req
+        );
+
+      const customerId =
+        booking.customer
+          ?.toString() ||
+        booking.user
+          ?.toString();
+
+      if (
+        customerId !==
+        currentUserId
+      ) {
+        return res.status(403).json({
+          success: false,
+
+          message:
+            "You cannot rate this booking",
+        });
+      }
+
+      if (
+        booking.status !==
+        BOOKING_STATUSES.COMPLETED
+      ) {
+        return res.status(400).json({
+          success: false,
+
+          message:
+            "Only completed bookings can be rated",
+        });
+      }
+
+      if (
+        booking.rating !== null &&
+        booking.rating !==
+          undefined
+      ) {
+        return res.status(409).json({
+          success: false,
+
+          message:
+            "This booking has already been rated",
+        });
+      }
+
+      booking.rating =
+        rating;
+
+      booking.review =
+        review;
+
+      booking.reviewedAt =
+        new Date();
+
+      await booking.save();
+
+      booking =
+        await getPopulatedBooking(
+          booking._id
+        );
+
+      await createDatabaseNotification({
+        recipient:
+          getDocumentId(
+            booking.provider
+          ),
+
+        sender:
+          currentUserId,
+
+        title:
+          "New Booking Review",
+
+        message:
+          `Booking ${
+            booking.bookingNumber ||
+            booking._id
+          } received a ${rating}-star rating.`,
+
+        booking,
+
+        type:
+          "review",
+      });
+
+      emitBookingEvent(
+        "bookingRated",
+        booking
+      );
+
+      return sendBookingResponse(
+        res,
+        booking,
+        {
+          message:
+            "Rating submitted successfully",
+        }
+      );
+    } catch (error) {
+      return sendControllerError(
+        res,
+        "Rate Booking Error",
+        error
+      );
+    }
+  };
 
 // =====================================================
 // CHAT MESSAGE PUSH NOTIFICATION

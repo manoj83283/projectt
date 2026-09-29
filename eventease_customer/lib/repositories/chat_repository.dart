@@ -11,49 +11,41 @@ class ChatRepository {
   final ChatService _chatService =
       ChatService.instance;
 
-  // ==========================================
-  // GET CHAT ROOMS
-  // ==========================================
+  // =====================================================
+  // CHAT ROOMS
+  // =====================================================
 
   Future<List<ChatRoomModel>> getChatRooms({
     int page = 1,
     int limit = 20,
   }) async {
-    return await _chatService.getChatRooms(
+    return _chatService.getChatRooms(
       page: page,
       limit: limit,
     );
   }
 
-  // ==========================================
-  // GET CHAT ROOM
-  // ==========================================
-
   Future<ChatRoomModel> getChatRoom(
     String roomId,
   ) async {
-    return await _chatService.getChatRoom(
+    return _chatService.getChatRoom(
       roomId,
     );
   }
-
-  // ==========================================
-  // CREATE CHAT ROOM
-  // ==========================================
 
   Future<ChatRoomModel> createChatRoom({
     required String providerId,
     required String bookingId,
   }) async {
-    return await _chatService.createChatRoom(
+    return _chatService.createChatRoom(
       providerId: providerId,
       bookingId: bookingId,
     );
   }
 
-  // ==========================================
-  // GET MESSAGES
-  // ==========================================
+  // =====================================================
+  // BOOKING ROOM MESSAGES
+  // =====================================================
 
   Future<List<ChatMessageModel>>
       getMessages(
@@ -61,46 +53,73 @@ class ChatRepository {
     int page = 1,
     int limit = 50,
   }) async {
-    return await _chatService.getMessages(
+    return _chatService.getMessages(
       roomId,
       page: page,
       limit: limit,
     );
   }
 
-  // ==========================================
-  // SEND TEXT MESSAGE
-  // ==========================================
+  Future<List<ChatMessageModel>>
+      loadRoomMessages({
+    required String roomId,
+    String? bookingId,
+    int page = 1,
+    int limit = 50,
+  }) async {
+    return _chatService.getMessages(
+      roomId,
+      page: page,
+      limit: limit,
+    );
+  }
+
+  // =====================================================
+  // SEND MESSAGE
+  // =====================================================
 
   Future<ChatMessageModel> sendMessage({
     required String roomId,
     required String message,
   }) async {
-    return await _chatService.sendMessage(
+    return _chatService.sendMessage(
       roomId: roomId,
       message: message,
     );
   }
 
-  // ==========================================
-  // SEND IMAGE MESSAGE
-  // ==========================================
+  Future<ChatMessageModel> sendRoomMessage({
+    required String roomId,
+    required String bookingId,
+    required String receiverId,
+    required String message,
+  }) async {
+    return _chatService.sendRoomMessage(
+      roomId: roomId,
+      bookingId: bookingId,
+      receiverId: receiverId,
+      message: message,
+    );
+  }
+
+  // =====================================================
+  // IMAGE
+  // =====================================================
 
   Future<ChatMessageModel>
       sendImageMessage({
     required String roomId,
     required String imageUrl,
   }) async {
-    return await _chatService
-        .sendImageMessage(
+    return _chatService.sendImageMessage(
       roomId: roomId,
       imageUrl: imageUrl,
     );
   }
 
-  // ==========================================
-  // SEND LOCATION MESSAGE
-  // ==========================================
+  // =====================================================
+  // LOCATION
+  // =====================================================
 
   Future<ChatMessageModel>
       sendLocationMessage({
@@ -108,70 +127,125 @@ class ChatRepository {
     required double latitude,
     required double longitude,
   }) async {
-    return await _chatService
-        .sendLocationMessage(
+    return _chatService.sendLocationMessage(
       roomId: roomId,
       latitude: latitude,
       longitude: longitude,
     );
   }
 
-  // ==========================================
-  // MARK AS READ
-  // ==========================================
+  // =====================================================
+  // READ RECEIPTS
+  // =====================================================
 
   Future<bool> markAsRead(
     String roomId,
   ) async {
-    return await _chatService.markAsRead(
+    return _chatService.markAsRead(
       roomId,
     );
   }
 
-  // ==========================================
+  Future<bool> markRoomAsRead({
+    required String roomId,
+    required String bookingId,
+  }) async {
+    return _chatService.markRoomAsRead(
+      roomId: roomId,
+      bookingId: bookingId,
+    );
+  }
+
+  // =====================================================
+  // SOCKET METHODS
+  // =====================================================
+
+  Future<void> joinRoom({
+    required String roomId,
+    required String bookingId,
+  }) async {
+    await _chatService.joinRoom(
+      roomId: roomId,
+      bookingId: bookingId,
+    );
+  }
+
+  Future<void> leaveRoom(
+    String roomId,
+  ) async {
+    await _chatService.leaveRoom(
+      roomId,
+    );
+  }
+
+  Future<void> startTyping({
+    required String roomId,
+    required String bookingId,
+    required String receiverId,
+  }) async {
+    await _chatService.startTyping(
+      roomId: roomId,
+      bookingId: bookingId,
+      receiverId: receiverId,
+    );
+  }
+
+  Future<void> stopTyping({
+    required String roomId,
+    required String bookingId,
+    required String receiverId,
+  }) async {
+    await _chatService.stopTyping(
+      roomId: roomId,
+      bookingId: bookingId,
+      receiverId: receiverId,
+    );
+  }
+
+  // =====================================================
   // DELETE MESSAGE
-  // ==========================================
+  // =====================================================
 
   Future<bool> deleteMessage(
     String messageId,
   ) async {
-    return await _chatService.deleteMessage(
+    return _chatService.deleteMessage(
       messageId,
     );
   }
 
-  // ==========================================
+  // =====================================================
   // DELETE ROOM
-  // ==========================================
+  // =====================================================
 
   Future<bool> deleteRoom(
     String roomId,
   ) async {
-    return await _chatService.deleteRoom(
+    return _chatService.deleteRoom(
       roomId,
     );
   }
 
-  // ==========================================
-  // SEARCH MESSAGES
-  // ==========================================
+  // =====================================================
+  // SEARCH
+  // =====================================================
 
   Future<List<ChatMessageModel>>
       searchMessages({
     required String roomId,
     required String keyword,
   }) async {
-    return await _chatService.searchMessages(
+    return _chatService.searchMessages(
       roomId: roomId,
       keyword: keyword,
     );
   }
 
-  // ==========================================
-  // UNREAD COUNT
-  // ==========================================
+  // =====================================================
+  // UNREAD
+  // =====================================================
 
   Future<int> getUnreadCount() async {
-    return await _chatService.getUnreadCount();
+    return _chatService.getUnreadCount();
   }
 }

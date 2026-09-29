@@ -29,7 +29,6 @@ import Message from "./models/Message.js";
 dotenv.config();
 
 const app = express();
-
 const server = http.createServer(app);
 
 const PORT = Number(
@@ -132,37 +131,40 @@ const corsOptions = {
 // SOCKET.IO
 // =====================================================
 
-export const io = new Server(server, {
-  cors: {
-    origin: validateCorsOrigin,
+export const io = new Server(
+  server,
+  {
+    cors: {
+      origin: validateCorsOrigin,
 
-    methods: [
-      "GET",
-      "POST",
-      "PUT",
-      "PATCH",
-      "DELETE",
+      methods: [
+        "GET",
+        "POST",
+        "PUT",
+        "PATCH",
+        "DELETE",
+      ],
+
+      allowedHeaders: [
+        "Accept",
+        "Authorization",
+        "Content-Type",
+        "Cache-Control",
+        "Pragma",
+      ],
+
+      credentials: true,
+    },
+
+    transports: [
+      "websocket",
+      "polling",
     ],
 
-    allowedHeaders: [
-      "Accept",
-      "Authorization",
-      "Content-Type",
-      "Cache-Control",
-      "Pragma",
-    ],
-
-    credentials: true,
-  },
-
-  transports: [
-    "websocket",
-    "polling",
-  ],
-
-  pingTimeout: 60000,
-  pingInterval: 25000,
-});
+    pingTimeout: 60000,
+    pingInterval: 25000,
+  }
+);
 
 global.io = io;
 
@@ -178,7 +180,7 @@ app.use(
 );
 
 app.options(
-  "*",
+  /.*/,
   cors(corsOptions)
 );
 
@@ -253,7 +255,7 @@ app.use(
 );
 
 // =====================================================
-// ROOT AND HEALTH
+// ROOT ROUTE
 // =====================================================
 
 app.get(
@@ -269,6 +271,10 @@ app.get(
     });
   }
 );
+
+// =====================================================
+// HEALTH CHECK
+// =====================================================
 
 app.get(
   "/api/health",
@@ -354,7 +360,35 @@ app.use(
   "/api/providers",
   providerRoutes
 );
+const validateEnvironment = () => {
+  const requiredVariables = [
+    "MONGO_URI",
+    "JWT_SECRET",
+    "OTP_SECRET",
+  ];
 
+  const missingVariables =
+    requiredVariables.filter(
+      (key) =>
+        !process.env[key]?.trim()
+    );
+
+  if (missingVariables.length > 0) {
+    throw new Error(
+      `Missing required environment variables: ${missingVariables.join(", ")}`
+    );
+  }
+
+  if (
+    process.env.NODE_ENV ===
+      "production" &&
+    process.env.OTP_SECRET.length < 32
+  ) {
+    throw new Error(
+      "OTP_SECRET must contain at least 32 characters in production"
+    );
+  }
+};
 // =====================================================
 // SOCKET HELPERS
 // =====================================================
@@ -442,6 +476,48 @@ const sendAcknowledgement = (
   }
 };
 
+const getBookingSocketData = (
+  booking
+) => {
+  const bookingId =
+    getDocumentId(
+      booking?._id ||
+      booking?.id ||
+      booking?.bookingId
+    );
+
+  const providerId =
+    getDocumentId(
+      booking?.providerId ||
+      booking?.provider
+    );
+
+  const customerId =
+    getDocumentId(
+      booking?.customerId ||
+      booking?.customer ||
+      booking?.user
+    );
+
+  const status =
+    normalizeValue(
+      booking?.status ||
+      booking?.bookingStatus
+    );
+
+  return {
+    bookingId,
+    providerId,
+    customerId,
+    status,
+    otpVerified:
+      booking?.otpVerified === true,
+    updatedAt:
+      booking?.updatedAt ||
+      new Date().toISOString(),
+  };
+};
+
 const emitBookingRefresh = (
   booking
 ) => {
@@ -449,38 +525,14 @@ const emitBookingRefresh = (
     return;
   }
 
-  const bookingId =
-    getDocumentId(
-      booking._id ||
-        booking.id ||
-        booking.bookingId
-    );
+  const refreshPayload =
+    getBookingSocketData(booking);
 
-  const providerId =
-    getDocumentId(
-      booking.providerId ||
-        booking.provider
-    );
-
-  const customerId =
-    getDocumentId(
-      booking.customerId ||
-        booking.customer ||
-        booking.user
-    );
-
-  const status =
-    normalizeValue(
-      booking.status ||
-        booking.bookingStatus
-    );
-
-  const refreshPayload = {
+  const {
     bookingId,
     providerId,
     customerId,
-    status,
-  };
+  } = refreshPayload;
 
   io.emit(
     "bookingUpdate",
@@ -532,6 +584,11 @@ const emitBookingRefresh = (
       `user:${customerId}`;
 
     io.to(customerRoom).emit(
+      "bookingUpdate",
+      booking
+    );
+
+    io.to(customerRoom).emit(
       "bookingUpdated",
       booking
     );
@@ -541,6 +598,11 @@ const emitBookingRefresh = (
       refreshPayload
     );
   }
+
+  io.to("admin").emit(
+    "bookingUpdated",
+    booking
+  );
 
   io.to("admin").emit(
     "refreshAdminBookings",
@@ -562,6 +624,13 @@ const emitBookingRefresh = (
       `booking:${bookingId}`
     ).emit(
       "bookingUpdate",
+      booking
+    );
+
+    io.to(
+      `booking:${bookingId}`
+    ).emit(
+      "bookingUpdated",
       booking
     );
   }
@@ -615,26 +684,6 @@ io.on(
     );
 
     socket.on(
-      "registerProvider",
-      (providerId) => {
-        const normalizedProviderId =
-          normalizeValue(providerId);
-
-        if (!normalizedProviderId) {
-          return;
-        }
-
-        socket.data.providerId =
-          normalizedProviderId;
-
-        joinRoom(
-          socket,
-          `provider:${normalizedProviderId}`
-        );
-      }
-    );
-
-    socket.on(
       "joinUserRoom",
       (userId) => {
         const normalizedUserId =
@@ -650,6 +699,26 @@ io.on(
         joinRoom(
           socket,
           `user:${normalizedUserId}`
+        );
+      }
+    );
+
+    socket.on(
+      "registerProvider",
+      (providerId) => {
+        const normalizedProviderId =
+          normalizeValue(providerId);
+
+        if (!normalizedProviderId) {
+          return;
+        }
+
+        socket.data.providerId =
+          normalizedProviderId;
+
+        joinRoom(
+          socket,
+          `provider:${normalizedProviderId}`
         );
       }
     );
@@ -751,7 +820,7 @@ io.on(
     );
 
     // =================================================
-    // PROVIDER STATUS
+    // PROVIDER AVAILABILITY
     // =================================================
 
     socket.on(
@@ -760,7 +829,7 @@ io.on(
         const providerId =
           getDocumentId(
             data?.providerId ||
-              data?.provider
+            data?.provider
           );
 
         if (providerId) {
@@ -795,18 +864,27 @@ io.on(
         acknowledgement
       ) => {
         try {
+          const bookingId =
+            normalizeValue(
+              data?.bookingId
+            );
+
           const roomId =
             normalizeValue(
               data?.roomId ||
-                data?.chatRoomId ||
-                data?.bookingId
+              data?.chatRoomId ||
+              (
+                bookingId
+                  ? `booking:${bookingId}`
+                  : ""
+              )
             );
 
           const message =
             normalizeValue(
               data?.message ||
-                data?.text ||
-                data?.content
+              data?.text ||
+              data?.content
             );
 
           const senderId =
@@ -817,11 +895,6 @@ io.on(
           const receiverId =
             normalizeValue(
               data?.receiverId
-            );
-
-          const bookingId =
-            normalizeValue(
-              data?.bookingId
             );
 
           if (!roomId) {
@@ -864,6 +937,26 @@ io.on(
             return;
           }
 
+          if (!senderId) {
+            const response = {
+              success: false,
+              message:
+                "Message sender ID is required",
+            };
+
+            sendAcknowledgement(
+              acknowledgement,
+              response
+            );
+
+            socket.emit(
+              "messageError",
+              response
+            );
+
+            return;
+          }
+
           const schemaPaths =
             Message.schema?.paths || {};
 
@@ -879,6 +972,9 @@ io.on(
             content: message,
             senderRole:
               data?.senderRole,
+            messageType:
+              data?.messageType ||
+              "text",
             isRead: false,
             read: false,
           };
@@ -929,11 +1025,10 @@ io.on(
             savedMessage
           );
 
-          if (
-            bookingId &&
-            bookingId !== roomId
-          ) {
-            io.to(bookingId).emit(
+          if (bookingId) {
+            io.to(
+              `booking:${bookingId}`
+            ).emit(
               "newMessage",
               savedMessage
             );
@@ -961,7 +1056,8 @@ io.on(
               success: true,
               message:
                 "Message sent successfully",
-              data: savedMessage,
+              data:
+                savedMessage,
             }
           );
         } catch (error) {
@@ -991,17 +1087,109 @@ io.on(
     );
 
     // =================================================
+    // MESSAGE READ STATUS
+    // =================================================
+
+    socket.on(
+      "messageRead",
+      (data) => {
+        const roomId =
+          normalizeValue(
+            data?.roomId ||
+            data?.chatRoomId ||
+            (
+              data?.bookingId
+                ? `booking:${data.bookingId}`
+                : ""
+            )
+          );
+
+        if (!roomId) {
+          return;
+        }
+
+        socket.to(roomId).emit(
+          "messageRead",
+          data
+        );
+      }
+    );
+
+    // =================================================
+    // TYPING EVENTS
+    // =================================================
+
+    socket.on(
+      "typingStarted",
+      (data) => {
+        const roomId =
+          normalizeValue(
+            data?.roomId ||
+            data?.chatRoomId ||
+            (
+              data?.bookingId
+                ? `booking:${data.bookingId}`
+                : ""
+            )
+          );
+
+        if (!roomId) {
+          return;
+        }
+
+        socket.to(roomId).emit(
+          "typingStarted",
+          data
+        );
+      }
+    );
+
+    socket.on(
+      "typingStopped",
+      (data) => {
+        const roomId =
+          normalizeValue(
+            data?.roomId ||
+            data?.chatRoomId ||
+            (
+              data?.bookingId
+                ? `booking:${data.bookingId}`
+                : ""
+            )
+          );
+
+        if (!roomId) {
+          return;
+        }
+
+        socket.to(roomId).emit(
+          "typingStopped",
+          data
+        );
+      }
+    );
+
+    // =================================================
     // LIVE LOCATION
     // =================================================
 
     socket.on(
       "updateLocation",
       (data) => {
+        const bookingId =
+          normalizeValue(
+            data?.bookingId
+          );
+
         const roomId =
           normalizeValue(
             data?.roomId ||
-              data?.chatRoomId ||
-              data?.bookingId
+            data?.chatRoomId ||
+            (
+              bookingId
+                ? `booking:${bookingId}`
+                : ""
+            )
           );
 
         if (!roomId) {
@@ -1021,7 +1209,7 @@ io.on(
     );
 
     // =================================================
-    // REFRESH REQUESTS
+    // CLIENT REFRESH REQUESTS
     // =================================================
 
     socket.on(
@@ -1030,14 +1218,14 @@ io.on(
         const providerId =
           getDocumentId(
             data?.providerId ||
-              data?.provider
+            data?.provider
           );
 
         const customerId =
           getDocumentId(
             data?.customerId ||
-              data?.customer ||
-              data?.user
+            data?.customer ||
+            data?.user
           );
 
         if (providerId) {
@@ -1058,6 +1246,11 @@ io.on(
             "refreshProviderDashboard",
             data || {}
           );
+
+          io.to(providerRoom).emit(
+            "refreshProviderEarnings",
+            data || {}
+          );
         }
 
         if (customerId) {
@@ -1073,6 +1266,11 @@ io.on(
           "refreshAdminBookings",
           data || {}
         );
+
+        io.to("admin").emit(
+          "refreshAdminDashboard",
+          data || {}
+        );
       }
     );
 
@@ -1082,7 +1280,7 @@ io.on(
         const providerId =
           getDocumentId(
             data?.providerId ||
-              data?.provider
+            data?.provider
           );
 
         if (providerId) {
@@ -1112,7 +1310,10 @@ io.on(
     );
 
     // =================================================
-    // BOOKING STATUS EVENTS
+    // BOOKING EVENT COMPATIBILITY
+    //
+    // These events only refresh clients.
+    // Booking status must be changed through REST APIs.
     // =================================================
 
     socket.on(
@@ -1132,6 +1333,10 @@ io.on(
         );
       }
     );
+
+    // =================================================
+    // SOCKET ERROR AND DISCONNECT
+    // =================================================
 
     socket.on(
       "error",
@@ -1244,7 +1449,28 @@ process.on(
 
 const startServer = async () => {
   try {
+    validateEnvironment();
     await connectDB();
+
+    server.on(
+      "error",
+      (error) => {
+        if (
+          error?.code === "EADDRINUSE"
+        ) {
+          console.error(
+            `Port ${PORT} is already in use`
+          );
+
+          process.exit(1);
+        }
+
+        console.error(
+          "HTTP server error:",
+          error
+        );
+      }
+    );
 
     server.listen(
       PORT,
@@ -1267,26 +1493,6 @@ const startServer = async () => {
 
         console.log(
           `Environment: ${NODE_ENV}`
-        );
-      }
-    );
-
-    server.on(
-      "error",
-      (error) => {
-        if (
-          error?.code === "EADDRINUSE"
-        ) {
-          console.error(
-            `Port ${PORT} is already in use`
-          );
-
-          process.exit(1);
-        }
-
-        console.error(
-          "HTTP server error:",
-          error
         );
       }
     );

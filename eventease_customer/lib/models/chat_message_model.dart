@@ -3,6 +3,9 @@ import 'dart:convert';
 class ChatMessageModel {
   final String id;
 
+  final String bookingId;
+
+  final String roomId;
   final String chatRoomId;
 
   final String senderId;
@@ -10,15 +13,13 @@ class ChatMessageModel {
 
   final String receiverId;
 
-  /// text | image | file | location
   final String messageType;
-
   final String message;
 
   final String? mediaUrl;
 
   final bool isRead;
-  final bool isDelivered;
+  final bool delivered;
 
   final DateTime? readAt;
 
@@ -30,29 +31,35 @@ class ChatMessageModel {
 
   const ChatMessageModel({
     required this.id,
+    required this.roomId,
     required this.chatRoomId,
     required this.senderId,
     required this.senderName,
     required this.receiverId,
     required this.messageType,
     required this.message,
+
+    this.bookingId = '',
+
     this.mediaUrl,
+
     this.isRead = false,
-    this.isDelivered = false,
+    this.delivered = false,
+
     this.readAt,
+
     this.latitude,
     this.longitude,
+
     this.createdAt,
     this.updatedAt,
   });
 
-  // ==========================================
-  // EMPTY
-  // ==========================================
-
   factory ChatMessageModel.empty() {
     return const ChatMessageModel(
       id: '',
+      bookingId: '',
+      roomId: '',
       chatRoomId: '',
       senderId: '',
       senderName: '',
@@ -62,123 +69,195 @@ class ChatMessageModel {
     );
   }
 
-  // ==========================================
-  // COPY WITH
-  // ==========================================
+  static String _string(
+    dynamic value,
+  ) {
+    if (value == null) {
+      return '';
+    }
 
-  ChatMessageModel copyWith({
-    String? id,
-    String? chatRoomId,
-    String? senderId,
-    String? senderName,
-    String? receiverId,
-    String? messageType,
-    String? message,
-    String? mediaUrl,
-    bool? isRead,
-    bool? isDelivered,
-    DateTime? readAt,
-    double? latitude,
-    double? longitude,
-    DateTime? createdAt,
-    DateTime? updatedAt,
-  }) {
-    return ChatMessageModel(
-      id: id ?? this.id,
-      chatRoomId: chatRoomId ?? this.chatRoomId,
-      senderId: senderId ?? this.senderId,
-      senderName: senderName ?? this.senderName,
-      receiverId: receiverId ?? this.receiverId,
-      messageType: messageType ?? this.messageType,
-      message: message ?? this.message,
-      mediaUrl: mediaUrl ?? this.mediaUrl,
-      isRead: isRead ?? this.isRead,
-      isDelivered: isDelivered ?? this.isDelivered,
-      readAt: readAt ?? this.readAt,
-      latitude: latitude ?? this.latitude,
-      longitude: longitude ?? this.longitude,
-      createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
+    return value.toString();
+  }
+
+  static bool _bool(
+    dynamic value,
+  ) {
+    if (value == null) {
+      return false;
+    }
+
+    if (value is bool) {
+      return value;
+    }
+
+    return value.toString().toLowerCase() ==
+        'true';
+  }
+
+  static double? _double(
+    dynamic value,
+  ) {
+    if (value == null) {
+      return null;
+    }
+
+    if (value is num) {
+      return value.toDouble();
+    }
+
+    return double.tryParse(
+      value.toString(),
     );
   }
 
-  // ==========================================
-  // FROM MAP
-  // ==========================================
+  static DateTime? _date(
+    dynamic value,
+  ) {
+    if (value == null) {
+      return null;
+    }
+
+    return DateTime.tryParse(
+      value.toString(),
+    );
+  }
+
+  static String _extractUserName(
+    dynamic value,
+  ) {
+    if (value == null) {
+      return '';
+    }
+
+    if (value is String) {
+      return value;
+    }
+
+    if (value is Map) {
+      return value['fullName']
+              ?.toString() ??
+          value['name']
+              ?.toString() ??
+          value['firstName']
+              ?.toString() ??
+          value['businessName']
+              ?.toString() ??
+          '';
+    }
+
+    return '';
+  }
+
+  static String _extractUserId(
+    dynamic value,
+  ) {
+    if (value == null) {
+      return '';
+    }
+
+    if (value is String) {
+      return value;
+    }
+
+    if (value is Map) {
+      return value['_id']
+              ?.toString() ??
+          value['id']
+              ?.toString() ??
+          '';
+    }
+
+    return '';
+  }
 
   factory ChatMessageModel.fromMap(
     Map<String, dynamic> map,
   ) {
-    return ChatMessageModel(
-      id: map['_id']?.toString() ??
-          map['id']?.toString() ??
-          '',
+    final sender =
+        map['sender'] ??
+            map['senderId'];
 
-      chatRoomId:
-          map['chatRoomId']?.toString() ?? '',
+    final receiver =
+        map['receiver'] ??
+            map['receiverId'];
+
+    return ChatMessageModel(
+      id: _string(
+        map['_id'] ?? map['id'],
+      ),
+
+      bookingId: _string(
+        map['bookingId'],
+      ),
+
+      roomId: _string(
+        map['roomId'],
+      ),
+
+      chatRoomId: _string(
+        map['chatRoomId'] ??
+            map['roomId'],
+      ),
 
       senderId:
-          map['senderId']?.toString() ?? '',
+          _extractUserId(sender),
 
       senderName:
-          map['senderName'] ?? '',
+          _extractUserName(sender),
 
       receiverId:
-          map['receiverId']?.toString() ?? '',
+          _extractUserId(receiver),
 
-      messageType:
-          map['messageType'] ?? 'text',
+      messageType: _string(
+        map['messageType'].toString().isEmpty
+            ? 'text'
+            : map['messageType'],
+      ),
 
-      message:
-          map['message'] ?? '',
+      message: _string(
+        map['message'],
+      ),
 
       mediaUrl:
-          map['mediaUrl'],
+          map['mediaUrl']?.toString(),
 
       isRead:
-          map['isRead'] ?? false,
+          _bool(map['isRead']) ||
+              _bool(map['read']),
 
-      isDelivered:
-          map['isDelivered'] ?? false,
+      delivered:
+          _bool(
+                map['delivered'],
+              ) ||
+              map['deliveredAt'] != null,
 
-      readAt:
-          map['readAt'] != null
-              ? DateTime.tryParse(
-                  map['readAt'],
-                )
-              : null,
+      readAt: _date(
+        map['readAt'],
+      ),
 
-      latitude:
-          (map['latitude'] as num?)
-              ?.toDouble(),
+      latitude: _double(
+        map['latitude'],
+      ),
 
-      longitude:
-          (map['longitude'] as num?)
-              ?.toDouble(),
+      longitude: _double(
+        map['longitude'],
+      ),
 
-      createdAt:
-          map['createdAt'] != null
-              ? DateTime.tryParse(
-                  map['createdAt'],
-                )
-              : null,
+      createdAt: _date(
+        map['createdAt'],
+      ),
 
-      updatedAt:
-          map['updatedAt'] != null
-              ? DateTime.tryParse(
-                  map['updatedAt'],
-                )
-              : null,
+      updatedAt: _date(
+        map['updatedAt'],
+      ),
     );
   }
-
-  // ==========================================
-  // TO MAP
-  // ==========================================
 
   Map<String, dynamic> toMap() {
     return {
       '_id': id,
+      'bookingId': bookingId,
+      'roomId': roomId,
       'chatRoomId': chatRoomId,
       'senderId': senderId,
       'senderName': senderName,
@@ -187,8 +266,9 @@ class ChatMessageModel {
       'message': message,
       'mediaUrl': mediaUrl,
       'isRead': isRead,
-      'isDelivered': isDelivered,
-      'readAt': readAt?.toIso8601String(),
+      'delivered': delivered,
+      'readAt':
+          readAt?.toIso8601String(),
       'latitude': latitude,
       'longitude': longitude,
       'createdAt':
@@ -197,10 +277,6 @@ class ChatMessageModel {
           updatedAt?.toIso8601String(),
     };
   }
-
-  // ==========================================
-  // JSON
-  // ==========================================
 
   factory ChatMessageModel.fromJson(
     String source,
@@ -211,24 +287,30 @@ class ChatMessageModel {
   }
 
   String toJson() {
-    return jsonEncode(toMap());
+    return jsonEncode(
+      toMap(),
+    );
   }
 
-  // ==========================================
+  // =====================================================
   // HELPERS
-  // ==========================================
+  // =====================================================
 
   bool get isTextMessage =>
-      messageType.toLowerCase() == 'text';
+      messageType.toLowerCase() ==
+      'text';
 
   bool get isImageMessage =>
-      messageType.toLowerCase() == 'image';
+      messageType.toLowerCase() ==
+      'image';
 
   bool get isFileMessage =>
-      messageType.toLowerCase() == 'file';
+      messageType.toLowerCase() ==
+      'file';
 
   bool get isLocationMessage =>
-      messageType.toLowerCase() == 'location';
+      messageType.toLowerCase() ==
+      'location';
 
   bool get hasMedia =>
       mediaUrl != null &&
@@ -238,18 +320,105 @@ class ChatMessageModel {
       latitude != null &&
       longitude != null;
 
-  // ==========================================
-  // OVERRIDES
-  // ==========================================
+  bool get isMine {
+    return senderId.isNotEmpty;
+  }
 
-  @override
-  String toString() {
-    return 'ChatMessageModel(id: $id, message: $message)';
+  String get createdAtText {
+    if (createdAt == null) {
+      return '';
+    }
+
+    final date =
+        createdAt!.toLocal();
+
+    final hour =
+        date.hour > 12
+            ? date.hour - 12
+            : date.hour == 0
+                ? 12
+                : date.hour;
+
+    final minute =
+        date.minute
+            .toString()
+            .padLeft(2, '0');
+
+    final suffix =
+        date.hour >= 12
+            ? 'PM'
+            : 'AM';
+
+    return '$hour:$minute $suffix';
+  }
+
+  ChatMessageModel copyWith({
+    String? id,
+    String? bookingId,
+    String? roomId,
+    String? chatRoomId,
+    String? senderId,
+    String? senderName,
+    String? receiverId,
+    String? messageType,
+    String? message,
+    String? mediaUrl,
+    bool? isRead,
+    bool? delivered,
+    DateTime? readAt,
+    double? latitude,
+    double? longitude,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) {
+    return ChatMessageModel(
+      id: id ?? this.id,
+      bookingId:
+          bookingId ?? this.bookingId,
+      roomId: roomId ?? this.roomId,
+      chatRoomId:
+          chatRoomId ?? this.chatRoomId,
+      senderId:
+          senderId ?? this.senderId,
+      senderName:
+          senderName ?? this.senderName,
+      receiverId:
+          receiverId ?? this.receiverId,
+      messageType:
+          messageType ?? this.messageType,
+      message:
+          message ?? this.message,
+      mediaUrl:
+          mediaUrl ?? this.mediaUrl,
+      isRead:
+          isRead ?? this.isRead,
+      delivered:
+          delivered ?? this.delivered,
+      readAt: readAt ?? this.readAt,
+      latitude:
+          latitude ?? this.latitude,
+      longitude:
+          longitude ?? this.longitude,
+      createdAt:
+          createdAt ?? this.createdAt,
+      updatedAt:
+          updatedAt ?? this.updatedAt,
+    );
   }
 
   @override
-  bool operator ==(Object other) {
-    return identical(this, other) ||
+  String toString() {
+    return 'ChatMessageModel(id: $id, roomId: $roomId, message: $message)';
+  }
+
+  @override
+  bool operator ==(
+    Object other,
+  ) {
+    return identical(
+          this,
+          other,
+        ) ||
         other is ChatMessageModel &&
             other.id == id;
   }

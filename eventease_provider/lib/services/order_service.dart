@@ -9,11 +9,16 @@ class OrderService {
   static final OrderService _instance =
       OrderService._();
 
-  static OrderService get instance =>
-      _instance;
+  static OrderService get instance {
+    return _instance;
+  }
 
   final ApiService _apiService =
       ApiService.instance;
+
+  // =====================================================
+  // RESPONSE HELPERS
+  // =====================================================
 
   Map<String, dynamic> _asMap(
     dynamic value,
@@ -24,10 +29,12 @@ class OrderService {
 
     if (value is Map) {
       return value.map(
-        (key, item) => MapEntry(
-          key.toString(),
-          item,
-        ),
+        (key, item) {
+          return MapEntry(
+            key.toString(),
+            item,
+          );
+        },
       );
     }
 
@@ -56,14 +63,13 @@ class OrderService {
       }
 
       if (payload is Map) {
-        final nestedMap =
-            _asMap(payload);
+        final nested = _asMap(payload);
 
         final nestedList =
-            nestedMap['orders'] ??
-            nestedMap['bookings'] ??
-            nestedMap['items'] ??
-            nestedMap['results'];
+            nested['orders'] ??
+            nested['bookings'] ??
+            nested['items'] ??
+            nested['results'];
 
         if (nestedList is List) {
           return nestedList;
@@ -105,6 +111,7 @@ class OrderService {
     final payload =
         map['analytics'] ??
         map['dashboard'] ??
+        map['invoice'] ??
         map['data'] ??
         map;
 
@@ -115,62 +122,93 @@ class OrderService {
     String value,
     String fieldName,
   ) {
-    final normalizedValue =
-        value.trim();
+    final normalized = value.trim();
 
-    if (normalizedValue.isEmpty) {
+    if (normalized.isEmpty) {
       throw ArgumentError(
         '$fieldName is required.',
       );
     }
 
-    return normalizedValue;
+    return normalized;
   }
 
   String _normalizeStatus(
     String value,
   ) {
-    return value
+    final status = value
         .trim()
         .toLowerCase()
         .replaceAll('-', '_')
         .replaceAll(' ', '_');
+
+    switch (status) {
+      case 'confirm':
+      case 'confirmed':
+        return 'accepted';
+
+      case 'otpverified':
+        return 'otp_verified';
+
+      case 'inprogress':
+      case 'processing':
+        return 'in_progress';
+
+      case 'canceled':
+        return 'cancelled';
+
+      default:
+        return status;
+    }
   }
 
-  bool _matchesSearch(
-    OrderModel order,
-    String keyword,
+  int _normalizePage(
+    int page,
   ) {
-    final normalizedKeyword =
-        keyword.trim().toLowerCase();
+    return page < 1 ? 1 : page;
+  }
 
-    if (normalizedKeyword.isEmpty) {
-      return true;
+  int _normalizeLimit(
+    int limit,
+  ) {
+    if (limit < 1) {
+      return 100;
     }
 
-    final searchableText =
-        order.toString().toLowerCase();
+    return limit > 100 ? 100 : limit;
+  }
 
-    return searchableText.contains(
-      normalizedKeyword,
+  OrderModel _orderFromResponse(
+    dynamic response,
+  ) {
+    final data = _extractSingle(
+      response,
+    );
+
+    if (data.isEmpty) {
+      throw const FormatException(
+        'The backend did not return valid booking data.',
+      );
+    }
+
+    return OrderModel.fromMap(
+      data,
     );
   }
 
   List<OrderModel> _ordersFromResponse(
     dynamic response,
   ) {
-    final orders =
-        <OrderModel>[];
+    final orders = <OrderModel>[];
 
-    for (final item
-        in _extractList(response)) {
+    for (final item in _extractList(response)) {
       if (item is! Map) {
         continue;
       }
 
       try {
         orders.add(
-          OrderModel.fromJson(
+          OrderModel.fromMap(
             _asMap(item),
           ),
         );
@@ -184,533 +222,6 @@ class OrderService {
     }
 
     return orders;
-  }
-
-  Future<List<OrderModel>> getOrders({
-    int page = 1,
-    int limit = 100,
-    String? status,
-  }) async {
-    try {
-      final normalizedStatus =
-          status == null
-              ? ''
-              : _normalizeStatus(status);
-
-      final response =
-          await _apiService.get(
-        '/provider/orders',
-        queryParameters: {
-          'page': page < 1 ? 1 : page,
-          'limit': limit < 1
-              ? 100
-              : limit > 100
-                  ? 100
-                  : limit,
-          if (normalizedStatus.isNotEmpty)
-            'status': normalizedStatus,
-        },
-      );
-
-      final orders =
-          _ordersFromResponse(response);
-
-      log(
-        'Provider orders loaded: '
-        '${orders.length}',
-      );
-
-      return orders;
-    } catch (error, stackTrace) {
-      log(
-        'Get Orders Error',
-        error: error,
-        stackTrace: stackTrace,
-      );
-
-      rethrow;
-    }
-  }
-
-  Future<OrderModel> getOrderById(
-    String orderId,
-  ) async {
-    try {
-      final normalizedOrderId =
-          _normalizeId(
-        orderId,
-        'Order ID',
-      );
-
-      final response =
-          await _apiService.get(
-        '/bookings/$normalizedOrderId',
-      );
-
-      final data =
-          _extractSingle(response);
-
-      if (data.isEmpty) {
-        throw const FormatException(
-          'The backend did not return valid booking data.',
-        );
-      }
-
-      return OrderModel.fromJson(data);
-    } catch (error, stackTrace) {
-      log(
-        'Get Order Error',
-        error: error,
-        stackTrace: stackTrace,
-      );
-
-      rethrow;
-    }
-  }
-
-  Future<List<OrderModel>>
-      getTodayOrders() async {
-    try {
-      final response =
-          await _apiService.get(
-        '/provider/orders/today',
-      );
-
-      return _ordersFromResponse(
-        response,
-      );
-    } catch (error, stackTrace) {
-      log(
-        'Today Orders Error',
-        error: error,
-        stackTrace: stackTrace,
-      );
-
-      return <OrderModel>[];
-    }
-  }
-
-  Future<List<OrderModel>>
-      getRecentOrders() async {
-    try {
-      final response =
-          await _apiService.get(
-        '/provider/orders/recent',
-      );
-
-      return _ordersFromResponse(
-        response,
-      );
-    } catch (error, stackTrace) {
-      log(
-        'Recent Orders Error',
-        error: error,
-        stackTrace: stackTrace,
-      );
-
-      return <OrderModel>[];
-    }
-  }
-
-  Future<List<OrderModel>>
-      getOrdersByStatus(
-    String status,
-  ) async {
-    try {
-      final normalizedStatus =
-          _normalizeStatus(status);
-
-      if (normalizedStatus.isEmpty) {
-        return getOrders();
-      }
-
-      final orders =
-          await getOrders();
-
-      return orders.where(
-        (order) {
-          final orderMap =
-              _asMap(
-            order.toJson(),
-          );
-
-          final orderStatus =
-              _normalizeStatus(
-            orderMap['status']
-                    ?.toString() ??
-                orderMap['bookingStatus']
-                    ?.toString() ??
-                '',
-          );
-
-          return orderStatus ==
-              normalizedStatus;
-        },
-      ).toList();
-    } catch (error, stackTrace) {
-      log(
-        'Get Orders By Status Error',
-        error: error,
-        stackTrace: stackTrace,
-      );
-
-      return <OrderModel>[];
-    }
-  }
-
-  Future<OrderModel> updateOrderStatus({
-    required String orderId,
-    required String status,
-    String? reason,
-    String? note,
-  }) async {
-    try {
-      final normalizedOrderId =
-          _normalizeId(
-        orderId,
-        'Order ID',
-      );
-
-      final normalizedStatus =
-          _normalizeStatus(status);
-
-      const allowedStatuses =
-          <String>{
-        'accepted',
-        'rejected',
-        'in_progress',
-        'completed',
-        'cancelled',
-      };
-
-      if (!allowedStatuses.contains(
-        normalizedStatus,
-      )) {
-        throw ArgumentError(
-          'Invalid order status: '
-          '$normalizedStatus',
-        );
-      }
-
-      log(
-        'Updating booking '
-        '$normalizedOrderId '
-        'to $normalizedStatus',
-      );
-
-      final response =
-          await _apiService.patch(
-        '/bookings/'
-        '$normalizedOrderId/status',
-        body: {
-          'status': normalizedStatus,
-          if (reason != null &&
-              reason.trim().isNotEmpty)
-            'reason': reason.trim(),
-          if (note != null &&
-              note.trim().isNotEmpty)
-            'note': note.trim(),
-        },
-      );
-
-      final data =
-          _extractSingle(response);
-
-      if (data.isEmpty) {
-        throw const FormatException(
-          'The backend did not return the updated booking.',
-        );
-      }
-
-      return OrderModel.fromJson(data);
-    } catch (error, stackTrace) {
-      log(
-        'Update Order Status Error',
-        error: error,
-        stackTrace: stackTrace,
-      );
-
-      rethrow;
-    }
-  }
-
-  Future<bool> confirmOrder(
-    String orderId,
-  ) async {
-    try {
-      await updateOrderStatus(
-        orderId: orderId,
-        status: 'accepted',
-      );
-
-      return true;
-    } catch (error, stackTrace) {
-      log(
-        'Confirm Order Error',
-        error: error,
-        stackTrace: stackTrace,
-      );
-
-      return false;
-    }
-  }
-
-  Future<bool> acceptOrder(
-    String orderId,
-  ) {
-    return confirmOrder(orderId);
-  }
-
-  Future<bool> startOrder(
-    String orderId,
-  ) async {
-    try {
-      await updateOrderStatus(
-        orderId: orderId,
-        status: 'in_progress',
-      );
-
-      return true;
-    } catch (error, stackTrace) {
-      log(
-        'Start Order Error',
-        error: error,
-        stackTrace: stackTrace,
-      );
-
-      return false;
-    }
-  }
-
-  Future<bool> completeOrder(
-    String orderId,
-  ) async {
-    try {
-      await updateOrderStatus(
-        orderId: orderId,
-        status: 'completed',
-      );
-
-      return true;
-    } catch (error, stackTrace) {
-      log(
-        'Complete Order Error',
-        error: error,
-        stackTrace: stackTrace,
-      );
-
-      return false;
-    }
-  }
-
-  Future<bool> rejectOrder({
-    required String orderId,
-    String? reason,
-  }) async {
-    try {
-      await updateOrderStatus(
-        orderId: orderId,
-        status: 'rejected',
-        reason: reason,
-      );
-
-      return true;
-    } catch (error, stackTrace) {
-      log(
-        'Reject Order Error',
-        error: error,
-        stackTrace: stackTrace,
-      );
-
-      return false;
-    }
-  }
-
-  Future<bool> cancelOrder({
-    required String orderId,
-    required String reason,
-  }) async {
-    try {
-      await updateOrderStatus(
-        orderId: orderId,
-        status: 'cancelled',
-        reason: reason,
-      );
-
-      return true;
-    } catch (error, stackTrace) {
-      log(
-        'Cancel Order Error',
-        error: error,
-        stackTrace: stackTrace,
-      );
-
-      return false;
-    }
-  }
-
-  Future<bool> refundOrder({
-    required String orderId,
-    required String reason,
-  }) async {
-    log(
-      'Refund is not supported by the '
-      'current booking backend. '
-      'Order ID: $orderId. '
-      'Reason: $reason',
-    );
-
-    return false;
-  }
-
-  Future<List<OrderModel>> searchOrders(
-    String keyword,
-  ) async {
-    try {
-      final orders =
-          await getOrders();
-
-      return orders
-          .where(
-            (order) => _matchesSearch(
-              order,
-              keyword,
-            ),
-          )
-          .toList();
-    } catch (error, stackTrace) {
-      log(
-        'Search Orders Error',
-        error: error,
-        stackTrace: stackTrace,
-      );
-
-      return <OrderModel>[];
-    }
-  }
-
-  Future<Map<String, dynamic>>
-      getOrderAnalytics() async {
-    try {
-      final response =
-          await _apiService.get(
-        '/provider/orders/analytics',
-      );
-
-      return _extractMap(response);
-    } catch (error, stackTrace) {
-      log(
-        'Order Analytics Error',
-        error: error,
-        stackTrace: stackTrace,
-      );
-
-      rethrow;
-    }
-  }
-
-  Future<int> getOrderCount() async {
-    try {
-      final analytics =
-          await getOrderAnalytics();
-
-      return _toInt(
-        analytics['totalOrders'] ??
-            analytics['totalBookings'],
-      );
-    } catch (error, stackTrace) {
-      log(
-        'Order Count Error',
-        error: error,
-        stackTrace: stackTrace,
-      );
-
-      return 0;
-    }
-  }
-
-  Future<int>
-      getCompletedOrderCount() async {
-    try {
-      final analytics =
-          await getOrderAnalytics();
-
-      return _toInt(
-        analytics['completedOrders'] ??
-            analytics[
-                'completedBookings'],
-      );
-    } catch (error, stackTrace) {
-      log(
-        'Completed Order Count Error',
-        error: error,
-        stackTrace: stackTrace,
-      );
-
-      return 0;
-    }
-  }
-
-  Future<int> getPendingOrderCount() async {
-    try {
-      final analytics =
-          await getOrderAnalytics();
-
-      return _toInt(
-        analytics['pendingOrders'] ??
-            analytics['pendingBookings'],
-      );
-    } catch (error, stackTrace) {
-      log(
-        'Pending Order Count Error',
-        error: error,
-        stackTrace: stackTrace,
-      );
-
-      return 0;
-    }
-  }
-
-  Future<double> getTotalRevenue() async {
-    try {
-      final response =
-          await _apiService.get(
-        '/provider/earnings',
-      );
-
-      final data =
-          _extractMap(response);
-
-      return _toDouble(
-        data['totalEarnings'] ??
-            data['availableBalance'],
-      );
-    } catch (error, stackTrace) {
-      log(
-        'Revenue Error',
-        error: error,
-        stackTrace: stackTrace,
-      );
-
-      return 0;
-    }
-  }
-
-  Future<String?> downloadInvoice(
-    String orderId,
-  ) async {
-    final normalizedOrderId =
-        _normalizeId(
-      orderId,
-      'Order ID',
-    );
-
-    log(
-      'Invoice endpoint is not implemented '
-      'for booking $normalizedOrderId.',
-    );
-
-    return null;
   }
 
   int _toInt(
@@ -733,10 +244,6 @@ class OrderService {
   double _toDouble(
     dynamic value,
   ) {
-    if (value is double) {
-      return value;
-    }
-
     if (value is num) {
       return value.toDouble();
     }
@@ -745,5 +252,622 @@ class OrderService {
           value?.toString() ?? '',
         ) ??
         0;
+  }
+
+  // =====================================================
+  // BOOKING ID RESOLUTION
+  // =====================================================
+
+  Future<String> _resolveBookingId(
+    String orderOrBookingId,
+  ) async {
+    final normalizedId = _normalizeId(
+      orderOrBookingId,
+      'Order or Booking ID',
+    );
+
+    try {
+      final order = await getOrderById(
+        normalizedId,
+      );
+
+      if (order.bookingId.trim().isNotEmpty) {
+        return order.bookingId.trim();
+      }
+
+      if (order.id.trim().isNotEmpty) {
+        return order.id.trim();
+      }
+    } catch (error) {
+      log(
+        'Using supplied identifier as Booking ID: $error',
+      );
+    }
+
+    return normalizedId;
+  }
+
+  // =====================================================
+  // GET ORDERS
+  // =====================================================
+
+  Future<List<OrderModel>> getOrders({
+    int page = 1,
+    int limit = 100,
+    String? status,
+  }) async {
+    try {
+      final normalizedStatus =
+          status == null
+              ? ''
+              : _normalizeStatus(status);
+
+      final response = await _apiService.get(
+        '/provider/orders',
+        queryParameters: {
+          'page': _normalizePage(page),
+          'limit': _normalizeLimit(limit),
+          if (normalizedStatus.isNotEmpty)
+            'status': normalizedStatus,
+        },
+      );
+
+      return _ordersFromResponse(
+        response,
+      );
+    } catch (error, stackTrace) {
+      log(
+        'Get Orders Error',
+        error: error,
+        stackTrace: stackTrace,
+      );
+
+      rethrow;
+    }
+  }
+
+  // =====================================================
+  // GET ORDER BY ID
+  // =====================================================
+
+  Future<OrderModel> getOrderById(
+    String orderId,
+  ) async {
+    try {
+      final normalizedOrderId = _normalizeId(
+        orderId,
+        'Order ID',
+      );
+
+      final response = await _apiService.get(
+        '/bookings/$normalizedOrderId',
+      );
+
+      return _orderFromResponse(
+        response,
+      );
+    } catch (error, stackTrace) {
+      log(
+        'Get Order Error',
+        error: error,
+        stackTrace: stackTrace,
+      );
+
+      rethrow;
+    }
+  }
+
+  // =====================================================
+  // TODAY ORDERS
+  // =====================================================
+
+  Future<List<OrderModel>> getTodayOrders() async {
+    try {
+      final response = await _apiService.get(
+        '/provider/orders/today',
+      );
+
+      return _ordersFromResponse(
+        response,
+      );
+    } catch (error, stackTrace) {
+      log(
+        'Today Orders Error',
+        error: error,
+        stackTrace: stackTrace,
+      );
+
+      return <OrderModel>[];
+    }
+  }
+
+  // =====================================================
+  // RECENT ORDERS
+  // =====================================================
+
+  Future<List<OrderModel>> getRecentOrders() async {
+    try {
+      final response = await _apiService.get(
+        '/provider/orders/recent',
+      );
+
+      return _ordersFromResponse(
+        response,
+      );
+    } catch (error, stackTrace) {
+      log(
+        'Recent Orders Error',
+        error: error,
+        stackTrace: stackTrace,
+      );
+
+      return <OrderModel>[];
+    }
+  }
+
+  // =====================================================
+  // ORDERS BY STATUS
+  // =====================================================
+
+  Future<List<OrderModel>> getOrdersByStatus(
+    String status,
+  ) async {
+    final normalizedStatus = _normalizeStatus(
+      status,
+    );
+
+    if (
+      normalizedStatus.isEmpty ||
+      normalizedStatus == 'all'
+    ) {
+      return getOrders();
+    }
+
+    return getOrders(
+      status: normalizedStatus,
+    );
+  }
+
+  // =====================================================
+  // UPDATE STATUS
+  // =====================================================
+
+  Future<OrderModel> updateOrderStatus({
+    required String orderId,
+    required String status,
+    String? reason,
+    String? note,
+  }) async {
+    try {
+      final bookingId = await _resolveBookingId(
+        orderId,
+      );
+
+      final normalizedStatus = _normalizeStatus(
+        status,
+      );
+
+      const allowedStatuses = <String>{
+        'accepted',
+        'rejected',
+        'in_progress',
+        'completed',
+        'cancelled',
+      };
+
+      if (!allowedStatuses.contains(normalizedStatus)) {
+        throw ArgumentError(
+          'Invalid order status: $normalizedStatus',
+        );
+      }
+
+      final response = await _apiService.patch(
+        '/bookings/$bookingId/status',
+        body: {
+          'status': normalizedStatus,
+          if (reason != null &&
+              reason.trim().isNotEmpty)
+            'reason': reason.trim(),
+          if (note != null &&
+              note.trim().isNotEmpty)
+            'note': note.trim(),
+        },
+      );
+
+      return _orderFromResponse(
+        response,
+      );
+    } catch (error, stackTrace) {
+      log(
+        'Update Order Status Error',
+        error: error,
+        stackTrace: stackTrace,
+      );
+
+      rethrow;
+    }
+  }
+
+  // =====================================================
+  // ACCEPT ORDER
+  // =====================================================
+
+  Future<bool> confirmOrder(
+    String orderId,
+  ) async {
+    await updateOrderStatus(
+      orderId: orderId,
+      status: 'accepted',
+    );
+
+    return true;
+  }
+
+  Future<bool> acceptOrder(
+    String orderId,
+  ) {
+    return confirmOrder(
+      orderId,
+    );
+  }
+
+  // =====================================================
+  // MARK PROVIDER ARRIVED
+  // =====================================================
+
+  Future<OrderModel> markProviderArrived({
+    required String orderId,
+    required double latitude,
+    required double longitude,
+  }) async {
+    try {
+      final bookingId = await _resolveBookingId(
+        orderId,
+      );
+
+      final response = await _apiService.patch(
+        '/bookings/$bookingId/arrived',
+        body: {
+          'latitude': latitude,
+          'longitude': longitude,
+        },
+      );
+
+      return _orderFromResponse(
+        response,
+      );
+    } catch (error, stackTrace) {
+      log(
+        'Mark Provider Arrived Error',
+        error: error,
+        stackTrace: stackTrace,
+      );
+
+      rethrow;
+    }
+  }
+
+  // =====================================================
+  // VERIFY SERVICE OTP
+  // =====================================================
+
+  Future<OrderModel> verifyServiceOtp({
+    required String orderId,
+    required String otp,
+  }) async {
+    try {
+      final bookingId = await _resolveBookingId(
+        orderId,
+      );
+
+      final normalizedOtp = otp.trim();
+
+      if (
+        normalizedOtp.length != 4 ||
+        int.tryParse(normalizedOtp) == null
+      ) {
+        throw ArgumentError(
+          'A valid 4-digit service OTP is required.',
+        );
+      }
+
+      final response = await _apiService.post(
+        '/bookings/$bookingId/verify-service-otp',
+        body: {
+          'otp': normalizedOtp,
+        },
+      );
+
+      return _orderFromResponse(
+        response,
+      );
+    } catch (error, stackTrace) {
+      log(
+        'Verify Service OTP Error',
+        error: error,
+        stackTrace: stackTrace,
+      );
+
+      rethrow;
+    }
+  }
+
+  // =====================================================
+  // START ORDER
+  // =====================================================
+
+  Future<bool> startOrder(
+    String orderId,
+  ) async {
+    await updateOrderStatus(
+      orderId: orderId,
+      status: 'in_progress',
+    );
+
+    return true;
+  }
+
+  // =====================================================
+  // COMPLETE ORDER
+  // =====================================================
+
+  Future<bool> completeOrder(
+    String orderId,
+  ) async {
+    await updateOrderStatus(
+      orderId: orderId,
+      status: 'completed',
+    );
+
+    return true;
+  }
+
+  // =====================================================
+  // REJECT ORDER
+  // =====================================================
+
+  Future<bool> rejectOrder({
+    required String orderId,
+    required String reason,
+  }) async {
+    final normalizedReason = reason.trim();
+
+    if (normalizedReason.isEmpty) {
+      throw ArgumentError(
+        'Rejection reason is required.',
+      );
+    }
+
+    await updateOrderStatus(
+      orderId: orderId,
+      status: 'rejected',
+      reason: normalizedReason,
+      note: normalizedReason,
+    );
+
+    return true;
+  }
+
+  // =====================================================
+  // CANCEL ORDER
+  // =====================================================
+
+  Future<bool> cancelOrder({
+    required String orderId,
+    required String reason,
+  }) async {
+    final normalizedReason = reason.trim();
+
+    if (normalizedReason.isEmpty) {
+      throw ArgumentError(
+        'Cancellation reason is required.',
+      );
+    }
+
+    await updateOrderStatus(
+      orderId: orderId,
+      status: 'cancelled',
+      reason: normalizedReason,
+      note: normalizedReason,
+    );
+
+    return true;
+  }
+
+  // =====================================================
+  // REFUND
+  // =====================================================
+
+  Future<bool> refundOrder({
+    required String orderId,
+    required String reason,
+  }) async {
+    log(
+      'Refund is not supported by the current backend. '
+      'Order ID: $orderId. Reason: $reason',
+    );
+
+    return false;
+  }
+
+  // =====================================================
+  // SEARCH
+  // =====================================================
+
+  Future<List<OrderModel>> searchOrders(
+    String keyword,
+  ) async {
+    final normalizedKeyword =
+        keyword.trim().toLowerCase();
+
+    final orders = await getOrders();
+
+    if (normalizedKeyword.isEmpty) {
+      return orders;
+    }
+
+    return orders.where(
+      (order) {
+        final searchableText = [
+          order.orderNumber,
+          order.bookingNumber,
+          order.bookingId,
+          order.customerName,
+          order.customerEmail,
+          order.customerPhone,
+          order.serviceName,
+          order.status,
+          order.eventAddress,
+          order.location,
+          order.transactionId,
+        ].join(' ').toLowerCase();
+
+        return searchableText.contains(
+          normalizedKeyword,
+        );
+      },
+    ).toList();
+  }
+
+  // =====================================================
+  // ANALYTICS
+  // =====================================================
+
+  Future<Map<String, dynamic>>
+      getOrderAnalytics() async {
+    try {
+      final response = await _apiService.get(
+        '/provider/orders/analytics',
+      );
+
+      return _extractMap(
+        response,
+      );
+    } catch (error, stackTrace) {
+      log(
+        'Order Analytics Error',
+        error: error,
+        stackTrace: stackTrace,
+      );
+
+      rethrow;
+    }
+  }
+
+  Future<int> getOrderCount() async {
+    final analytics = await getOrderAnalytics();
+
+    return _toInt(
+      analytics['totalOrders'] ??
+          analytics['totalBookings'],
+    );
+  }
+
+  Future<int> getCompletedOrderCount() async {
+    final analytics = await getOrderAnalytics();
+
+    return _toInt(
+      analytics['completedOrders'] ??
+          analytics['completedBookings'],
+    );
+  }
+
+  Future<int> getPendingOrderCount() async {
+    final analytics = await getOrderAnalytics();
+
+    return _toInt(
+      analytics['pendingOrders'] ??
+          analytics['pendingBookings'],
+    );
+  }
+
+  // =====================================================
+  // REVENUE
+  // =====================================================
+
+  Future<double> getTotalRevenue() async {
+    try {
+      final response = await _apiService.get(
+        '/provider/earnings',
+      );
+
+      final data = _extractMap(
+        response,
+      );
+
+      return _toDouble(
+        data['totalEarnings'] ??
+            data['totalRevenue'] ??
+            data['availableBalance'],
+      );
+    } catch (error, stackTrace) {
+      log(
+        'Revenue Error',
+        error: error,
+        stackTrace: stackTrace,
+      );
+
+      return 0;
+    }
+  }
+
+  // =====================================================
+  // INVOICE
+  // =====================================================
+
+  Future<Map<String, dynamic>> getInvoice(
+    String orderId,
+  ) async {
+    try {
+      final bookingId = await _resolveBookingId(
+        orderId,
+      );
+
+      final response = await _apiService.get(
+        '/bookings/$bookingId/invoice',
+      );
+
+      final invoice = _extractMap(
+        response,
+      );
+
+      if (invoice.isEmpty) {
+        throw const FormatException(
+          'The backend did not return valid invoice data.',
+        );
+      }
+
+      return invoice;
+    } catch (error, stackTrace) {
+      log(
+        'Get Invoice Error',
+        error: error,
+        stackTrace: stackTrace,
+      );
+
+      rethrow;
+    }
+  }
+
+  Future<String?> downloadInvoice(
+    String orderId,
+  ) async {
+    final invoice = await getInvoice(
+      orderId,
+    );
+
+    final invoiceUrl =
+        invoice['invoiceUrl']
+            ?.toString()
+            .trim();
+
+    if (
+      invoiceUrl == null ||
+      invoiceUrl.isEmpty
+    ) {
+      return null;
+    }
+
+    return invoiceUrl;
   }
 }

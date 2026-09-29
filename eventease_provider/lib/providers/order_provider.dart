@@ -4,14 +4,13 @@ import '../models/order_model.dart';
 import '../repositories/order_repository.dart';
 
 class OrderProvider extends ChangeNotifier {
-  OrderProvider({OrderRepository? repository})
-    : _repository = repository ?? OrderRepository.instance;
+  OrderProvider({
+    OrderRepository? repository,
+  }) : _repository =
+            repository ??
+            OrderRepository.instance;
 
   final OrderRepository _repository;
-
-  // =====================================================
-  // STATE
-  // =====================================================
 
   int _activeRequests = 0;
 
@@ -19,15 +18,19 @@ class OrderProvider extends ChangeNotifier {
 
   String? _errorMessage;
 
-  List<OrderModel> _orders = <OrderModel>[];
+  List<OrderModel> _orders =
+      <OrderModel>[];
 
-  List<OrderModel> _todayOrders = <OrderModel>[];
+  List<OrderModel> _todayOrders =
+      <OrderModel>[];
 
-  List<OrderModel> _recentOrders = <OrderModel>[];
+  List<OrderModel> _recentOrders =
+      <OrderModel>[];
 
   OrderModel? _selectedOrder;
 
-  Map<String, dynamic> _analytics = <String, dynamic>{};
+  Map<String, dynamic> _analytics =
+      <String, dynamic>{};
 
   double _totalRevenue = 0;
 
@@ -37,89 +40,214 @@ class OrderProvider extends ChangeNotifier {
   // GETTERS
   // =====================================================
 
-  bool get isLoading => _activeRequests > 0;
+  bool get isLoading {
+    return _activeRequests > 0;
+  }
 
-  bool get hasError =>
-      _errorMessage != null && _errorMessage!.trim().isNotEmpty;
+  bool get hasError {
+    return _errorMessage != null &&
+        _errorMessage!.trim().isNotEmpty;
+  }
 
-  String? get errorMessage => _errorMessage;
+  String? get errorMessage {
+    return _errorMessage;
+  }
 
-  List<OrderModel> get orders => List<OrderModel>.unmodifiable(_orders);
+  List<OrderModel> get orders {
+    return List<OrderModel>.unmodifiable(
+      _orders,
+    );
+  }
 
-  List<OrderModel> get todayOrders =>
-      List<OrderModel>.unmodifiable(_todayOrders);
+  List<OrderModel> get todayOrders {
+    return List<OrderModel>.unmodifiable(
+      _todayOrders,
+    );
+  }
 
-  List<OrderModel> get recentOrders =>
-      List<OrderModel>.unmodifiable(_recentOrders);
+  List<OrderModel> get recentOrders {
+    return List<OrderModel>.unmodifiable(
+      _recentOrders,
+    );
+  }
 
-  OrderModel? get selectedOrder => _selectedOrder;
+  OrderModel? get selectedOrder {
+    return _selectedOrder;
+  }
 
-  Map<String, dynamic> get analytics =>
-      Map<String, dynamic>.unmodifiable(_analytics);
+  Map<String, dynamic> get analytics {
+    return Map<String, dynamic>.unmodifiable(
+      _analytics,
+    );
+  }
 
-  double get totalRevenue => _totalRevenue;
+  double get totalRevenue {
+    return _totalRevenue;
+  }
 
-  DateTime? get lastRefreshedAt => _lastRefreshedAt;
+  DateTime? get lastRefreshedAt {
+    return _lastRefreshedAt;
+  }
 
-  bool get hasOrders => _orders.isNotEmpty;
+  bool get hasOrders {
+    return _orders.isNotEmpty;
+  }
 
-  int get totalOrderCount => _orders.length;
+  int get totalOrderCount {
+    return _orders.length;
+  }
 
   // =====================================================
   // LOCAL STATUS COUNTS
   // =====================================================
 
-  int get pendingOrderCount => _countByStatus('pending');
+  int get pendingOrderCount {
+    return _countByStatus(
+      'pending',
+    );
+  }
 
-  int get acceptedOrderCount => _countByStatus('accepted');
+  int get acceptedOrderCount {
+    return _countByStatus(
+      'accepted',
+    );
+  }
 
-  int get inProgressOrderCount => _countByStatus('in_progress');
+  int get otpVerifiedOrderCount {
+    return _countByStatus(
+      'otp_verified',
+    );
+  }
 
-  int get completedOrderCount => _countByStatus('completed');
+  int get inProgressOrderCount {
+    return _countByStatus(
+      'in_progress',
+    );
+  }
 
-  int get cancelledOrderCount => _countByStatus('cancelled');
+  int get completedOrderCount {
+    return _countByStatus(
+      'completed',
+    );
+  }
 
-  int get rejectedOrderCount => _countByStatus('rejected');
+  int get cancelledOrderCount {
+    return _countByStatus(
+      'cancelled',
+    );
+  }
+
+  int get rejectedOrderCount {
+    return _countByStatus(
+      'rejected',
+    );
+  }
 
   // =====================================================
   // LOCAL STATUS LISTS
   // =====================================================
 
-  List<OrderModel> get pendingOrders => _filterByStatus('pending');
+  List<OrderModel> get pendingOrders {
+    return _filterByStatus(
+      'pending',
+    );
+  }
 
-  List<OrderModel> get acceptedOrders => _filterByStatus('accepted');
+  List<OrderModel> get acceptedOrders {
+    return _filterByStatus(
+      'accepted',
+    );
+  }
 
-  List<OrderModel> get inProgressOrders => _filterByStatus('in_progress');
+  List<OrderModel> get otpVerifiedOrders {
+    return _filterByStatus(
+      'otp_verified',
+    );
+  }
 
-  List<OrderModel> get completedOrders => _filterByStatus('completed');
+  List<OrderModel> get inProgressOrders {
+    return _filterByStatus(
+      'in_progress',
+    );
+  }
 
-  List<OrderModel> get cancelledOrders => _filterByStatus('cancelled');
+  List<OrderModel> get completedOrders {
+    return _filterByStatus(
+      'completed',
+    );
+  }
 
-  List<OrderModel> get rejectedOrders => _filterByStatus('rejected');
+  List<OrderModel> get cancelledOrders {
+    return _filterByStatus(
+      'cancelled',
+    );
+  }
+
+  List<OrderModel> get rejectedOrders {
+    return _filterByStatus(
+      'rejected',
+    );
+  }
 
   // =====================================================
   // ANALYTICS GETTERS
   // =====================================================
 
-  int get analyticsTotalOrders => _analyticsInt('totalOrders', 'totalBookings');
+  int get analyticsTotalOrders {
+    return _analyticsInt(
+      'totalOrders',
+      'totalBookings',
+    );
+  }
 
-  int get analyticsPendingOrders =>
-      _analyticsInt('pendingOrders', 'pendingBookings');
+  int get analyticsPendingOrders {
+    return _analyticsInt(
+      'pendingOrders',
+      'pendingBookings',
+    );
+  }
 
-  int get analyticsAcceptedOrders =>
-      _analyticsInt('acceptedOrders', 'acceptedBookings');
+  int get analyticsAcceptedOrders {
+    return _analyticsInt(
+      'acceptedOrders',
+      'acceptedBookings',
+    );
+  }
 
-  int get analyticsInProgressOrders =>
-      _analyticsInt('inProgressOrders', 'inProgressBookings');
+  int get analyticsOtpVerifiedOrders {
+    return _analyticsInt(
+      'otpVerifiedOrders',
+      'otpVerifiedBookings',
+    );
+  }
 
-  int get analyticsCompletedOrders =>
-      _analyticsInt('completedOrders', 'completedBookings');
+  int get analyticsInProgressOrders {
+    return _analyticsInt(
+      'inProgressOrders',
+      'inProgressBookings',
+    );
+  }
 
-  int get analyticsCancelledOrders =>
-      _analyticsInt('cancelledOrders', 'cancelledBookings');
+  int get analyticsCompletedOrders {
+    return _analyticsInt(
+      'completedOrders',
+      'completedBookings',
+    );
+  }
 
-  int get analyticsRejectedOrders =>
-      _analyticsInt('rejectedOrders', 'rejectedBookings');
+  int get analyticsCancelledOrders {
+    return _analyticsInt(
+      'cancelledOrders',
+      'cancelledBookings',
+    );
+  }
+
+  int get analyticsRejectedOrders {
+    return _analyticsInt(
+      'rejectedOrders',
+      'rejectedBookings',
+    );
+  }
 
   // =====================================================
   // NOTIFICATION HELPERS
@@ -133,6 +261,7 @@ class OrderProvider extends ChangeNotifier {
 
   void _beginRequest() {
     _activeRequests += 1;
+
     _safeNotifyListeners();
   }
 
@@ -154,21 +283,34 @@ class OrderProvider extends ChangeNotifier {
     }
 
     _errorMessage = null;
+
     _safeNotifyListeners();
   }
 
-  void _setError(Object error, {required String fallback}) {
-    final message = _cleanErrorMessage(error, fallback: fallback);
+  void _setError(
+    Object error, {
+    required String fallback,
+  }) {
+    final message = _cleanErrorMessage(
+      error,
+      fallback: fallback,
+    );
 
     _errorMessage = message;
 
-    debugPrint('ORDER PROVIDER ERROR: $message');
+    debugPrint(
+      'ORDER PROVIDER ERROR: $message',
+    );
 
     _safeNotifyListeners();
   }
 
-  String _cleanErrorMessage(Object error, {required String fallback}) {
-    var message = error.toString().trim();
+  String _cleanErrorMessage(
+    Object error, {
+    required String fallback,
+  }) {
+    var message =
+        error.toString().trim();
 
     const prefixes = <String>[
       'Exception: ',
@@ -179,28 +321,40 @@ class OrderProvider extends ChangeNotifier {
 
     for (final prefix in prefixes) {
       if (message.startsWith(prefix)) {
-        message = message.substring(prefix.length).trim();
+        message = message
+            .substring(prefix.length)
+            .trim();
       }
     }
 
-    return message.isEmpty ? fallback : message;
+    return message.isEmpty
+        ? fallback
+        : message;
   }
 
   // =====================================================
-  // NORMALIZATION HELPERS
+  // NORMALIZATION
   // =====================================================
 
-  String _normalizeId(String value, String fieldName) {
-    final normalizedValue = value.trim();
+  String _normalizeId(
+    String value,
+    String fieldName,
+  ) {
+    final normalizedValue =
+        value.trim();
 
     if (normalizedValue.isEmpty) {
-      throw ArgumentError('$fieldName is required.');
+      throw ArgumentError(
+        '$fieldName is required.',
+      );
     }
 
     return normalizedValue;
   }
 
-  String _normalizeStatus(String? value) {
+  String _normalizeStatus(
+    String? value,
+  ) {
     final status = (value ?? '')
         .trim()
         .toLowerCase()
@@ -211,6 +365,9 @@ class OrderProvider extends ChangeNotifier {
       case 'confirm':
       case 'confirmed':
         return 'accepted';
+
+      case 'otpverified':
+        return 'otp_verified';
 
       case 'inprogress':
       case 'processing':
@@ -224,26 +381,47 @@ class OrderProvider extends ChangeNotifier {
     }
   }
 
-  int _countByStatus(String status) {
-    final normalizedStatus = _normalizeStatus(status);
+  int _countByStatus(
+    String status,
+  ) {
+    final normalizedStatus =
+        _normalizeStatus(status);
 
-    return _orders.where((order) {
-      return _normalizeStatus(order.status) == normalizedStatus;
-    }).length;
+    return _orders.where(
+      (order) {
+        return _normalizeStatus(
+              order.status,
+            ) ==
+            normalizedStatus;
+      },
+    ).length;
   }
 
-  List<OrderModel> _filterByStatus(String status) {
-    final normalizedStatus = _normalizeStatus(status);
+  List<OrderModel> _filterByStatus(
+    String status,
+  ) {
+    final normalizedStatus =
+        _normalizeStatus(status);
 
     return List<OrderModel>.unmodifiable(
-      _orders.where((order) {
-        return _normalizeStatus(order.status) == normalizedStatus;
-      }),
+      _orders.where(
+        (order) {
+          return _normalizeStatus(
+                order.status,
+              ) ==
+              normalizedStatus;
+        },
+      ),
     );
   }
 
-  int _analyticsInt(String primaryKey, String fallbackKey) {
-    final value = _analytics[primaryKey] ?? _analytics[fallbackKey];
+  int _analyticsInt(
+    String primaryKey,
+    String fallbackKey,
+  ) {
+    final value =
+        _analytics[primaryKey] ??
+        _analytics[fallbackKey];
 
     if (value is int) {
       return value;
@@ -253,26 +431,127 @@ class OrderProvider extends ChangeNotifier {
       return value.toInt();
     }
 
-    return int.tryParse(value?.toString() ?? '') ?? 0;
+    return int.tryParse(
+          value?.toString() ?? '',
+        ) ??
+        0;
   }
 
-  double _toDouble(dynamic value) {
-    if (value is double) {
-      return value;
-    }
-
+  double _toDouble(
+    dynamic value,
+  ) {
     if (value is num) {
       return value.toDouble();
     }
 
-    return double.tryParse(value?.toString() ?? '') ?? 0;
+    return double.tryParse(
+          value?.toString() ?? '',
+        ) ??
+        0;
+  }
+
+  // =====================================================
+  // LOCAL ORDER SYNCHRONIZATION
+  // =====================================================
+
+  void _replaceOrderInList(
+    List<OrderModel> target,
+    OrderModel order, {
+    bool insertWhenMissing = false,
+  }) {
+    final index = target.indexWhere(
+      (item) => item.id == order.id,
+    );
+
+    if (index >= 0) {
+      target[index] = order;
+      return;
+    }
+
+    if (insertWhenMissing) {
+      target.insert(
+        0,
+        order,
+      );
+    }
+  }
+
+  void _applyOrderLocally(
+    OrderModel order, {
+    bool insertWhenMissing = true,
+    bool notify = true,
+  }) {
+    _replaceOrderInList(
+      _orders,
+      order,
+      insertWhenMissing:
+          insertWhenMissing,
+    );
+
+    _replaceOrderInList(
+      _todayOrders,
+      order,
+    );
+
+    _replaceOrderInList(
+      _recentOrders,
+      order,
+      insertWhenMissing:
+          insertWhenMissing,
+    );
+
+    if (
+      _selectedOrder?.id ==
+      order.id
+    ) {
+      _selectedOrder = order;
+    }
+
+    if (notify) {
+      _safeNotifyListeners();
+    }
+  }
+
+  OrderModel? findOrderById(
+    String orderId,
+  ) {
+    final normalizedId =
+        orderId.trim();
+
+    if (normalizedId.isEmpty) {
+      return null;
+    }
+
+    if (
+      _selectedOrder?.id ==
+      normalizedId
+    ) {
+      return _selectedOrder;
+    }
+
+    for (final order in _orders) {
+      if (order.id == normalizedId) {
+        return order;
+      }
+
+      if (
+        order.bookingId ==
+        normalizedId
+      ) {
+        return order;
+      }
+    }
+
+    return null;
   }
 
   // =====================================================
   // GET ALL ORDERS
   // =====================================================
 
-  Future<void> getOrders({bool showLoading = true}) async {
+  Future<void> getOrders({
+    bool showLoading = true,
+  }) async {
     if (showLoading) {
       _beginRequest();
     }
@@ -280,20 +559,24 @@ class OrderProvider extends ChangeNotifier {
     _clearErrorWithoutNotification();
 
     try {
-      final result = await _repository.getOrders();
+      final result =
+          await _repository.getOrders();
 
-      _orders = List<OrderModel>.from(result);
-
-      _lastRefreshedAt = DateTime.now();
-
-      debugPrint(
-        'PROVIDER ORDERS LOADED: '
-        '${_orders.length}',
+      _orders =
+          List<OrderModel>.from(
+        result,
       );
+
+      _lastRefreshedAt =
+          DateTime.now();
 
       _safeNotifyListeners();
     } catch (error) {
-      _setError(error, fallback: 'Unable to load Provider orders.');
+      _setError(
+        error,
+        fallback:
+            'Unable to load Provider orders.',
+      );
     } finally {
       if (showLoading) {
         _endRequest();
@@ -312,9 +595,17 @@ class OrderProvider extends ChangeNotifier {
     String normalizedOrderId;
 
     try {
-      normalizedOrderId = _normalizeId(orderId, 'Order ID');
+      normalizedOrderId =
+          _normalizeId(
+        orderId,
+        'Order ID',
+      );
     } catch (error) {
-      _setError(error, fallback: 'Order ID is required.');
+      _setError(
+        error,
+        fallback:
+            'Order ID is required.',
+      );
 
       return null;
     }
@@ -326,13 +617,27 @@ class OrderProvider extends ChangeNotifier {
     _clearErrorWithoutNotification();
 
     try {
-      _selectedOrder = await _repository.getOrderById(normalizedOrderId);
+      final order =
+          await _repository.getOrderById(
+        normalizedOrderId,
+      );
+
+      _selectedOrder = order;
+
+      _applyOrderLocally(
+        order,
+        notify: false,
+      );
 
       _safeNotifyListeners();
 
-      return _selectedOrder;
+      return order;
     } catch (error) {
-      _setError(error, fallback: 'Unable to load order details.');
+      _setError(
+        error,
+        fallback:
+            'Unable to load order details.',
+      );
 
       return null;
     } finally {
@@ -342,8 +647,11 @@ class OrderProvider extends ChangeNotifier {
     }
   }
 
-  void selectOrder(OrderModel? order) {
+  void selectOrder(
+    OrderModel? order,
+  ) {
     _selectedOrder = order;
+
     _safeNotifyListeners();
   }
 
@@ -351,19 +659,30 @@ class OrderProvider extends ChangeNotifier {
   // GET TODAY ORDERS
   // =====================================================
 
-  Future<void> getTodayOrders({bool showLoading = false}) async {
+  Future<void> getTodayOrders({
+    bool showLoading = false,
+  }) async {
     if (showLoading) {
       _beginRequest();
     }
 
     try {
-      final result = await _repository.getTodayOrders();
+      final result =
+          await _repository
+              .getTodayOrders();
 
-      _todayOrders = List<OrderModel>.from(result);
+      _todayOrders =
+          List<OrderModel>.from(
+        result,
+      );
 
       _safeNotifyListeners();
     } catch (error) {
-      _setError(error, fallback: 'Unable to load today\'s orders.');
+      _setError(
+        error,
+        fallback:
+            'Unable to load today\'s orders.',
+      );
     } finally {
       if (showLoading) {
         _endRequest();
@@ -375,19 +694,30 @@ class OrderProvider extends ChangeNotifier {
   // GET RECENT ORDERS
   // =====================================================
 
-  Future<void> getRecentOrders({bool showLoading = false}) async {
+  Future<void> getRecentOrders({
+    bool showLoading = false,
+  }) async {
     if (showLoading) {
       _beginRequest();
     }
 
     try {
-      final result = await _repository.getRecentOrders();
+      final result =
+          await _repository
+              .getRecentOrders();
 
-      _recentOrders = List<OrderModel>.from(result);
+      _recentOrders =
+          List<OrderModel>.from(
+        result,
+      );
 
       _safeNotifyListeners();
     } catch (error) {
-      _setError(error, fallback: 'Unable to load recent orders.');
+      _setError(
+        error,
+        fallback:
+            'Unable to load recent orders.',
+      );
     } finally {
       if (showLoading) {
         _endRequest();
@@ -399,50 +729,81 @@ class OrderProvider extends ChangeNotifier {
   // GET ORDERS BY STATUS
   // =====================================================
 
-  Future<List<OrderModel>> getOrdersByStatus(String status) async {
-    final normalizedStatus = _normalizeStatus(status);
+  Future<List<OrderModel>>
+      getOrdersByStatus(
+    String status,
+  ) async {
+    final normalizedStatus =
+        _normalizeStatus(status);
 
-    if (normalizedStatus.isEmpty || normalizedStatus == 'all') {
+    if (
+      normalizedStatus.isEmpty ||
+      normalizedStatus == 'all'
+    ) {
       return orders;
     }
 
     try {
-      final result = await _repository.getOrdersByStatus(normalizedStatus);
-
-      return List<OrderModel>.unmodifiable(result);
-    } catch (error) {
-      debugPrint(
-        'REMOTE STATUS FILTER FAILED: '
-        '$error',
+      final result =
+          await _repository
+              .getOrdersByStatus(
+        normalizedStatus,
       );
 
-      return _filterByStatus(normalizedStatus);
+      return List<OrderModel>.unmodifiable(
+        result,
+      );
+    } catch (error) {
+      debugPrint(
+        'REMOTE STATUS FILTER FAILED: $error',
+      );
+
+      return _filterByStatus(
+        normalizedStatus,
+      );
     }
   }
 
   // =====================================================
-  // REFRESH AFTER STATUS CHANGE
+  // REFRESH AFTER MUTATION
   // =====================================================
 
-  Future<void> _refreshAfterMutation(String orderId) async {
-    await refreshData(showLoading: false);
+  Future<void> _refreshAfterMutation(
+    String orderId,
+  ) async {
+    await refreshData(
+      showLoading: false,
+    );
 
-    await getOrderById(orderId, showLoading: false);
+    await getOrderById(
+      orderId,
+      showLoading: false,
+    );
   }
 
   // =====================================================
-  // CONFIRM / ACCEPT ORDER
+  // ACCEPT ORDER
   //
   // pending -> accepted
   // =====================================================
 
-  Future<bool> confirmOrder(String orderId) async {
+  Future<bool> confirmOrder(
+    String orderId,
+  ) async {
     String normalizedOrderId;
 
     try {
-      normalizedOrderId = _normalizeId(orderId, 'Order ID');
+      normalizedOrderId =
+          _normalizeId(
+        orderId,
+        'Order ID',
+      );
     } catch (error) {
-      _setError(error, fallback: 'Order ID is required.');
+      _setError(
+        error,
+        fallback:
+            'Order ID is required.',
+      );
 
       return false;
     }
@@ -451,17 +812,28 @@ class OrderProvider extends ChangeNotifier {
     _clearErrorWithoutNotification();
 
     try {
-      final success = await _repository.confirmOrder(normalizedOrderId);
+      final success =
+          await _repository.confirmOrder(
+        normalizedOrderId,
+      );
 
       if (!success) {
-        throw Exception('The Provider could not accept this order.');
+        throw Exception(
+          'The Provider could not accept this order.',
+        );
       }
 
-      await _refreshAfterMutation(normalizedOrderId);
+      await _refreshAfterMutation(
+        normalizedOrderId,
+      );
 
       return true;
     } catch (error) {
-      _setError(error, fallback: 'Unable to accept order.');
+      _setError(
+        error,
+        fallback:
+            'Unable to accept order.',
+      );
 
       return false;
     } finally {
@@ -469,23 +841,57 @@ class OrderProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> acceptOrder(String orderId) {
-    return confirmOrder(orderId);
+  Future<bool> acceptOrder(
+    String orderId,
+  ) {
+    return confirmOrder(
+      orderId,
+    );
   }
 
   // =====================================================
-  // START ORDER
+  // VERIFY SERVICE OTP
   //
-  // accepted -> in_progress
+  // accepted -> otp_verified
   // =====================================================
 
-  Future<bool> startOrder(String orderId) async {
+  Future<bool> verifyServiceOtp({
+    required String orderId,
+    required String otp,
+  }) async {
     String normalizedOrderId;
 
     try {
-      normalizedOrderId = _normalizeId(orderId, 'Order ID');
+      normalizedOrderId =
+          _normalizeId(
+        orderId,
+        'Order ID',
+      );
     } catch (error) {
-      _setError(error, fallback: 'Order ID is required.');
+      _setError(
+        error,
+        fallback:
+            'Order ID is required.',
+      );
+
+      return false;
+    }
+
+    final normalizedOtp =
+        otp.trim();
+
+    if (
+      normalizedOtp.length != 4 ||
+      int.tryParse(normalizedOtp) ==
+          null
+    ) {
+      _setError(
+        ArgumentError(
+          'A valid 4-digit OTP is required.',
+        ),
+        fallback:
+            'A valid 4-digit OTP is required.',
+      );
 
       return false;
     }
@@ -494,17 +900,111 @@ class OrderProvider extends ChangeNotifier {
     _clearErrorWithoutNotification();
 
     try {
-      final success = await _repository.startOrder(normalizedOrderId);
+      final updatedOrder =
+          await _repository
+              .verifyServiceOtp(
+        orderId: normalizedOrderId,
+        otp: normalizedOtp,
+      );
 
-      if (!success) {
-        throw Exception('The order could not be started.');
-      }
+      _selectedOrder =
+          updatedOrder;
 
-      await _refreshAfterMutation(normalizedOrderId);
+      _applyOrderLocally(
+        updatedOrder,
+      );
+
+      await refreshData(
+        showLoading: false,
+      );
 
       return true;
     } catch (error) {
-      _setError(error, fallback: 'Unable to start order.');
+      _setError(
+        error,
+        fallback:
+            'Unable to verify the service OTP.',
+      );
+
+      return false;
+    } finally {
+      _endRequest();
+    }
+  }
+
+  // =====================================================
+  // START ORDER
+  //
+  // otp_verified -> in_progress
+  // =====================================================
+
+  Future<bool> startOrder(
+    String orderId,
+  ) async {
+    String normalizedOrderId;
+
+    try {
+      normalizedOrderId =
+          _normalizeId(
+        orderId,
+        'Order ID',
+      );
+    } catch (error) {
+      _setError(
+        error,
+        fallback:
+            'Order ID is required.',
+      );
+
+      return false;
+    }
+
+    final currentOrder =
+        findOrderById(
+      normalizedOrderId,
+    );
+
+    if (
+      currentOrder != null &&
+      !currentOrder.canStart
+    ) {
+      _setError(
+        Exception(
+          'Verify the customer service OTP before starting the service.',
+        ),
+        fallback:
+            'Verify the customer service OTP before starting the service.',
+      );
+
+      return false;
+    }
+
+    _beginRequest();
+    _clearErrorWithoutNotification();
+
+    try {
+      final success =
+          await _repository.startOrder(
+        normalizedOrderId,
+      );
+
+      if (!success) {
+        throw Exception(
+          'The order could not be started.',
+        );
+      }
+
+      await _refreshAfterMutation(
+        normalizedOrderId,
+      );
+
+      return true;
+    } catch (error) {
+      _setError(
+        error,
+        fallback:
+            'Unable to start order.',
+      );
 
       return false;
     } finally {
@@ -518,13 +1018,23 @@ class OrderProvider extends ChangeNotifier {
   // in_progress -> completed
   // =====================================================
 
-  Future<bool> completeOrder(String orderId) async {
+  Future<bool> completeOrder(
+    String orderId,
+  ) async {
     String normalizedOrderId;
 
     try {
-      normalizedOrderId = _normalizeId(orderId, 'Order ID');
+      normalizedOrderId =
+          _normalizeId(
+        orderId,
+        'Order ID',
+      );
     } catch (error) {
-      _setError(error, fallback: 'Order ID is required.');
+      _setError(
+        error,
+        fallback:
+            'Order ID is required.',
+      );
 
       return false;
     }
@@ -533,17 +1043,105 @@ class OrderProvider extends ChangeNotifier {
     _clearErrorWithoutNotification();
 
     try {
-      final success = await _repository.completeOrder(normalizedOrderId);
+      final success =
+          await _repository.completeOrder(
+        normalizedOrderId,
+      );
 
       if (!success) {
-        throw Exception('The order could not be completed.');
+        throw Exception(
+          'The order could not be completed.',
+        );
       }
 
-      await _refreshAfterMutation(normalizedOrderId);
+      await _refreshAfterMutation(
+        normalizedOrderId,
+      );
 
       return true;
     } catch (error) {
-      _setError(error, fallback: 'Unable to complete order.');
+      _setError(
+        error,
+        fallback:
+            'Unable to complete order.',
+      );
+
+      return false;
+    } finally {
+      _endRequest();
+    }
+  }
+
+  // =====================================================
+  // REJECT ORDER
+  //
+  // pending -> rejected
+  // =====================================================
+
+  Future<bool> rejectOrder({
+    required String orderId,
+    required String reason,
+  }) async {
+    String normalizedOrderId;
+
+    try {
+      normalizedOrderId =
+          _normalizeId(
+        orderId,
+        'Order ID',
+      );
+    } catch (error) {
+      _setError(
+        error,
+        fallback:
+            'Order ID is required.',
+      );
+
+      return false;
+    }
+
+    final normalizedReason =
+        reason.trim();
+
+    if (normalizedReason.isEmpty) {
+      _setError(
+        ArgumentError(
+          'Rejection reason is required.',
+        ),
+        fallback:
+            'Rejection reason is required.',
+      );
+
+      return false;
+    }
+
+    _beginRequest();
+    _clearErrorWithoutNotification();
+
+    try {
+      final success =
+          await _repository.rejectOrder(
+        orderId: normalizedOrderId,
+        reason: normalizedReason,
+      );
+
+      if (!success) {
+        throw Exception(
+          'The order could not be rejected.',
+        );
+      }
+
+      await _refreshAfterMutation(
+        normalizedOrderId,
+      );
+
+      return true;
+    } catch (error) {
+      _setError(
+        error,
+        fallback:
+            'Unable to reject order.',
+      );
 
       return false;
     } finally {
@@ -553,9 +1151,6 @@ class OrderProvider extends ChangeNotifier {
 
   // =====================================================
   // CANCEL ORDER
-  //
-  // accepted -> cancelled
-  // in_progress -> cancelled
   // =====================================================
 
   Future<bool> cancelOrder({
@@ -565,19 +1160,31 @@ class OrderProvider extends ChangeNotifier {
     String normalizedOrderId;
 
     try {
-      normalizedOrderId = _normalizeId(orderId, 'Order ID');
+      normalizedOrderId =
+          _normalizeId(
+        orderId,
+        'Order ID',
+      );
     } catch (error) {
-      _setError(error, fallback: 'Order ID is required.');
+      _setError(
+        error,
+        fallback:
+            'Order ID is required.',
+      );
 
       return false;
     }
 
-    final normalizedReason = reason.trim();
+    final normalizedReason =
+        reason.trim();
 
     if (normalizedReason.isEmpty) {
       _setError(
-        ArgumentError('Cancellation reason is required.'),
-        fallback: 'Cancellation reason is required.',
+        ArgumentError(
+          'Cancellation reason is required.',
+        ),
+        fallback:
+            'Cancellation reason is required.',
       );
 
       return false;
@@ -587,20 +1194,29 @@ class OrderProvider extends ChangeNotifier {
     _clearErrorWithoutNotification();
 
     try {
-      final success = await _repository.cancelOrder(
+      final success =
+          await _repository.cancelOrder(
         orderId: normalizedOrderId,
         reason: normalizedReason,
       );
 
       if (!success) {
-        throw Exception('The order could not be cancelled.');
+        throw Exception(
+          'The order could not be cancelled.',
+        );
       }
 
-      await _refreshAfterMutation(normalizedOrderId);
+      await _refreshAfterMutation(
+        normalizedOrderId,
+      );
 
       return true;
     } catch (error) {
-      _setError(error, fallback: 'Unable to cancel order.');
+      _setError(
+        error,
+        fallback:
+            'Unable to cancel order.',
+      );
 
       return false;
     } finally {
@@ -619,19 +1235,31 @@ class OrderProvider extends ChangeNotifier {
     String normalizedOrderId;
 
     try {
-      normalizedOrderId = _normalizeId(orderId, 'Order ID');
+      normalizedOrderId =
+          _normalizeId(
+        orderId,
+        'Order ID',
+      );
     } catch (error) {
-      _setError(error, fallback: 'Order ID is required.');
+      _setError(
+        error,
+        fallback:
+            'Order ID is required.',
+      );
 
       return false;
     }
 
-    final normalizedReason = reason.trim();
+    final normalizedReason =
+        reason.trim();
 
     if (normalizedReason.isEmpty) {
       _setError(
-        ArgumentError('Refund reason is required.'),
-        fallback: 'Refund reason is required.',
+        ArgumentError(
+          'Refund reason is required.',
+        ),
+        fallback:
+            'Refund reason is required.',
       );
 
       return false;
@@ -641,20 +1269,29 @@ class OrderProvider extends ChangeNotifier {
     _clearErrorWithoutNotification();
 
     try {
-      final success = await _repository.refundOrder(
+      final success =
+          await _repository.refundOrder(
         orderId: normalizedOrderId,
         reason: normalizedReason,
       );
 
       if (!success) {
-        throw Exception('Refund is unavailable or could not be processed.');
+        throw Exception(
+          'Refund is unavailable or could not be processed.',
+        );
       }
 
-      await _refreshAfterMutation(normalizedOrderId);
+      await _refreshAfterMutation(
+        normalizedOrderId,
+      );
 
       return true;
     } catch (error) {
-      _setError(error, fallback: 'Unable to refund order.');
+      _setError(
+        error,
+        fallback:
+            'Unable to refund order.',
+      );
 
       return false;
     } finally {
@@ -666,48 +1303,70 @@ class OrderProvider extends ChangeNotifier {
   // SEARCH ORDERS
   // =====================================================
 
-  Future<List<OrderModel>> searchOrders(String keyword) async {
-    final normalizedKeyword = keyword.trim();
+  Future<List<OrderModel>> searchOrders(
+    String keyword,
+  ) async {
+    final normalizedKeyword =
+        keyword.trim();
 
     if (normalizedKeyword.isEmpty) {
       return orders;
     }
 
     try {
-      final result = await _repository.searchOrders(normalizedKeyword);
-
-      return List<OrderModel>.unmodifiable(result);
-    } catch (error) {
-      debugPrint(
-        'REMOTE ORDER SEARCH FAILED: '
-        '$error',
+      final result =
+          await _repository.searchOrders(
+        normalizedKeyword,
       );
 
-      final lowerKeyword = normalizedKeyword.toLowerCase();
+      return List<OrderModel>.unmodifiable(
+        result,
+      );
+    } catch (error) {
+      final lowerKeyword =
+          normalizedKeyword.toLowerCase();
 
-      return _orders.where((order) {
-        return order.toString().toLowerCase().contains(lowerKeyword);
-      }).toList();
+      return _orders.where(
+        (order) {
+          return order
+              .toString()
+              .toLowerCase()
+              .contains(
+                lowerKeyword,
+              );
+        },
+      ).toList();
     }
   }
 
   // =====================================================
-  // ORDER ANALYTICS
+  // ANALYTICS
   // =====================================================
 
-  Future<void> getOrderAnalytics({bool showLoading = false}) async {
+  Future<void> getOrderAnalytics({
+    bool showLoading = false,
+  }) async {
     if (showLoading) {
       _beginRequest();
     }
 
     try {
-      final result = await _repository.getOrderAnalytics();
+      final result =
+          await _repository
+              .getOrderAnalytics();
 
-      _analytics = Map<String, dynamic>.from(result);
+      _analytics =
+          Map<String, dynamic>.from(
+        result,
+      );
 
       _safeNotifyListeners();
     } catch (error) {
-      _setError(error, fallback: 'Unable to load order analytics.');
+      _setError(
+        error,
+        fallback:
+            'Unable to load order analytics.',
+      );
     } finally {
       if (showLoading) {
         _endRequest();
@@ -715,163 +1374,225 @@ class OrderProvider extends ChangeNotifier {
     }
   }
 
-  // =====================================================
-  // COUNT METHODS
-  // =====================================================
-
   Future<int> getOrderCount() async {
     try {
-      return await _repository.getOrderCount();
-    } catch (error) {
-      debugPrint('GET ORDER COUNT ERROR: $error');
-
+      return await _repository
+          .getOrderCount();
+    } catch (_) {
       return totalOrderCount;
     }
   }
 
-  Future<int> getCompletedOrderCount() async {
+  Future<int>
+      getCompletedOrderCount() async {
     try {
-      return await _repository.getCompletedOrderCount();
-    } catch (error) {
-      debugPrint(
-        'GET COMPLETED ORDER COUNT ERROR: '
-        '$error',
-      );
-
+      return await _repository
+          .getCompletedOrderCount();
+    } catch (_) {
       return completedOrderCount;
     }
   }
 
-  Future<int> getPendingOrderCount() async {
+  Future<int>
+      getPendingOrderCount() async {
     try {
-      return await _repository.getPendingOrderCount();
-    } catch (error) {
-      debugPrint(
-        'GET PENDING ORDER COUNT ERROR: '
-        '$error',
-      );
-
+      return await _repository
+          .getPendingOrderCount();
+    } catch (_) {
       return pendingOrderCount;
     }
   }
 
-  Future<int> getAcceptedOrderCount() async {
+  Future<int>
+      getAcceptedOrderCount() async {
     if (_analytics.isEmpty) {
       await getOrderAnalytics();
     }
 
-    if (_analytics.containsKey('acceptedOrders') ||
-        _analytics.containsKey('acceptedBookings')) {
-      return analyticsAcceptedOrders;
-    }
-
-    return acceptedOrderCount;
+    return analyticsAcceptedOrders > 0
+        ? analyticsAcceptedOrders
+        : acceptedOrderCount;
   }
 
-  Future<int> getInProgressOrderCount() async {
+  Future<int>
+      getOtpVerifiedOrderCount() async {
     if (_analytics.isEmpty) {
       await getOrderAnalytics();
     }
 
-    if (_analytics.containsKey('inProgressOrders') ||
-        _analytics.containsKey('inProgressBookings')) {
-      return analyticsInProgressOrders;
-    }
-
-    return inProgressOrderCount;
+    return analyticsOtpVerifiedOrders > 0
+        ? analyticsOtpVerifiedOrders
+        : otpVerifiedOrderCount;
   }
 
-  Future<int> getCancelledOrderCount() async {
+  Future<int>
+      getInProgressOrderCount() async {
     if (_analytics.isEmpty) {
       await getOrderAnalytics();
     }
 
-    if (_analytics.containsKey('cancelledOrders') ||
-        _analytics.containsKey('cancelledBookings')) {
-      return analyticsCancelledOrders;
-    }
-
-    return cancelledOrderCount;
+    return analyticsInProgressOrders > 0
+        ? analyticsInProgressOrders
+        : inProgressOrderCount;
   }
 
-  Future<int> getRejectedOrderCount() async {
+  Future<int>
+      getCancelledOrderCount() async {
     if (_analytics.isEmpty) {
       await getOrderAnalytics();
     }
 
-    if (_analytics.containsKey('rejectedOrders') ||
-        _analytics.containsKey('rejectedBookings')) {
-      return analyticsRejectedOrders;
+    return analyticsCancelledOrders > 0
+        ? analyticsCancelledOrders
+        : cancelledOrderCount;
+  }
+
+  Future<int>
+      getRejectedOrderCount() async {
+    if (_analytics.isEmpty) {
+      await getOrderAnalytics();
     }
 
-    return rejectedOrderCount;
+    return analyticsRejectedOrders > 0
+        ? analyticsRejectedOrders
+        : rejectedOrderCount;
   }
 
   // =====================================================
-  // TOTAL REVENUE
+  // REVENUE
   // =====================================================
 
-  Future<double> getTotalRevenue({bool forceRefresh = true}) async {
-    if (!forceRefresh && _lastRefreshedAt != null) {
+  Future<double> getTotalRevenue({
+    bool forceRefresh = true,
+  }) async {
+    if (
+      !forceRefresh &&
+      _lastRefreshedAt != null
+    ) {
       return _totalRevenue;
     }
 
     try {
-      final result = await _repository.getTotalRevenue();
+      final result =
+          await _repository
+              .getTotalRevenue();
 
-      _totalRevenue = _toDouble(result);
+      _totalRevenue =
+          _toDouble(result);
 
       _safeNotifyListeners();
 
       return _totalRevenue;
     } catch (error) {
-      _setError(error, fallback: 'Unable to load total revenue.');
+      _setError(
+        error,
+        fallback:
+            'Unable to load total revenue.',
+      );
 
       return _totalRevenue;
     }
   }
 
   // =====================================================
-  // DOWNLOAD INVOICE
+  // INVOICE
   // =====================================================
 
-  Future<String?> downloadInvoice(String orderId) async {
+  Future<String?> downloadInvoice(
+    String orderId,
+  ) async {
     try {
-      final normalizedOrderId = _normalizeId(orderId, 'Order ID');
+      final normalizedOrderId =
+          _normalizeId(
+        orderId,
+        'Order ID',
+      );
 
-      return await _repository.downloadInvoice(normalizedOrderId);
+      return await _repository
+          .downloadInvoice(
+        normalizedOrderId,
+      );
     } catch (error) {
-      _setError(error, fallback: 'Invoice is unavailable.');
+      _setError(
+        error,
+        fallback:
+            'Invoice is unavailable.',
+      );
 
       return null;
     }
   }
 
   // =====================================================
-  // REAL-TIME EVENT HANDLER
-  //
-  // Call when receiving:
-  // newBooking
-  // bookingUpdated
-  // bookingCancelled
-  // refreshBookings
-  // refreshProviderDashboard
+  // REAL-TIME ORDER EVENT
   // =====================================================
 
-  Future<void> handleOrderEvent(dynamic event) async {
-    debugPrint(
-      'PROVIDER ORDER EVENT RECEIVED: '
-      '$event',
-    );
+  Future<void> handleOrderEvent(
+    dynamic event,
+  ) async {
+    try {
+      if (event is Map) {
+        final eventMap =
+            event.map(
+          (key, value) {
+            return MapEntry(
+              key.toString(),
+              value,
+            );
+          },
+        );
 
-    await refreshData(showLoading: false);
+        final candidate =
+            eventMap['booking'] ??
+            eventMap['order'] ??
+            eventMap['data'] ??
+            eventMap;
+
+        if (candidate is Map) {
+          final orderMap =
+              candidate.map(
+            (key, value) {
+              return MapEntry(
+                key.toString(),
+                value,
+              );
+            },
+          );
+
+          final order =
+              OrderModel.fromMap(
+            orderMap,
+          );
+
+          if (order.id.isNotEmpty) {
+            _applyOrderLocally(
+              order,
+            );
+          }
+        }
+      }
+
+      await refreshData(
+        showLoading: false,
+      );
+    } catch (error) {
+      debugPrint(
+        'PROVIDER ORDER EVENT ERROR: $error',
+      );
+
+      await getOrders(
+        showLoading: false,
+      );
+    }
   }
 
   // =====================================================
   // REFRESH ALL ORDER DATA
   // =====================================================
 
-  Future<void> refreshData({bool showLoading = true}) async {
+  Future<void> refreshData({
+    bool showLoading = true,
+  }) async {
     if (showLoading) {
       _beginRequest();
     }
@@ -879,88 +1600,82 @@ class OrderProvider extends ChangeNotifier {
     _clearErrorWithoutNotification();
 
     try {
-      final results = await Future.wait<dynamic>(<Future<dynamic>>[
-        _repository.getOrders(),
-        _repository.getTodayOrders(),
-        _repository.getRecentOrders(),
-        _repository.getOrderAnalytics(),
-        _repository.getTotalRevenue(),
-      ]);
-
-      _orders = List<OrderModel>.from(results[0] as List);
-
-      _todayOrders = List<OrderModel>.from(results[1] as List);
-
-      _recentOrders = List<OrderModel>.from(results[2] as List);
-
-      _analytics = Map<String, dynamic>.from(results[3] as Map);
-
-      _totalRevenue = _toDouble(results[4]);
-
-      _lastRefreshedAt = DateTime.now();
-
-      debugPrint('PROVIDER ORDER DATA REFRESHED');
-
-      debugPrint(
-        'TOTAL ORDERS: '
-        '$totalOrderCount',
+      final results =
+          await Future.wait<dynamic>(
+        <Future<dynamic>>[
+          _repository.getOrders(),
+          _repository.getTodayOrders(),
+          _repository.getRecentOrders(),
+          _repository.getOrderAnalytics(),
+          _repository.getTotalRevenue(),
+        ],
       );
 
-      debugPrint(
-        'PENDING ORDERS: '
-        '$pendingOrderCount',
+      _orders =
+          List<OrderModel>.from(
+        results[0] as List,
       );
 
-      debugPrint(
-        'ACCEPTED ORDERS: '
-        '$acceptedOrderCount',
+      _todayOrders =
+          List<OrderModel>.from(
+        results[1] as List,
       );
 
-      debugPrint(
-        'IN-PROGRESS ORDERS: '
-        '$inProgressOrderCount',
+      _recentOrders =
+          List<OrderModel>.from(
+        results[2] as List,
       );
 
-      debugPrint(
-        'COMPLETED ORDERS: '
-        '$completedOrderCount',
+      _analytics =
+          Map<String, dynamic>.from(
+        results[3] as Map,
       );
 
-      debugPrint(
-        'CANCELLED ORDERS: '
-        '$cancelledOrderCount',
+      _totalRevenue =
+          _toDouble(
+        results[4],
       );
 
-      debugPrint(
-        'REJECTED ORDERS: '
-        '$rejectedOrderCount',
-      );
+      _lastRefreshedAt =
+          DateTime.now();
 
-      debugPrint(
-        'TOTAL REVENUE: '
-        '$_totalRevenue',
-      );
+      if (_selectedOrder != null) {
+        final matchingOrder =
+            findOrderById(
+          _selectedOrder!.id,
+        );
+
+        if (matchingOrder != null) {
+          _selectedOrder =
+              matchingOrder;
+        }
+      }
 
       _safeNotifyListeners();
     } catch (error) {
-      _setError(error, fallback: 'Unable to refresh Provider order data.');
+      _setError(
+        error,
+        fallback:
+            'Unable to refresh Provider order data.',
+      );
 
-      /*
-       * If one secondary endpoint fails, still refresh
-       * the main order list.
-       */
       try {
-        final fallbackOrders = await _repository.getOrders();
+        final fallbackOrders =
+            await _repository
+                .getOrders();
 
-        _orders = List<OrderModel>.from(fallbackOrders);
+        _orders =
+            List<OrderModel>.from(
+          fallbackOrders,
+        );
 
-        _lastRefreshedAt = DateTime.now();
+        _lastRefreshedAt =
+            DateTime.now();
 
         _safeNotifyListeners();
       } catch (fallbackError) {
         debugPrint(
-          'ORDER REFRESH FALLBACK ERROR: '
-          '$fallbackError',
+          'ORDER REFRESH FALLBACK ERROR: $fallbackError',
         );
       }
     } finally {
@@ -979,15 +1694,19 @@ class OrderProvider extends ChangeNotifier {
 
     _errorMessage = null;
 
-    _orders = <OrderModel>[];
+    _orders =
+        <OrderModel>[];
 
-    _todayOrders = <OrderModel>[];
+    _todayOrders =
+        <OrderModel>[];
 
-    _recentOrders = <OrderModel>[];
+    _recentOrders =
+        <OrderModel>[];
 
     _selectedOrder = null;
 
-    _analytics = <String, dynamic>{};
+    _analytics =
+        <String, dynamic>{};
 
     _totalRevenue = 0;
 
@@ -999,6 +1718,7 @@ class OrderProvider extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
+
     super.dispose();
   }
 }
