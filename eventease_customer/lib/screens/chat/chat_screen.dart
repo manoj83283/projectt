@@ -535,17 +535,17 @@ class _ChatScreenState extends State<ChatScreen> {
                     vertical: 8,
                   ),
                   color: ThemeConfig.primaryColor
-                      .withOpacity(0.08),
-                  child: Row(
+                      .withValues(alpha: 0.08),
+                  child: const Row(
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.shield_outlined,
                         size: 18,
                         color:
                             ThemeConfig.primaryColor,
                       ),
-                      const SizedBox(width: 8),
-                      const Expanded(
+                      SizedBox(width: 8),
+                      Expanded(
                         child: Text(
                           'Booking-specific secure chat',
                           style: TextStyle(
@@ -835,7 +835,7 @@ class _ChatScreenState extends State<ChatScreen> {
           boxShadow: [
             BoxShadow(
               color:
-                  Colors.black.withOpacity(0.05),
+                  Colors.black.withValues(alpha: 0.05),
               blurRadius: 5,
               offset: const Offset(0, 2),
             ),
@@ -911,7 +911,7 @@ class _ChatScreenState extends State<ChatScreen> {
         boxShadow: [
           BoxShadow(
             color:
-                Colors.black.withOpacity(0.07),
+                Colors.black.withValues(alpha: 0.07),
             blurRadius: 10,
             offset: const Offset(0, -2),
           ),

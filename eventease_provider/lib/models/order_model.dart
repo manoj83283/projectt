@@ -159,6 +159,11 @@ class OrderModel {
   final String eventDate;
   final String bookingTime;
 
+  final bool providerArrived;
+  final DateTime? providerArrivedAt;
+  final bool providerArrivalVerified;
+  final double? providerArrivalDistanceMeters;
+
   final bool otpVerified;
   final DateTime? otpVerifiedAt;
 
@@ -233,6 +238,10 @@ class OrderModel {
     this.longitude,
     this.specialInstructions = '',
     this.bookingTime = '',
+    this.providerArrived = false,
+    this.providerArrivedAt,
+    this.providerArrivalVerified = false,
+    this.providerArrivalDistanceMeters,
     this.otpVerified = false,
     this.otpVerifiedAt,
     this.chatRoomId = '',
@@ -680,9 +689,30 @@ class OrderModel {
             booking?['bookingTime'],
       ),
 
+      providerArrived: _asBool(
+        map['providerArrived'] ??
+           booking?['providerArrived'],
+      ),
+
+      providerArrivedAt: _toDateTime(
+        map['providerArrivedAt'] ??
+           booking?['providerArrivedAt'],
+      ),
+
+      providerArrivalVerified: _asBool(
+        map['providerArrivalVerified'] ??
+           booking?['providerArrivalVerified'],
+      ),
+
+      providerArrivalDistanceMeters:
+           _toNullableDouble(
+        map['providerArrivalDistanceMeters'] ??
+           booking?['providerArrivalDistanceMeters'],
+      ),
+
       otpVerified: _asBool(
-        map['otpVerified'] ??
-            booking?['otpVerified'],
+         map['otpVerified'] ??
+          booking?['otpVerified'],
       ),
 
       otpVerifiedAt: _toDateTime(
@@ -843,6 +873,13 @@ class OrderModel {
       'eventDate': eventDate,
       'bookingDate': eventDate,
       'bookingTime': bookingTime,
+      'providerArrived': providerArrived,
+      'providerArrivedAt':
+          providerArrivedAt?.toIso8601String(),
+      'providerArrivalVerified':
+          providerArrivalVerified,
+      'providerArrivalDistanceMeters':
+          providerArrivalDistanceMeters,
       'otpVerified': otpVerified,
       'otpVerifiedAt':
           otpVerifiedAt?.toIso8601String(),
@@ -981,13 +1018,21 @@ class OrderModel {
     return isPending;
   }
 
+  bool get canProviderMarkArrived {
+    return isAccepted &&
+      !providerArrived;
+  }
+
   bool get canVerifyOtp {
     return isAccepted &&
-        !otpVerified;
+      providerArrived &&
+      !otpVerified;
   }
 
   bool get canStart {
-    return isOtpVerified;
+    return isOtpVerified &&
+      providerArrived &&
+      otpVerified;
   }
 
   bool get canComplete {
@@ -996,8 +1041,29 @@ class OrderModel {
 
   bool get canCancel {
     return isAccepted ||
-        isOtpVerified ||
-        isInProgress;
+      isOtpVerified ||
+      isInProgress;
+  }
+
+  bool get hasProviderArrived {
+    return providerArrived;
+  }
+
+  bool get isWaitingForProviderArrival {
+    return isAccepted &&
+      !providerArrived;
+  }
+
+  bool get isWaitingForOtpVerification {
+    return isAccepted &&
+      providerArrived &&
+      !otpVerified;
+  }
+
+  bool get isReadyToStart {
+    return isOtpVerified &&
+      providerArrived &&
+      otpVerified;
   }
 
   bool get canChat {
@@ -1156,6 +1222,10 @@ class OrderModel {
     String? orderDate,
     String? eventDate,
     String? bookingTime,
+    bool? providerArrived,
+    DateTime? providerArrivedAt,
+    bool? providerArrivalVerified,
+    double? providerArrivalDistanceMeters,
     bool? otpVerified,
     DateTime? otpVerifiedAt,
     String? chatRoomId,
@@ -1307,6 +1377,24 @@ class OrderModel {
       bookingTime:
           bookingTime ??
           this.bookingTime,
+          
+      providerArrived:
+          providerArrived ??
+          this.providerArrived,
+
+      providerArrivedAt:
+          providerArrivedAt ??
+          this.providerArrivedAt,
+
+      providerArrivalVerified:
+          providerArrivalVerified ??
+          this.providerArrivalVerified,
+
+      providerArrivalDistanceMeters:
+         providerArrivalDistanceMeters ??
+         this.providerArrivalDistanceMeters,
+
+
       otpVerified:
           otpVerified ??
           this.otpVerified,

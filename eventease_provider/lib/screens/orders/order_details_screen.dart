@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:geolocator/geolocator.dart';
 
+import '../../services/order_service.dart';
 import '../../models/order_model.dart';
 import '../../providers/booking_provider.dart';
 import '../../providers/order_provider.dart';
@@ -8,7 +10,10 @@ import '../../providers/order_provider.dart';
 class OrderDetailsScreen extends StatefulWidget {
   final OrderModel order;
 
-  const OrderDetailsScreen({super.key, required this.order});
+  const OrderDetailsScreen({
+    super.key,
+    required this.order,
+  });
 
   @override
   State<OrderDetailsScreen> createState() {
@@ -64,17 +69,26 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
   bool get _canAccept {
     return _currentStatus == 'pending';
   }
-
-  bool get _canStart {
-    return _currentStatus == 'accepted';
+  bool get _canMarkArrived {
+    return _currentStatus == 'accepted' &&
+      order.canProviderMarkArrived;
   }
-
+  bool get _canVerifyOtp {
+    return _currentStatus == 'accepted' &&
+      order.canVerifyOtp;
+  }
+  bool get _canStart {
+    return _currentStatus == 'otp_verified' &&
+      order.canStart;
+  }
   bool get _canComplete {
-    return _currentStatus == 'in_progress';
+    return _currentStatus == 'in_progress' &&
+      order.canComplete;
   }
 
   bool get _canCancel {
-    return _currentStatus == 'accepted' || _currentStatus == 'in_progress';
+    return _currentStatus == 'accepted' ||
+        _currentStatus == 'in_progress';
   }
 
   bool get _isTerminalStatus {
@@ -90,6 +104,9 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
 
       case 'accepted':
         return 'ACCEPTED';
+
+      case 'otp_verified':
+        return 'OTP VERIFIED';
 
       case 'in_progress':
         return 'IN PROGRESS';
@@ -113,6 +130,9 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
       case 'accepted':
         return Colors.blue;
 
+      case 'otp_verified':
+        return Colors.teal;
+
       case 'in_progress':
         return Colors.deepPurple;
 
@@ -135,6 +155,9 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
     switch (_normalizeStatus(status)) {
       case 'accepted':
         return Icons.check_circle_outline;
+
+      case 'otp_verified':
+        return Icons.password;
 
       case 'in_progress':
         return Icons.play_circle_outline;
@@ -160,7 +183,10 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
         return 'This order is waiting for provider acceptance.';
 
       case 'accepted':
-        return 'This order has been accepted and can now be started.';
+        return 'This order has been accepted. Verify the customer service OTP before starting the service.';
+
+      case 'otp_verified':
+        return 'The customer service OTP has been verified.';
 
       case 'in_progress':
         return 'The service is currently in progress.';
@@ -179,7 +205,10 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
     }
   }
 
-  String _formatText(String? value, {String fallback = 'N/A'}) {
+  String _formatText(
+    String? value, {
+    String fallback = 'N/A',
+  }) {
     final cleanValue = value?.trim() ?? '';
 
     if (cleanValue.isEmpty) {
@@ -198,7 +227,9 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
       return '₹${amount.toStringAsFixed(2)}';
     }
 
-    final parsedAmount = double.tryParse(amount.toString());
+    final parsedAmount = double.tryParse(
+      amount.toString(),
+    );
 
     if (parsedAmount == null) {
       return '₹0.00';
@@ -223,10 +254,11 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
     });
 
     try {
-      final latestOrder = await context.read<OrderProvider>().getOrderById(
-        orderId,
-        showLoading: false,
-      );
+      final latestOrder =
+          await context.read<OrderProvider>().getOrderById(
+                orderId,
+                showLoading: false,
+              );
 
       if (!mounted || latestOrder == null) {
         return;
@@ -235,6 +267,12 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
       setState(() {
         order = latestOrder;
       });
+    } catch (error) {
+      if (mounted) {
+        _showErrorMessage(
+          'Unable to refresh order details: $error',
+        );
+      }
     } finally {
       if (mounted) {
         setState(() {
@@ -249,21 +287,27 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
       return;
     }
 
-    final bookingProvider = context.read<BookingProvider>();
-    final orderProvider = context.read<OrderProvider>();
+    final bookingProvider =
+        context.read<BookingProvider>();
 
-    ///final dashboardProvider = context.read<DashboardProvider>();
+    final orderProvider =
+        context.read<OrderProvider>();
 
     await Future.wait<void>([
-      bookingProvider.refreshData(showLoading: false),
-      orderProvider.refreshData(showLoading: false),
+      bookingProvider.refreshData(
+        showLoading: false,
+      ),
+      orderProvider.refreshData(
+        showLoading: false,
+      ),
     ]);
 
     if (!mounted) {
       return;
     }
 
-    final latestOrder = await orderProvider.getOrderById(
+    final latestOrder =
+        await orderProvider.getOrderById(
       order.id,
       showLoading: false,
     );
@@ -308,11 +352,15 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
       return;
     }
 
-    final providerError = context.read<OrderProvider>().errorMessage?.trim();
+    final providerError = context
+        .read<OrderProvider>()
+        .errorMessage
+        ?.trim();
 
-    final message = providerError != null && providerError.isNotEmpty
-        ? providerError
-        : fallbackMessage;
+    final message =
+        providerError != null && providerError.isNotEmpty
+            ? providerError
+            : fallbackMessage;
 
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
@@ -333,17 +381,19 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
     _setProcessing(true);
 
     try {
-      final success = await context.read<OrderProvider>().confirmOrder(
-        order.id,
-      );
+      final success =
+          await context.read<OrderProvider>().confirmOrder(
+                order.id,
+              );
 
       if (!mounted) {
         return;
       }
 
       if (!success) {
-        _showErrorMessage('Unable to accept the order.');
-
+        _showErrorMessage(
+          'Unable to accept the order.',
+        );
         return;
       }
 
@@ -353,9 +403,330 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
         return;
       }
 
-      _showSuccessMessage('Order accepted successfully.');
+      _showSuccessMessage(
+        'Order accepted successfully.',
+      );
     } catch (error) {
-      _showErrorMessage(error.toString());
+      _showErrorMessage(
+        error.toString(),
+      );
+    } finally {
+      _setProcessing(false);
+    }
+  }
+  Future<Position?> _getCurrentPosition() async {
+  var locationEnabled =
+      await Geolocator.isLocationServiceEnabled();
+
+  if (!locationEnabled) {
+    final openSettings =
+        await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (
+        dialogContext,
+      ) {
+        return AlertDialog(
+          title: const Text(
+            'Location Required',
+          ),
+          content: const Text(
+            'Enable device location before marking yourself as arrived.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(
+                  dialogContext,
+                ).pop(
+                  false,
+                );
+              },
+              child: const Text(
+                'Cancel',
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(
+                  dialogContext,
+                ).pop(
+                  true,
+                );
+              },
+              child: const Text(
+                'Open Settings',
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (openSettings != true) {
+      return null;
+    }
+
+    await Geolocator.openLocationSettings();
+
+    locationEnabled =
+        await Geolocator.isLocationServiceEnabled();
+
+    if (!locationEnabled) {
+      return null;
+    }
+  }
+
+  var permission =
+      await Geolocator.checkPermission();
+
+  if (permission ==
+      LocationPermission.denied) {
+    permission =
+        await Geolocator.requestPermission();
+  }
+
+  if (permission ==
+          LocationPermission.denied ||
+      permission ==
+          LocationPermission.deniedForever) {
+    if (permission ==
+        LocationPermission.deniedForever) {
+      await Geolocator.openAppSettings();
+    }
+
+    return null;
+  }
+
+  return Geolocator.getCurrentPosition(
+    locationSettings:
+        const LocationSettings(
+      accuracy: LocationAccuracy.high,
+    ),
+  );
+}
+
+Future<void> _markProviderArrived() async {
+  if (_isProcessing ||
+      !_canMarkArrived) {
+    return;
+  }
+
+  final confirmed =
+      await showDialog<bool>(
+    context: context,
+    barrierDismissible: false,
+    builder: (
+      dialogContext,
+    ) {
+      return AlertDialog(
+        title: const Text(
+          'Confirm Arrival',
+        ),
+        content: const Text(
+          'Confirm that you have reached the Customer service location.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(
+                dialogContext,
+              ).pop(
+                false,
+              );
+            },
+            child: const Text(
+              'Back',
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(
+                dialogContext,
+              ).pop(
+                true,
+              );
+            },
+            child: const Text(
+              'I Have Arrived',
+            ),
+          ),
+        ],
+      );
+    },
+  );
+
+  if (confirmed != true ||
+      !mounted) {
+    return;
+  }
+
+  _setProcessing(
+    true,
+  );
+
+  try {
+    final position =
+        await _getCurrentPosition();
+
+    if (!mounted) {
+      return;
+    }
+
+    if (position == null) {
+      _showErrorMessage(
+        'Current location is required to mark arrival.',
+      );
+
+      return;
+    }
+
+    final updatedOrder =
+        await OrderService.instance
+            .markProviderArrived(
+      orderId: order.id,
+      latitude: position.latitude,
+      longitude: position.longitude,
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      order = updatedOrder;
+    });
+
+    await _refreshAllProviderData();
+
+    if (!mounted) {
+      return;
+    }
+
+    _showSuccessMessage(
+      'Arrival confirmed. Ask the Customer for the service OTP.',
+    );
+  } catch (error) {
+    _showErrorMessage(
+      error
+          .toString()
+          .replaceFirst(
+            'Exception: ',
+            '',
+          ),
+        );
+     } 
+     finally {
+      _setProcessing(
+       false,
+      );
+    }
+  }
+  Future<void> _showOtpDialog() async {
+    if (_isProcessing || !_canVerifyOtp) {
+      return;
+    }
+
+    final controller = TextEditingController();
+    String? validationMessage;
+
+    final otp = await showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text(
+                'Verify Service OTP',
+              ),
+              content: TextField(
+                controller: controller,
+                keyboardType: TextInputType.number,
+                maxLength: 4,
+                autofocus: true,
+                decoration: InputDecoration(
+                  labelText: 'Customer OTP',
+                  hintText: 'Enter 4-digit OTP',
+                  errorText: validationMessage,
+                  border: const OutlineInputBorder(),
+                  counterText: '',
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(dialogContext).pop();
+                  },
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    final enteredOtp =
+                        controller.text.trim();
+
+                    if (enteredOtp.length != 4 ||
+                        int.tryParse(enteredOtp) == null) {
+                      setDialogState(() {
+                        validationMessage =
+                            'Enter a valid 4-digit OTP.';
+                      });
+                      return;
+                    }
+
+                    Navigator.of(dialogContext).pop(
+                      enteredOtp,
+                    );
+                  },
+                  child: const Text('Verify'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    controller.dispose();
+
+    if (otp == null || otp.isEmpty || !mounted) {
+      return;
+    }
+
+    _setProcessing(true);
+
+    try {
+      final success = await context
+          .read<OrderProvider>()
+          .verifyServiceOtp(
+            orderId: order.id,
+            otp: otp,
+          );
+
+      if (!mounted) {
+        return;
+      }
+
+      if (!success) {
+        _showErrorMessage(
+          'OTP verification failed.',
+        );
+        return;
+      }
+
+      await _refreshAllProviderData();
+
+      if (!mounted) {
+        return;
+      }
+
+      _showSuccessMessage(
+        'OTP verified successfully.',
+      );
+    } catch (error) {
+      _showErrorMessage(
+        error.toString(),
+      );
     } finally {
       _setProcessing(false);
     }
@@ -372,7 +743,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
         return AlertDialog(
           title: const Text('Start Order'),
           content: const Text(
-            'Confirm that you are ready to start this service.',
+            'Confirm that the customer OTP has been verified and you are ready to start this service.',
           ),
           actions: [
             TextButton(
@@ -399,15 +770,19 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
     _setProcessing(true);
 
     try {
-      final success = await context.read<OrderProvider>().startOrder(order.id);
+      final success =
+          await context.read<OrderProvider>().startOrder(
+                order.id,
+              );
 
       if (!mounted) {
         return;
       }
 
       if (!success) {
-        _showErrorMessage('Unable to start the order.');
-
+        _showErrorMessage(
+          'Unable to start the order.',
+        );
         return;
       }
 
@@ -417,9 +792,13 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
         return;
       }
 
-      _showSuccessMessage('Order started successfully.');
+      _showSuccessMessage(
+        'Order started successfully.',
+      );
     } catch (error) {
-      _showErrorMessage(error.toString());
+      _showErrorMessage(
+        error.toString(),
+      );
     } finally {
       _setProcessing(false);
     }
@@ -463,17 +842,19 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
     _setProcessing(true);
 
     try {
-      final success = await context.read<OrderProvider>().completeOrder(
-        order.id,
-      );
+      final success =
+          await context.read<OrderProvider>().completeOrder(
+                order.id,
+              );
 
       if (!mounted) {
         return;
       }
 
       if (!success) {
-        _showErrorMessage('Unable to complete the order.');
-
+        _showErrorMessage(
+          'Unable to complete the order.',
+        );
         return;
       }
 
@@ -483,9 +864,13 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
         return;
       }
 
-      _showSuccessMessage('Order completed successfully.');
+      _showSuccessMessage(
+        'Order completed successfully.',
+      );
     } catch (error) {
-      _showErrorMessage(error.toString());
+      _showErrorMessage(
+        error.toString(),
+      );
     } finally {
       _setProcessing(false);
     }
@@ -509,18 +894,20 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
     _setProcessing(true);
 
     try {
-      final success = await context.read<OrderProvider>().cancelOrder(
-        orderId: order.id,
-        reason: reason,
-      );
+      final success =
+          await context.read<OrderProvider>().cancelOrder(
+                orderId: order.id,
+                reason: reason,
+              );
 
       if (!mounted) {
         return;
       }
 
       if (!success) {
-        _showErrorMessage('Unable to cancel the order.');
-
+        _showErrorMessage(
+          'Unable to cancel the order.',
+        );
         return;
       }
 
@@ -530,9 +917,13 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
         return;
       }
 
-      _showSuccessMessage('Order cancelled successfully.');
+      _showSuccessMessage(
+        'Order cancelled successfully.',
+      );
     } catch (error) {
-      _showErrorMessage(error.toString());
+      _showErrorMessage(
+        error.toString(),
+      );
     } finally {
       _setProcessing(false);
     }
@@ -575,17 +966,20 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                 ),
                 ElevatedButton(
                   onPressed: () {
-                    final reason = controller.text.trim();
+                    final reason =
+                        controller.text.trim();
 
                     if (reason.isEmpty) {
                       setDialogState(() {
-                        validationMessage = 'Cancellation reason is required.';
+                        validationMessage =
+                            'Cancellation reason is required.';
                       });
-
                       return;
                     }
 
-                    Navigator.of(dialogContext).pop(reason);
+                    Navigator.of(dialogContext).pop(
+                      reason,
+                    );
                   },
                   child: Text(actionText),
                 ),
@@ -607,7 +1001,10 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
 
     final provider = context.watch<OrderProvider>();
 
-    final showLoading = _isProcessing || _isRefreshing || provider.isLoading;
+    final showLoading =
+        _isProcessing ||
+        _isRefreshing ||
+        provider.isLoading;
 
     return Scaffold(
       appBar: AppBar(
@@ -615,7 +1012,8 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
         actions: [
           IconButton(
             tooltip: 'Refresh',
-            onPressed: showLoading ? null : _loadLatestOrder,
+            onPressed:
+                showLoading ? null : _loadLatestOrder,
             icon: const Icon(Icons.refresh),
           ),
         ],
@@ -625,35 +1023,47 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
           RefreshIndicator(
             onRefresh: _refreshAllProviderData,
             child: SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
+              physics:
+                  const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.all(16),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
                 children: [
                   _buildStatusCard(theme),
                   const SizedBox(height: 16),
-                  _sectionTitle('Customer Information'),
+                  _sectionTitle(
+                    'Customer Information',
+                  ),
                   _infoCard(
                     children: [
                       _infoTile(
                         Icons.person_outline,
                         'Customer Name',
-                        _formatText(order.customerName),
+                        _formatText(
+                          order.customerName,
+                        ),
                       ),
                       _infoTile(
                         Icons.phone_outlined,
                         'Phone',
-                        _formatText(order.customerPhone),
+                        _formatText(
+                          order.customerPhone,
+                        ),
                       ),
                       _infoTile(
                         Icons.email_outlined,
                         'Email',
-                        _formatText(order.customerEmail),
+                        _formatText(
+                          order.customerEmail,
+                        ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 16),
-                  _sectionTitle('Order Information'),
+                  _sectionTitle(
+                    'Order Information',
+                  ),
                   _infoCard(
                     children: [
                       _infoTile(
@@ -664,38 +1074,53 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                       _infoTile(
                         Icons.calendar_today_outlined,
                         'Order Date',
-                        _formatText(order.orderDate),
+                        _formatText(
+                          order.orderDate,
+                        ),
                       ),
                       _infoTile(
                         Icons.event_outlined,
                         'Event Date',
-                        _formatText(order.eventDate),
+                        _formatText(
+                          order.eventDate,
+                        ),
                       ),
                       _infoTile(
                         Icons.location_on_outlined,
                         'Location',
-                        _formatText(order.location),
+                        _formatText(
+                          order.location,
+                        ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 16),
-                  _sectionTitle('Payment Information'),
+                  _sectionTitle(
+                    'Payment Information',
+                  ),
                   _infoCard(
                     children: [
                       _infoTile(
                         Icons.currency_rupee,
                         'Order Amount',
-                        _formatAmount(order.totalAmount),
+                        _formatAmount(
+                          order.totalAmount,
+                        ),
                       ),
                       _infoTile(
                         Icons.payment_outlined,
                         'Payment Status',
-                        _formatText(order.paymentStatus, fallback: 'Pending'),
+                        _formatText(
+                          order.paymentStatus,
+                          fallback: 'Pending',
+                        ),
                       ),
                       _infoTile(
                         Icons.receipt_outlined,
                         'Transaction ID',
-                        _formatText(order.transactionId),
+                        _formatText(
+                          order.transactionId,
+                        ),
                       ),
                     ],
                   ),
@@ -709,7 +1134,8 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                         child: Text(
                           _formatText(
                             order.notes,
-                            fallback: 'No notes available',
+                            fallback:
+                                'No notes available',
                           ),
                         ),
                       ),
@@ -725,8 +1151,12 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
           if (showLoading)
             Positioned.fill(
               child: ColoredBox(
-                color: Colors.black.withValues(alpha: 0.08),
-                child: const Center(child: CircularProgressIndicator()),
+                color: Colors.black.withValues(
+                  alpha: 0.08,
+                ),
+                child: const Center(
+                  child: CircularProgressIndicator(),
+                ),
               ),
             ),
         ],
@@ -751,7 +1181,8 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                 ),
                 decoration: BoxDecoration(
                   color: color,
-                  borderRadius: BorderRadius.circular(30),
+                  borderRadius:
+                      BorderRadius.circular(30),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -774,9 +1205,13 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
               ),
               const SizedBox(height: 16),
               Text(
-                _formatText(order.serviceName, fallback: 'Service Order'),
+                _formatText(
+                  order.serviceName,
+                  fallback: 'Service Order',
+                ),
                 textAlign: TextAlign.center,
-                style: theme.textTheme.headlineSmall?.copyWith(
+                style:
+                    theme.textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -784,8 +1219,10 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
               Text(
                 _statusDescription(),
                 textAlign: TextAlign.center,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
+                style:
+                    theme.textTheme.bodyMedium?.copyWith(
+                  color: theme
+                      .colorScheme.onSurfaceVariant,
                 ),
               ),
             ],
@@ -794,71 +1231,162 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
       ),
     );
   }
-
   Widget _buildActionButtons() {
-    if (_isTerminalStatus) {
-      return const SizedBox.shrink();
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        if (_canAccept)
-          ElevatedButton.icon(
-            onPressed: _isProcessing ? null : _confirmOrder,
-            icon: const Icon(Icons.check_circle_outline),
-            label: const Text('ACCEPT ORDER'),
-          ),
-        if (_canStart)
-          ElevatedButton.icon(
-            onPressed: _isProcessing ? null : _startOrder,
-            icon: const Icon(Icons.play_arrow),
-            label: const Text('START ORDER'),
-          ),
-        if (_canComplete)
-          ElevatedButton.icon(
-            onPressed: _isProcessing ? null : _completeOrder,
-            icon: const Icon(Icons.done_all),
-            label: const Text('COMPLETE ORDER'),
-          ),
-        if (_canCancel) ...[
-          const SizedBox(height: 12),
-          OutlinedButton.icon(
-            onPressed: _isProcessing ? null : _cancelOrder,
-            icon: const Icon(Icons.cancel_outlined),
-            label: const Text('CANCEL ORDER'),
-            style: OutlinedButton.styleFrom(foregroundColor: Colors.red),
-          ),
-        ],
-      ],
-    );
+  if (_isTerminalStatus) {
+    return const SizedBox.shrink();
   }
+  return Column(
+    crossAxisAlignment:
+        CrossAxisAlignment.stretch,
+    children: [
+      if (_canAccept)
+        ElevatedButton.icon(
+          onPressed: _isProcessing
+              ? null
+              : _confirmOrder,
+          icon: const Icon(
+            Icons.check_circle_outline,
+          ),
+          label: const Text(
+            'ACCEPT BOOKING',
+          ),
+        ),
 
+      if (_canMarkArrived) ...[
+        const SizedBox(
+          height: 12,
+        ),
+        ElevatedButton.icon(
+          onPressed: _isProcessing
+              ? null
+              : _markProviderArrived,
+          icon: const Icon(
+            Icons.location_on,
+          ),
+          label: const Text(
+            'I HAVE ARRIVED',
+          ),
+        ),
+      ],
+
+      if (_canVerifyOtp) ...[
+        const SizedBox(
+          height: 12,
+        ),
+        ElevatedButton.icon(
+          onPressed: _isProcessing
+              ? null
+              : _showOtpDialog,
+          icon: const Icon(
+            Icons.password,
+          ),
+          label: const Text(
+            'ENTER SERVICE OTP',
+          ),
+        ),
+      ],
+
+      if (_canStart) ...[
+        const SizedBox(
+          height: 12,
+        ),
+        ElevatedButton.icon(
+          onPressed: _isProcessing
+              ? null
+              : _startOrder,
+          icon: const Icon(
+            Icons.play_arrow,
+          ),
+          label: const Text(
+            'START SERVICE',
+          ),
+        ),
+      ],
+
+      if (_canComplete) ...[
+        const SizedBox(
+          height: 12,
+        ),
+        ElevatedButton.icon(
+          onPressed: _isProcessing
+              ? null
+              : _completeOrder,
+          icon: const Icon(
+            Icons.done_all,
+          ),
+          label: const Text(
+            'COMPLETE SERVICE',
+          ),
+        ),
+      ],
+
+      if (_canCancel) ...[
+        const SizedBox(
+          height: 12,
+        ),
+        OutlinedButton.icon(
+          onPressed: _isProcessing
+              ? null
+              : _cancelOrder,
+          icon: const Icon(
+            Icons.cancel_outlined,
+          ),
+          label: const Text(
+            'CANCEL BOOKING',
+          ),
+          style:
+              OutlinedButton.styleFrom(
+            foregroundColor:
+                Colors.red,
+              ),
+            ),
+          ],
+        ],
+      );
+    }
+  
   Widget _sectionTitle(String title) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.only(
+        bottom: 8,
+      ),
       child: Text(
         title,
-        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        style: const TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+        ),
       ),
     );
   }
 
-  Widget _infoCard({required List<Widget> children}) {
+  Widget _infoCard({
+    required List<Widget> children,
+  }) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 6),
-        child: Column(children: children),
+        padding: const EdgeInsets.symmetric(
+          vertical: 6,
+        ),
+        child: Column(
+          children: children,
+        ),
       ),
     );
   }
 
-  Widget _infoTile(IconData icon, String title, String value) {
+  Widget _infoTile(
+    IconData icon,
+    String title,
+    String value,
+  ) {
     return ListTile(
       dense: true,
       leading: Icon(icon),
       title: Text(title),
-      subtitle: Text(value.trim().isEmpty ? 'N/A' : value),
+      subtitle: Text(
+        value.trim().isEmpty ? 'N/A' : value,
+      ),
     );
   }
 }

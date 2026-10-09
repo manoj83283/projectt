@@ -39,11 +39,6 @@ import 'screens/home/home_screen.dart';
 import 'screens/home/notifications_screen.dart';
 import 'screens/home/search_screen.dart';
 
-import 'screens/orders/my_orders_screen.dart'
-    as order_screens;
-import 'screens/orders/order_details_screen.dart';
-import 'screens/orders/track_order_screen.dart';
-
 import 'screens/profile/add_address_screen.dart';
 import 'screens/profile/address_screen.dart';
 import 'screens/profile/change_password_screen.dart';
@@ -401,20 +396,19 @@ class EventEaseApp extends StatelessWidget {
       RouteConfig.myOrders: (
         BuildContext context,
       ) {
-        return const order_screens
-            .MyOrdersScreen();
+        return const booking_screens.MyBookingsScreen();
       },
 
       RouteConfig.orderDetails: (
         BuildContext context,
       ) {
-        return const OrderDetailsScreen();
+        return const BookingDetailsScreen();
       },
 
       RouteConfig.trackOrder: (
         BuildContext context,
       ) {
-        return const TrackOrderScreen();
+        return const TrackBookingScreen();
       },
 
       // =================================================

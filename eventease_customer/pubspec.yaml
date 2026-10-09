@@ -4,7 +4,6 @@ description: EventEase Customer Application
 publish_to: "none"
 
 version: 1.0.0+1
-
 environment:
   sdk: ">=3.7.0 <4.0.0"
 
@@ -14,148 +13,70 @@ dependencies:
 
   cupertino_icons: ^1.0.8
 
-  # ==================================
-  # STATE MANAGEMENT
-  # ==================================
   provider: ^6.1.5
-  
   http: ^1.2.2
-
-  # ==================================
-  # API
-  # ==================================
   dio: ^5.11.0
 
-  # ==================================
-  # STORAGE
-  # ==================================
   shared_preferences: ^2.5.5
   flutter_secure_storage: ^10.3.1
 
-  # ==================================
-  # IMAGES
-  # ==================================
   cached_network_image: ^3.4.1
 
-  # ==================================
-  # SOCKET.IO
-  # ==================================
   socket_io_client: ^3.1.2
 
-  # ==================================
-  # FONTS
-  # ==================================
   google_fonts: ^6.3.1
-
-  # ==================================
-  # RESPONSIVE UI
-  # ==================================
   flutter_screenutil: ^5.9.3
-
-  # ==================================
-  # INTERNATIONALIZATION
-  # ==================================
   intl: ^0.20.2
 
-  # ==================================
-  # LOCATION
-  # ==================================
   geolocator: ^14.0.2
   geocoding: ^4.0.0
-  
-  # ==================================
-  # GOOGLE MAPS
-  # ==================================
+
   google_maps_flutter: ^2.12.3
 
-  # ==================================
-  # PERMISSIONS
-  # ==================================
   permission_handler: ^12.0.1
 
-  # ==================================
-  # IMAGE PICKER
-  # ==================================
   image_picker: ^1.2.0
 
-  # ==================================
-  # URL LAUNCHER
-  # ==================================
   url_launcher: ^6.3.2
 
-  # ==================================
-  # CONNECTIVITY
-  # ==================================
   connectivity_plus: ^6.1.5
 
-  # ==================================
-  # FIREBASE
-  # ==================================
   firebase_core: ^4.0.0
   firebase_auth: ^6.0.1
   firebase_messaging: ^16.0.0
 
-  # ==================================
-  # PUSH NOTIFICATIONS
-  # ==================================
   flutter_local_notifications: ^19.4.1
 
-  # ==================================
-  # RAZORPAY
-  # ==================================
   razorpay_flutter: ^1.4.0
 
-  # ==================================
-  # ANIMATIONS
-  # ==================================
   lottie: ^3.3.2
-
-  # ==================================
-  # LOADING
-  # ==================================
   flutter_spinkit: ^5.2.1
 
-  # ==================================
-  # SVG SUPPORT
-  # ==================================
   flutter_svg: ^2.2.1
 
-  # ==================================
-  # DATE PICKER
-  # ==================================
   table_calendar: ^3.2.0
 
-  # ==================================
-  # RATING BAR
-  # ==================================
   flutter_rating_bar: ^4.0.1
 
-  # ==================================
-  # CAROUSEL
-  # ==================================
   carousel_slider: ^5.1.1
 
-  # ==================================
-  # TOASTS
-  # ==================================
   fluttertoast: ^8.2.14
+
   flutter_localizations:
     sdk: flutter
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+
   build_runner: ^2.4.13
   flutter_gen_runner: ^5.8.0
-
-
   flutter_lints: ^6.0.0
+
 flutter_gen:
   output: lib/generated/
 
-
 flutter:
-
   uses-material-design: true
 
   assets:
@@ -175,7 +96,6 @@ flutter:
     - assets/translations/
     - assets/placeholders/
 
-  # Optional Local Fonts
   fonts:
     - family: Poppins
       fonts:

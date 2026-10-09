@@ -262,8 +262,8 @@ class _CartScreenState extends State<CartScreen> {
               width: 80,
               height: 80,
               decoration: BoxDecoration(
-                color: ThemeConfig.primaryColor.withOpacity(
-                  0.1,
+                color: ThemeConfig.primaryColor.withValues(
+                  alpha: 0.1,
                 ),
                 borderRadius: BorderRadius.circular(
                   12,

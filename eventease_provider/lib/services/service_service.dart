@@ -98,8 +98,8 @@ class ServiceService {
           'search': search.trim(),
         if (category != null && category.trim().isNotEmpty)
           'category': category.trim().toLowerCase(),
-        if (minPrice != null) 'minPrice': minPrice,
-        if (maxPrice != null) 'maxPrice': maxPrice,
+        'minPrice': ?minPrice,
+        'maxPrice': ?maxPrice,
         if (sort != null && sort.trim().isNotEmpty)
           'sort': sort.trim(),
         'page': page < 1 ? 1 : page,
@@ -242,9 +242,8 @@ class ServiceService {
       final response = await _apiService.patch(
         '$_servicesEndpoint/$normalizedId/status',
         body: {
-          if (isActive != null) 'isActive': isActive,
-          if (isAvailable != null)
-            'isAvailable': isAvailable,
+          'isActive': ?isActive,
+          'isAvailable': ?isAvailable,
         },
       );
 
@@ -356,9 +355,9 @@ class ServiceService {
           'keyword': keyword.trim(),
         if (category != null && category.trim().isNotEmpty)
           'category': category.trim().toLowerCase(),
-        if (latitude != null) 'lat': latitude,
-        if (longitude != null) 'lng': longitude,
-        if (radius != null) 'radius': radius,
+        'lat': ?latitude,
+        'lng': ?longitude,
+        'radius': ?radius,
       };
 
       final endpoint = _buildEndpoint(
@@ -597,8 +596,7 @@ class ServiceService {
         data: {
           'price': price,
           'basePrice': price,
-          if (discountedPrice != null)
-            'discountedPrice': discountedPrice,
+          'discountedPrice': ?discountedPrice,
         },
       );
 

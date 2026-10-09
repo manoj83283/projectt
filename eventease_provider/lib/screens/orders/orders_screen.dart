@@ -399,7 +399,7 @@ class _OrderList
     OrderModel order,
   ) {
     final name =
-        order.serviceName?.trim() ??
+        order.serviceName.trim() ??
             '';
 
     return name.isEmpty
@@ -411,7 +411,7 @@ class _OrderList
     OrderModel order,
   ) {
     final name =
-        order.customerName?.trim() ??
+        order.customerName.trim() ??
             '';
 
     return name.isEmpty
@@ -423,7 +423,7 @@ class _OrderList
     OrderModel order,
   ) {
     final date =
-        order.orderDate?.trim() ??
+        order.orderDate.trim() ??
             '';
 
     return date.isEmpty

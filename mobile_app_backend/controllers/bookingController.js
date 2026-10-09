@@ -3305,26 +3305,7 @@ export const verifyServiceOtp =
         await Booking.findById(
           bookingId
         ).select(
-          [
-            "+serviceOtpHash",
-            "+serviceOtpDisplay",
-            "user",
-            "customer",
-            "provider",
-            "status",
-            "statusHistory",
-            "otpVerified",
-            "otpVerifiedAt",
-            "otpVerifiedBy",
-            "otpAttempts",
-            "otpLockedUntil",
-            "providerArrived",
-            "providerArrivedAt",
-            "providerArrivalLocation",
-            "providerArrivalDistanceMeters",
-            "providerArrivalVerified",
-            "bookingNumber",
-          ].join(" ")
+          "+serviceOtpHash +serviceOtpDisplay"
         );
 
       if (!booking) {
@@ -3814,6 +3795,13 @@ export const updateBookingStatus =
       booking.status =
         requestedStatus;
 
+      if (
+        requestedStatus ===
+        BOOKING_STATUSES.IN_PROGRESS
+      ) {
+        booking.startedAt = now;
+      }
+      
       if (
         requestedStatus ===
         BOOKING_STATUSES.REJECTED

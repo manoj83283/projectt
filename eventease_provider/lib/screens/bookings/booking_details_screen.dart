@@ -45,6 +45,57 @@ class _BookingDetailsScreenState
     }
   }
 
+  Future<void> _showOtpDialog() async {
+    final otpController = TextEditingController();
+    final otp = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text(
+            'Verify Service OTP',
+          ),
+        content: TextField(
+          controller: otpController,
+          keyboardType: TextInputType.number,
+          maxLength: 4,
+          decoration: const InputDecoration(
+            labelText: 'Customer OTP',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(dialogContext);
+            },
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(
+                dialogContext,
+                otpController.text.trim(),
+              );
+            },
+            child: const Text('Verify'),
+            ),
+          ],
+        );
+      },
+    );
+    if (!mounted) {
+    return;
+    }
+    if (otp == null || otp.trim().isEmpty) {
+    return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'OTP Entered: $otp',
+        ),
+      ),
+    );
+  }
   Future<void> _startBooking() async {
     final success = await context
         .read<BookingProvider>()
@@ -377,26 +428,39 @@ class _BookingDetailsScreenState
                   ),
                 ),
               ),
-
-            if ((booking.status ?? '')
-                    .toLowerCase() ==
-                'confirmed')
-              SizedBox(
-                width:
-                    double.infinity,
-                child:
-                    ElevatedButton.icon(
-                  onPressed:
-                      _startBooking,
-                  icon: const Icon(
-                    Icons.play_arrow,
-                  ),
-                  label: const Text(
-                    'START SERVICE',
-                  ),
-                ),
-              ),
-
+              if ((booking.status ?? '')
+              .toLowerCase() ==
+              'confirmed')
+              Column(
+                children: [
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: _showOtpDialog,
+                      icon: const Icon(
+                        Icons.password,
+                        ),
+                        label: const Text(
+                          'VERIFY SERVICE OTP',
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: _startBooking,
+                          icon: const Icon(
+                            Icons.play_arrow,
+                            ),
+                            label: const Text(
+                              'START SERVICE',
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+            
             if ((booking.status ?? '')
                     .toLowerCase() ==
                 'inprogress' ||

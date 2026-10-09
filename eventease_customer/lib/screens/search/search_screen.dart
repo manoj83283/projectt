@@ -382,8 +382,8 @@ class _SearchScreenState extends State<SearchScreen> {
                 height: 82,
                 decoration: BoxDecoration(
                   color:
-                      ThemeConfig.primaryColor.withOpacity(
-                    0.1,
+                      ThemeConfig.primaryColor.withValues(
+                    alpha: 0.1,
                   ),
                   borderRadius: BorderRadius.circular(
                     12,

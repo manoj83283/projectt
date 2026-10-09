@@ -25,11 +25,11 @@ import '../screens/profile/privacy_policy_screen.dart';
 import '../screens/profile/profile_screen.dart';
 import '../screens/profile/settings_screen.dart';
 import '../screens/profile/terms_conditions_screen.dart';
+import '../screens/search/search_screen.dart';
 // Splash
 import '../screens/splash/splash_screen.dart';
 // Support
 import '../screens/support/about_screen.dart';
-import '../screens/search/search_screen.dart';
 
 class AppRoutes {
   AppRoutes._();

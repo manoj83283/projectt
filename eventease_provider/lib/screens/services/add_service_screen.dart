@@ -447,7 +447,7 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
 
                     // CATEGORY
                     DropdownButtonFormField<String>(
-                      value: _selectedCategory,
+                      initialValue: _selectedCategory,
                       isExpanded: true,
                       decoration:
                           const InputDecoration(
@@ -492,7 +492,7 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
 
                     // SERVICE TYPE
                     DropdownButtonFormField<String>(
-                      value: _selectedServiceType,
+                      initialValue: _selectedServiceType,
                       isExpanded: true,
                       decoration:
                           const InputDecoration(

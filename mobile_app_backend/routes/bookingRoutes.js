@@ -8,6 +8,10 @@ import {
   getProviderUpcomingBookings,
   getProviderBookingAnalytics,
   getBookingById,
+  getServiceOtp,
+  verifyServiceOtp,
+  markProviderArrived,
+  getBookingInvoice,
   updateBookingStatus,
   cancelBooking,
   rateBooking,
@@ -175,6 +179,32 @@ router.patch(
   providerOrAdmin,
   updateBookingStatus
 );
+// =====================================================
+// SERVICE OTP ROUTES
+// =====================================================
+
+// GET /api/bookings/:id/service-otp
+router.get(
+  "/:id/service-otp",
+  protect,
+  customerOrAdmin,
+  getServiceOtp
+);
+
+// POST /api/bookings/:id/verify-service-otp
+router.post(
+  "/:id/verify-service-otp",
+  protect,
+  providerOrAdmin,
+  verifyServiceOtp
+);
+
+router.patch(
+  '/:id/arrived',
+  protect,
+  providerOrAdmin,
+  markProviderArrived,
+);
 
 // PUT /api/bookings/:id/status
 router.put(
@@ -200,6 +230,16 @@ router.patch(
   providerOrAdmin,
   injectBookingStatus("accepted"),
   updateBookingStatus
+);
+// =====================================================
+// BOOKING INVOICE
+// =====================================================
+
+// GET /api/bookings/:id/invoice
+router.get(
+  "/:id/invoice",
+  protect,
+  getBookingInvoice
 );
 
 // PATCH /api/bookings/:id/start

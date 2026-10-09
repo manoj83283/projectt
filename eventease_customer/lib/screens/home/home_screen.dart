@@ -102,7 +102,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
       case 3:
         _openRoute(
-          RouteConfig.myOrders,
+          RouteConfig.myBookings,
         );
         break;
 
@@ -563,9 +563,9 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           BottomNavigationBarItem(
             icon: Icon(
-              Icons.list_alt,
+              Icons.calendar_month_outlined,
             ),
-            label: 'Orders',
+            label: 'Bookings',
           ),
           BottomNavigationBarItem(
             icon: Icon(

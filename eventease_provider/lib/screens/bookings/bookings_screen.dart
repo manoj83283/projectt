@@ -312,7 +312,7 @@ class _BookingList extends StatelessWidget {
                                 .isEmpty
                             ? 'Service'
                             : booking
-                                .serviceName!,
+                                .serviceName,
                         style:
                             const TextStyle(
                           fontSize: 18,

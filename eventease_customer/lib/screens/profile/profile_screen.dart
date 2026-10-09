@@ -17,19 +17,15 @@ class ProfileScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FC),
-
       appBar: AppBar(
-        title: const Text('My Profile'),
+        title: const Text(
+          'My Profile',
+        ),
         centerTitle: true,
       ),
-
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // ======================================
-            // PROFILE HEADER
-            // ======================================
-
             Container(
               width: double.infinity,
               color: ThemeConfig.primaryColor,
@@ -45,9 +41,9 @@ class ProfileScreen extends StatelessWidget {
                       size: 60,
                     ),
                   ),
-
-                  const SizedBox(height: 12),
-
+                  const SizedBox(
+                    height: 12,
+                  ),
                   Text(
                     user['name'].toString(),
                     style: const TextStyle(
@@ -56,18 +52,18 @@ class ProfileScreen extends StatelessWidget {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-
-                  const SizedBox(height: 4),
-
+                  const SizedBox(
+                    height: 4,
+                  ),
                   Text(
                     user['email'].toString(),
                     style: const TextStyle(
                       color: Colors.white70,
                     ),
                   ),
-
-                  const SizedBox(height: 4),
-
+                  const SizedBox(
+                    height: 4,
+                  ),
                   Text(
                     user['phone'].toString(),
                     style: const TextStyle(
@@ -78,15 +74,15 @@ class ProfileScreen extends StatelessWidget {
               ),
             ),
 
-            // ======================================
-            // PROFILE COMPLETION
-            // ======================================
-
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(
+                16,
+              ),
               child: Card(
                 child: Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(
+                    16,
+                  ),
                   child: Column(
                     children: [
                       Row(
@@ -109,9 +105,9 @@ class ProfileScreen extends StatelessWidget {
                           ),
                         ],
                       ),
-
-                      const SizedBox(height: 12),
-
+                      const SizedBox(
+                        height: 12,
+                      ),
                       LinearProgressIndicator(
                         value: 0.85,
                         minHeight: 8,
@@ -126,10 +122,6 @@ class ProfileScreen extends StatelessWidget {
               ),
             ),
 
-            // ======================================
-            // MENU ITEMS
-            // ======================================
-
             _buildSection(
               title: 'Account',
               children: [
@@ -137,11 +129,16 @@ class ProfileScreen extends StatelessWidget {
                   context,
                   Icons.edit,
                   'Edit Profile',
-                  () {},
+                  () {
+                    Navigator.pushNamed(
+                      context,
+                      RouteConfig.editProfile,
+                    );
+                  },
                 ),
                 _menuTile(
                   context,
-                  Icons.event,
+                  Icons.calendar_month_outlined,
                   'My Bookings',
                   () {
                     Navigator.pushNamed(
@@ -152,18 +149,7 @@ class ProfileScreen extends StatelessWidget {
                 ),
                 _menuTile(
                   context,
-                  Icons.shopping_bag,
-                  'My Orders',
-                  () {
-                    Navigator.pushNamed(
-                      context,
-                      RouteConfig.myOrders,
-                    );
-                  },
-                ),
-                _menuTile(
-                  context,
-                  Icons.star,
+                  Icons.star_outline,
                   'My Reviews',
                   () {
                     Navigator.pushNamed(
@@ -174,9 +160,14 @@ class ProfileScreen extends StatelessWidget {
                 ),
                 _menuTile(
                   context,
-                  Icons.location_on,
+                  Icons.location_on_outlined,
                   'Saved Addresses',
-                  () {},
+                  () {
+                    Navigator.pushNamed(
+                      context,
+                      RouteConfig.address,
+                    );
+                  },
                 ),
               ],
             ),
@@ -186,7 +177,7 @@ class ProfileScreen extends StatelessWidget {
               children: [
                 _menuTile(
                   context,
-                  Icons.notifications,
+                  Icons.notifications_outlined,
                   'Notifications',
                   () {
                     Navigator.pushNamed(
@@ -197,15 +188,25 @@ class ProfileScreen extends StatelessWidget {
                 ),
                 _menuTile(
                   context,
-                  Icons.language,
+                  Icons.language_outlined,
                   'Language',
-                  () {},
+                  () {
+                    Navigator.pushNamed(
+                      context,
+                      RouteConfig.language,
+                    );
+                  },
                 ),
                 _menuTile(
                   context,
-                  Icons.security,
+                  Icons.security_outlined,
                   'Privacy & Security',
-                  () {},
+                  () {
+                    Navigator.pushNamed(
+                      context,
+                      RouteConfig.security,
+                    );
+                  },
                 ),
               ],
             ),
@@ -215,21 +216,33 @@ class ProfileScreen extends StatelessWidget {
               children: [
                 _menuTile(
                   context,
-                  Icons.help,
+                  Icons.help_outline,
                   'Help & Support',
-                  () {},
+                  () {
+                    Navigator.pushNamed(
+                      context,
+                      RouteConfig.helpSupport,
+                    );
+                  },
                 ),
                 _menuTile(
                   context,
-                  Icons.info,
+                  Icons.info_outline,
                   'About App',
-                  () {},
+                  () {
+                    Navigator.pushNamed(
+                      context,
+                      RouteConfig.about,
+                    );
+                  },
                 ),
               ],
             ),
 
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(
+                16,
+              ),
               child: SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
@@ -241,10 +254,13 @@ class ProfileScreen extends StatelessWidget {
                   onPressed: () {
                     showDialog(
                       context: context,
-                      builder: (context) {
+                      builder: (
+                        dialogContext,
+                      ) {
                         return AlertDialog(
-                          title:
-                              const Text('Logout'),
+                          title: const Text(
+                            'Logout',
+                          ),
                           content: const Text(
                             'Are you sure you want to logout?',
                           ),
@@ -252,27 +268,29 @@ class ProfileScreen extends StatelessWidget {
                             TextButton(
                               onPressed: () {
                                 Navigator.pop(
-                                    context);
+                                  dialogContext,
+                                );
                               },
-                              child:
-                                  const Text(
+                              child: const Text(
                                 'Cancel',
                               ),
                             ),
                             ElevatedButton(
                               onPressed: () {
                                 Navigator.pop(
-                                    context);
+                                  dialogContext,
+                                );
 
                                 Navigator.pushNamedAndRemoveUntil(
                                   context,
                                   RouteConfig.login,
-                                  (route) =>
+                                  (
+                                    route,
+                                  ) =>
                                       false,
                                 );
                               },
-                              child:
-                                  const Text(
+                              child: const Text(
                                 'Logout',
                               ),
                             ),
@@ -295,7 +313,9 @@ class ProfileScreen extends StatelessWidget {
               ),
             ),
 
-            const SizedBox(height: 30),
+            const SizedBox(
+              height: 30,
+            ),
           ],
         ),
       ),
@@ -322,7 +342,9 @@ class ProfileScreen extends StatelessWidget {
             children: [
               Padding(
                 padding:
-                    const EdgeInsets.all(16),
+                    const EdgeInsets.all(
+                  16,
+                ),
                 child: Align(
                   alignment:
                       Alignment.centerLeft,
@@ -357,7 +379,9 @@ class ProfileScreen extends StatelessWidget {
         color:
             ThemeConfig.primaryColor,
       ),
-      title: Text(title),
+      title: Text(
+        title,
+      ),
       trailing: const Icon(
         Icons.arrow_forward_ios,
         size: 16,

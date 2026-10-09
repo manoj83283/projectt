@@ -4,8 +4,10 @@ import 'package:provider/provider.dart';
 import '../../config/route_config.dart';
 import '../../config/theme_config.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/booking_provider.dart';
 import '../../services/api_service.dart';
 import '../../services/auth_service.dart';
+import '../../services/customer_realtime_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({
@@ -75,6 +77,7 @@ class _LoginScreenState extends State<LoginScreen> {
       'Exception: ',
       'FormatException: ',
       'Invalid argument(s): ',
+      'StateError: ',
     ];
 
     for (final prefix in prefixes) {
@@ -100,7 +103,9 @@ class _LoginScreenState extends State<LoginScreen> {
       ..hideCurrentSnackBar()
       ..showSnackBar(
         SnackBar(
-          content: Text(message),
+          content: Text(
+            message,
+          ),
           backgroundColor: isError
               ? Colors.red.shade700
               : Colors.green.shade700,
@@ -127,7 +132,8 @@ class _LoginScreenState extends State<LoginScreen> {
   String? _validateEmail(
     String? value,
   ) {
-    final email = value?.trim() ?? '';
+    final email =
+        value?.trim() ?? '';
 
     if (email.isEmpty) {
       return 'Email is required';
@@ -147,7 +153,8 @@ class _LoginScreenState extends State<LoginScreen> {
   String? _validatePassword(
     String? value,
   ) {
-    final password = value ?? '';
+    final password =
+        value ?? '';
 
     if (password.isEmpty) {
       return 'Password is required';
@@ -158,6 +165,126 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     return null;
+  }
+
+  Future<void> _initializeAuthenticatedSession({
+    required AuthProvider authProvider,
+  }) async {
+    final token =
+        await AuthService.instance.getToken();
+
+    if (!mounted) {
+      return;
+    }
+
+    if (token == null ||
+        token.trim().isEmpty) {
+      throw Exception(
+        'Sign-in succeeded, but the Customer authentication token was not saved.',
+      );
+    }
+
+    final normalizedToken =
+        token.trim();
+
+    ApiService.instance.setAuthToken(
+      normalizedToken,
+    );
+
+    if (!ApiService.instance.hasAuthToken) {
+      throw Exception(
+        'Sign-in succeeded, but Customer authentication could not be attached to API requests.',
+      );
+    }
+
+    final customer =
+        authProvider.user;
+
+    if (customer == null) {
+      throw Exception(
+        'Sign-in succeeded, but Customer information is unavailable.',
+      );
+    }
+
+    final customerId =
+        customer.id.trim();
+
+    if (customerId.isEmpty) {
+      throw Exception(
+        'Sign-in succeeded, but the Customer ID is unavailable.',
+      );
+    }
+
+    final bookingProvider =
+        context.read<BookingProvider>();
+
+    await CustomerRealtimeService.instance.initialize(
+      token: normalizedToken,
+      customerId: customerId,
+      bookingProvider: bookingProvider,
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    debugPrint(
+      'CUSTOMER SESSION INITIALIZED',
+    );
+
+    debugPrint(
+      'CUSTOMER ID AVAILABLE: '
+      '${customerId.isNotEmpty}',
+    );
+
+    debugPrint(
+      'CUSTOMER TOKEN AVAILABLE: '
+      '${AuthService.instance.hasToken}',
+    );
+
+    debugPrint(
+      'CUSTOMER API AUTH HEADER AVAILABLE: '
+      '${ApiService.instance.hasAuthToken}',
+    );
+
+    debugPrint(
+      'CUSTOMER REALTIME INITIALIZED: '
+      '${CustomerRealtimeService.instance.isInitialized}',
+    );
+
+    debugPrint(
+      'CUSTOMER SOCKET CONNECTED: '
+      '${CustomerRealtimeService.instance.isConnected}',
+    );
+
+    debugPrint(
+      'CUSTOMER BOOKINGS LOADED: '
+      '${bookingProvider.myBookings.length}',
+    );
+  }
+
+  Future<void> _completeLoginNavigation() async {
+    if (!mounted) {
+      return;
+    }
+
+    _showMessage(
+      'Signed in successfully.',
+    );
+
+    if (_returnToBooking &&
+        Navigator.canPop(context)) {
+      Navigator.of(context).pop(
+        true,
+      );
+
+      return;
+    }
+
+    Navigator.of(context).pushNamedAndRemoveUntil(
+      RouteConfig.home,
+      (route) => false,
+    );
   }
 
   Future<void> _login() async {
@@ -200,10 +327,6 @@ class _LoginScreenState extends State<LoginScreen> {
         'CUSTOMER LOGIN SUBMITTED',
       );
 
-      debugPrint(
-        'CUSTOMER LOGIN EMAIL: $email',
-      );
-
       final success =
           await authProvider.login(
         email: email,
@@ -215,7 +338,8 @@ class _LoginScreenState extends State<LoginScreen> {
       }
 
       if (!success) {
-        final errorMessage = _cleanError(
+        final errorMessage =
+            _cleanError(
           authProvider.error,
         );
 
@@ -229,64 +353,20 @@ class _LoginScreenState extends State<LoginScreen> {
         return;
       }
 
-      final token =
-          await AuthService.instance
-              .getToken();
+      await _initializeAuthenticatedSession(
+        authProvider: authProvider,
+      );
 
       if (!mounted) {
         return;
-      }
-
-      if (token == null ||
-          token.trim().isEmpty) {
-        throw Exception(
-          'Sign-in succeeded, but the Customer authentication token was not saved.',
-        );
-      }
-
-      ApiService.instance.setAuthToken(
-        token,
-      );
-
-      if (!ApiService.instance.hasAuthToken) {
-        throw Exception(
-          'Sign-in succeeded, but Customer authentication could not be attached to API requests.',
-        );
       }
 
       debugPrint(
         'CUSTOMER SIGN-IN COMPLETED',
       );
 
-      debugPrint(
-        'CUSTOMER TOKEN AVAILABLE: '
-        '${AuthService.instance.hasToken}',
-      );
-
-      debugPrint(
-        'CUSTOMER API AUTH HEADER AVAILABLE: '
-        '${ApiService.instance.hasAuthToken}',
-      );
-
-      _showMessage(
-        'Signed in successfully.',
-      );
-
-      if (_returnToBooking &&
-          Navigator.canPop(context)) {
-        Navigator.of(context).pop(
-          true,
-        );
-
-        return;
-      }
-
-      Navigator.of(context)
-          .pushNamedAndRemoveUntil(
-        RouteConfig.home,
-        (route) => false,
-      );
-    } catch (error, stackTrace) {
+      await _completeLoginNavigation();
+    } catch (error,stackTrace) {
       debugPrint(
         'CUSTOMER SIGN-IN ERROR: $error',
       );
@@ -329,11 +409,15 @@ class _LoginScreenState extends State<LoginScreen> {
       isLoading = true;
     });
 
-    try {
-      final authProvider =
-          context.read<AuthProvider>();
+    final authProvider =
+        context.read<AuthProvider>();
 
-      authProvider.clearError();
+    authProvider.clearError();
+
+    try {
+      debugPrint(
+        'CUSTOMER GOOGLE SIGN-IN SUBMITTED',
+      );
 
       final success =
           await authProvider.googleLogin();
@@ -343,7 +427,8 @@ class _LoginScreenState extends State<LoginScreen> {
       }
 
       if (!success) {
-        final message = _cleanError(
+        final message =
+            _cleanError(
           authProvider.error,
         );
 
@@ -357,46 +442,23 @@ class _LoginScreenState extends State<LoginScreen> {
         return;
       }
 
-      final token =
-          await AuthService.instance
-              .getToken();
+      await _initializeAuthenticatedSession(
+        authProvider: authProvider,
+      );
 
       if (!mounted) {
         return;
       }
 
-      if (token == null ||
-          token.trim().isEmpty) {
-        throw Exception(
-          'Google sign-in succeeded, but the Customer authentication token was not saved.',
-        );
-      }
-
-      ApiService.instance.setAuthToken(
-        token,
+      debugPrint(
+        'CUSTOMER GOOGLE SIGN-IN COMPLETED',
       );
 
-      if (!ApiService.instance.hasAuthToken) {
-        throw Exception(
-          'Unable to attach Google authentication to API requests.',
-        );
-      }
-
-      if (_returnToBooking &&
-          Navigator.canPop(context)) {
-        Navigator.of(context).pop(
-          true,
-        );
-
-        return;
-      }
-
-      Navigator.of(context)
-          .pushNamedAndRemoveUntil(
-        RouteConfig.home,
-        (route) => false,
-      );
-    } catch (error, stackTrace) {
+      await _completeLoginNavigation();
+    } catch (
+      error,
+      stackTrace,
+    ) {
       debugPrint(
         'GOOGLE SIGN-IN ERROR: $error',
       );
@@ -434,8 +496,7 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     final result =
-        await Navigator.of(context)
-            .pushNamed(
+        await Navigator.of(context).pushNamed(
       RouteConfig.signup,
       arguments: <String, dynamic>{
         if (_returnToBooking)
@@ -443,31 +504,94 @@ class _LoginScreenState extends State<LoginScreen> {
       },
     );
 
-    if (!mounted) {
+    if (!mounted ||
+        result != true) {
       return;
     }
 
-    if (_returnToBooking &&
-        result == true) {
-      final token =
-          await AuthService.instance
-              .getToken();
+    final authProvider =
+        context.read<AuthProvider>();
 
-      if (token != null &&
-          token.trim().isNotEmpty) {
-        ApiService.instance.setAuthToken(
-          token,
-        );
+    setState(() {
+      isLoading = true;
+    });
 
-        if (!mounted) {
-          return;
-        }
+    try {
+      await _initializeAuthenticatedSession(
+        authProvider: authProvider,
+      );
 
+      if (!mounted) {
+        return;
+      }
+
+      if (_returnToBooking &&
+          Navigator.canPop(context)) {
         Navigator.of(context).pop(
           true,
         );
+
+        return;
+      }
+
+      Navigator.of(context).pushNamedAndRemoveUntil(
+        RouteConfig.home,
+        (route) => false,
+      );
+    } catch (
+      error,
+      stackTrace,
+    ) {
+      debugPrint(
+        'CUSTOMER SIGN-UP SESSION ERROR: $error',
+      );
+
+      debugPrint(
+        'CUSTOMER SIGN-UP SESSION STACK TRACE: '
+        '$stackTrace',
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      final message =
+          _cleanError(error);
+
+      _showMessage(
+        message.isEmpty
+            ? 'Account created, but the Customer session could not be initialized.'
+            : message,
+        isError: true,
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
       }
     }
+  }
+
+  void _openForgotPassword() {
+    if (isLoading) {
+      return;
+    }
+
+    Navigator.of(context).pushNamed(
+      RouteConfig.forgotPassword,
+    );
+  }
+
+  void _togglePasswordVisibility() {
+    if (isLoading) {
+      return;
+    }
+
+    setState(() {
+      obscurePassword =
+          !obscurePassword;
+    });
   }
 
   @override
@@ -497,7 +621,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(
                   height: 36,
                 ),
-
                 if (_returnToBooking)
                   Align(
                     alignment:
@@ -510,18 +633,18 @@ class _LoginScreenState extends State<LoginScreen> {
                           : () {
                               Navigator.of(
                                 context,
-                              ).pop(false);
+                              ).pop(
+                                false,
+                              );
                             },
                       icon: const Icon(
                         Icons.arrow_back,
                       ),
                     ),
                   ),
-
                 const SizedBox(
                   height: 14,
                 ),
-
                 Container(
                   height: 100,
                   width: 100,
@@ -555,11 +678,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     color: Colors.white,
                   ),
                 ),
-
                 const SizedBox(
                   height: 20,
                 ),
-
                 const Text(
                   'Welcome Back',
                   textAlign:
@@ -570,11 +691,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         FontWeight.bold,
                   ),
                 ),
-
                 const SizedBox(
                   height: 8,
                 ),
-
                 Text(
                   _returnToBooking
                       ? 'Sign in to continue with your booking'
@@ -587,11 +706,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     fontSize: 15,
                   ),
                 ),
-
                 const SizedBox(
                   height: 40,
                 ),
-
                 TextFormField(
                   controller:
                       emailController,
@@ -623,11 +740,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   validator:
                       _validateEmail,
                 ),
-
                 const SizedBox(
                   height: 16,
                 ),
-
                 TextFormField(
                   controller:
                       passwordController,
@@ -666,12 +781,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               : 'Hide password',
                       onPressed: isLoading
                           ? null
-                          : () {
-                              setState(() {
-                                obscurePassword =
-                                    !obscurePassword;
-                              });
-                            },
+                          : _togglePasswordVisibility,
                       icon: Icon(
                         obscurePassword
                             ? Icons
@@ -684,35 +794,24 @@ class _LoginScreenState extends State<LoginScreen> {
                   validator:
                       _validatePassword,
                 ),
-
                 const SizedBox(
                   height: 10,
                 ),
-
                 Align(
                   alignment:
                       Alignment.centerRight,
                   child: TextButton(
                     onPressed: isLoading
                         ? null
-                        : () {
-                            Navigator.of(
-                              context,
-                            ).pushNamed(
-                              RouteConfig
-                                  .forgotPassword,
-                            );
-                          },
+                        : _openForgotPassword,
                     child: const Text(
                       'Forgot Password?',
                     ),
                   ),
                 ),
-
                 const SizedBox(
                   height: 20,
                 ),
-
                 SizedBox(
                   width: double.infinity,
                   height: 55,
@@ -750,11 +849,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                   ),
                 ),
-
                 const SizedBox(
                   height: 20,
                 ),
-
                 Row(
                   children: <Widget>[
                     Expanded(
@@ -780,11 +877,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ],
                 ),
-
                 const SizedBox(
                   height: 20,
                 ),
-
                 SizedBox(
                   width: double.infinity,
                   height: 55,
@@ -802,11 +897,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                 ),
-
                 const SizedBox(
                   height: 30,
                 ),
-
                 Wrap(
                   alignment:
                       WrapAlignment.center,
@@ -826,7 +919,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ],
                 ),
-
                 const SizedBox(
                   height: 24,
                 ),
@@ -837,4 +929,4 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
   }
-}
+}           

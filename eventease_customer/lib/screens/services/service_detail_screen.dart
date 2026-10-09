@@ -218,8 +218,8 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
             Container(
               height: 250,
               width: double.infinity,
-              color: ThemeConfig.primaryColor.withOpacity(
-                0.1,
+              color: ThemeConfig.primaryColor.withValues(
+                alpha: 0.1,
               ),
               child: const Icon(
                 Icons.image,
@@ -311,8 +311,8 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
                       14,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.green.withOpacity(
-                        0.1,
+                      color: Colors.green.withValues(
+                        alpha: 0.1,
                       ),
                       borderRadius: BorderRadius.circular(
                         12,
