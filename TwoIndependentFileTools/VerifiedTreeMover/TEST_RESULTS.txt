@@ -1,0 +1,13 @@
+Verified Directory Tree Mover 1.0 - Test Summary
+PASS - 32 MiB large file verified move
+PASS - Nested files preserve exact relative paths and names
+PASS - Empty directory hierarchy is created at destination and removed from source
+PASS - Existing destination with identical SHA-256 resumes and deletes verified source
+PASS - Existing destination conflict is not overwritten and source remains
+PASS - Insufficient capacity stops before source deletion
+PASS - Simulated interruption retains source and removes toolkit part
+PASS - Injected final SHA-256 mismatch retains source
+PASS - Dry run performs no data movement
+PASS - Source/destination overlap is rejected
+PASS - Only strict UUID .vtm.part files are cleaned; unrelated .part files remain
+PASS - final_report.txt, files.csv, summary.json, and transfer.log generated

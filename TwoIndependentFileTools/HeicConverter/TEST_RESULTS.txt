@@ -1,0 +1,25 @@
+HEIC/HEIF Converter 1.0 - Test Summary
+PASS - Real ISO HEIF/HEVC fixture converted and output decoded/validated (local libheif/ImageMagick fallback in test environment)
+PASS - Large 2048x2048 image conversion
+PASS - Nested folder structure preservation
+PASS - JPG and PNG output modes
+PASS - EXIF orientation applied and output orientation reset to 1
+PASS - EXIF DateTimeOriginal preserved
+PASS - ICC profile preserved
+PASS - Default original preservation
+PASS - Explicit confirmed ordinary-original deletion after verification
+PASS - ZIP-contained HEIC streamed, converted, and temporary file removed
+PASS - All-HEIC ZIP deleted only in explicit confirmed mode after every member succeeded
+PASS - ZIP containing non-HEIC content retained
+PASS - Corrupt ZIP member routed and original ZIP retained
+PASS - Corrupt ordinary HEIC routed and original retained
+PASS - Duplicate output names produce conflict without overwrite
+PASS - Repeated-run output conflict preserves source
+PASS - Insufficient capacity preserves source
+PASS - Simulated interruption preserves source and removes part
+PASS - Injected final hash mismatch preserves source
+PASS - Dry run writes no converted output and preserves originals
+PASS - Source/output overlap rejected
+PASS - final_report.txt, files.csv, summary.json, and transfer.log generated
+
+Environment note: pillow-heif was unavailable from the sandbox package mirror. Production requirements and BAT install pillow-heif/libheif. A real HEIC was tested through the script's local ImageMagick/libheif fallback; metadata-specific tests used image payloads with .heic names so EXIF orientation/date and ICC behavior could be asserted end-to-end through Pillow.
