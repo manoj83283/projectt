@@ -1,0 +1,6 @@
+# Core local/offline-at-runtime analysis and format validation.
+numpy>=1.26.0,<3
+Pillow>=10.4.0,<14
+filetype>=1.2.0,<2
+mutagen>=1.47.0,<2
+pypdf>=5.0.0,<7

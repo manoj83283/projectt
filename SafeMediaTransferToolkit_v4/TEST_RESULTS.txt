@@ -1,0 +1,25 @@
+Safe Media Transfer Toolkit 4.0 - Verification Summary
+Date: 2026-11-24
+
+PASS - Python syntax compilation and CLI/version checks
+PASS - Exact same image with different filename -> EXACT_SHA256 duplicate
+PASS - Re-encoded JPEG of canonical PNG -> strong perceptual duplicate
+PASS - Resized PNG -> strong perceptual duplicate
+PASS - Visually similar but materially different image -> unique canonical
+PASS - Weak/watermarked match in review-only mode -> REVIEW_NEEDED copy; source retained
+PASS - Crop/screenshot embedding-only decision -> EMBEDDING_REVIEW using deterministic local-model test fixture
+PASS - Embedding-review ordinary source retained
+PASS - Embedding-review ZIP member copied to REVIEW_NEEDED and source ZIP retained
+PASS - ZIP-contained canonical plus re-encoded image -> canonical + perceptual duplicate; ZIP deleted after all members succeeded
+PASS - Encrypted ZIP member -> ZIP retained with reason
+PASS - Malformed JSON ZIP member -> Corrupted route; ZIP deleted after successful finalization
+PASS - Persistent SQLite index and repeated-run exact/perceptual matching
+PASS - SQLite required columns, canonical rows, similarity fields, run ID, and embedding/index columns
+PASS - Format/year/naming-group hierarchy and collision-safe naming
+PASS - Storage-preflight shortage -> source retained; no finalized data or stale .part
+PASS - Simulated interruption -> source retained; no finalized target or stale .part
+PASS - Dry run -> sources retained; no content finalized
+PASS - final_report.txt, files.csv, summary.json, and transfer.log generation
+PASS - ZIP archive package integrity test
+
+Note: The production optional embedding backend is TorchVision MobileNetV3-Small. The execution environment used for this verification did not contain Torch/TorchVision model weights, so crop/screenshot routing was tested end-to-end with a deterministic injected local-model embedding fixture. The installer and production MobileNet code path perform clear dependency checks; hash mode is fully operational without the optional embedding stack.
