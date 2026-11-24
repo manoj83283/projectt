@@ -1,14 +1,14 @@
 @echo off
 setlocal EnableExtensions DisableDelayedExpansion
 cd /d "%~dp0"
-title Safe File Transfer Toolkit
+title Safe Media Transfer Toolkit
 
 set "SCRIPT_DIR=%~dp0"
 set "PYTHON_CMD="
 set "VENV_PY=%SCRIPT_DIR%.venv\Scripts\python.exe"
 
 echo ============================================================
-echo   Safe File Transfer Toolkit - automatic Windows setup
+echo   Safe Media Transfer Toolkit - automatic Windows setup
 echo ============================================================
 echo.
 
@@ -37,15 +37,26 @@ if not exist "%VENV_PY%" (
 
 if not exist "%VENV_PY%" goto :setup_failed
 
-echo Installing/updating optional deep-validation Python libraries...
+echo Installing/updating required local image-analysis and validation libraries...
 "%VENV_PY%" -m pip install --disable-pip-version-check --quiet --upgrade pip
 if errorlevel 1 echo WARNING: pip could not be updated; continuing with the installed pip.
 "%VENV_PY%" -m pip install --disable-pip-version-check --quiet -r "%SCRIPT_DIR%requirements.txt"
+if errorlevel 1 goto :setup_failed
+"%VENV_PY%" -c "import PIL, numpy" >nul 2>nul
+if errorlevel 1 goto :setup_failed
+
+"%VENV_PY%" -c "import torch, torchvision" >nul 2>nul
 if errorlevel 1 (
-    echo WARNING: Optional deep-validation libraries could not be installed.
-    echo The built-in validators remain available; check internet/proxy settings
-    echo and run this BAT again later to add the optional validators.
+    echo.
+    echo Optional advanced crop/mirror/watermark detection is not installed.
+    choice /C YN /N /M "Install the larger local embedding packages now? [Y/N]: "
+    if errorlevel 2 goto :skip_embeddings
+    echo Installing optional CPU-local MobileNet embedding packages...
+    "%VENV_PY%" -m pip install --disable-pip-version-check -r "%SCRIPT_DIR%requirements-embeddings.txt"
+    if errorlevel 1 goto :embedding_failed
 )
+
+:skip_embeddings
 
 echo.
 where ffprobe >nul 2>nul
@@ -58,20 +69,27 @@ if errorlevel 1 (
 )
 
 echo.
-echo Starting transfer program...
+echo Starting verified-move and ZIP-streaming program...
 echo.
-"%VENV_PY%" "%SCRIPT_DIR%safe_transfer.py" %*
+"%VENV_PY%" "%SCRIPT_DIR%media_transfer.py" %*
 set "RUN_RESULT=%ERRORLEVEL%"
 echo.
 if "%RUN_RESULT%"=="0" (
-    echo Transfer completed successfully.
+    echo Media transfer completed successfully.
 ) else if "%RUN_RESULT%"=="130" (
-    echo Transfer was interrupted safely. Re-run to continue.
+    echo Media transfer was interrupted safely. Sources were retained where incomplete.
 ) else (
     echo Transfer finished with exit code %RUN_RESULT%. Review the report path shown above.
 )
 pause
 exit /b %RUN_RESULT%
+
+:embedding_failed
+echo.
+echo WARNING: Optional embedding installation failed.
+echo Core SHA-256 plus pHash/dHash/wHash mode remains available.
+echo Do not use --enable-embeddings until installation succeeds.
+goto :skip_embeddings
 
 :find_python
 py -3.12 -c "import sys; raise SystemExit(0 if sys.version_info >= (3,10) else 1)" >nul 2>nul
