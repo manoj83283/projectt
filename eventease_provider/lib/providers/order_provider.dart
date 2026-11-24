@@ -7,13 +7,11 @@ class OrderProvider extends ChangeNotifier {
   OrderProvider({
     OrderRepository? repository,
   }) : _repository =
-            repository ??
-            OrderRepository.instance;
+            repository ?? OrderRepository.instance;
 
   final OrderRepository _repository;
 
   int _activeRequests = 0;
-
   bool _disposed = false;
 
   String? _errorMessage;
@@ -190,7 +188,7 @@ class OrderProvider extends ChangeNotifier {
   }
 
   // =====================================================
-  // ANALYTICS GETTERS
+  // ANALYTICS
   // =====================================================
 
   int get analyticsTotalOrders {
@@ -291,7 +289,8 @@ class OrderProvider extends ChangeNotifier {
     Object error, {
     required String fallback,
   }) {
-    final message = _cleanErrorMessage(
+    final message =
+        _cleanErrorMessage(
       error,
       fallback: fallback,
     );
@@ -320,9 +319,13 @@ class OrderProvider extends ChangeNotifier {
     ];
 
     for (final prefix in prefixes) {
-      if (message.startsWith(prefix)) {
+      if (message.startsWith(
+        prefix,
+      )) {
         message = message
-            .substring(prefix.length)
+            .substring(
+              prefix.length,
+            )
             .trim();
       }
     }
@@ -358,8 +361,14 @@ class OrderProvider extends ChangeNotifier {
     final status = (value ?? '')
         .trim()
         .toLowerCase()
-        .replaceAll('-', '_')
-        .replaceAll(' ', '_');
+        .replaceAll(
+          '-',
+          '_',
+        )
+        .replaceAll(
+          ' ',
+          '_',
+        );
 
     switch (status) {
       case 'confirm':
@@ -371,7 +380,12 @@ class OrderProvider extends ChangeNotifier {
 
       case 'inprogress':
       case 'processing':
+      case 'started':
         return 'in_progress';
+
+      case 'complete':
+      case 'delivered':
+        return 'completed';
 
       case 'canceled':
         return 'cancelled';
@@ -385,7 +399,9 @@ class OrderProvider extends ChangeNotifier {
     String status,
   ) {
     final normalizedStatus =
-        _normalizeStatus(status);
+        _normalizeStatus(
+      status,
+    );
 
     return _orders.where(
       (order) {
@@ -401,7 +417,9 @@ class OrderProvider extends ChangeNotifier {
     String status,
   ) {
     final normalizedStatus =
-        _normalizeStatus(status);
+        _normalizeStatus(
+      status,
+    );
 
     return List<OrderModel>.unmodifiable(
       _orders.where(
@@ -459,12 +477,18 @@ class OrderProvider extends ChangeNotifier {
     OrderModel order, {
     bool insertWhenMissing = false,
   }) {
-    final index = target.indexWhere(
-      (item) => item.id == order.id,
+    final index =
+        target.indexWhere(
+      (item) =>
+          item.id == order.id ||
+          (order.bookingId.isNotEmpty &&
+              item.bookingId ==
+                  order.bookingId),
     );
 
     if (index >= 0) {
       target[index] = order;
+
       return;
     }
 
@@ -500,11 +524,17 @@ class OrderProvider extends ChangeNotifier {
           insertWhenMissing,
     );
 
-    if (
-      _selectedOrder?.id ==
-      order.id
-    ) {
-      _selectedOrder = order;
+    if (_selectedOrder?.id ==
+            order.id ||
+        (_selectedOrder
+                    ?.bookingId
+                    .isNotEmpty ==
+                true &&
+            _selectedOrder
+                    ?.bookingId ==
+                order.bookingId)) {
+      _selectedOrder =
+          order;
     }
 
     if (notify) {
@@ -522,22 +552,22 @@ class OrderProvider extends ChangeNotifier {
       return null;
     }
 
-    if (
-      _selectedOrder?.id ==
-      normalizedId
-    ) {
-      return _selectedOrder;
+    final selected =
+        _selectedOrder;
+
+    if (selected != null &&
+        (selected.id ==
+                normalizedId ||
+            selected.bookingId ==
+                normalizedId)) {
+      return selected;
     }
 
     for (final order in _orders) {
-      if (order.id == normalizedId) {
-        return order;
-      }
-
-      if (
-        order.bookingId ==
-        normalizedId
-      ) {
+      if (order.id ==
+              normalizedId ||
+          order.bookingId ==
+              normalizedId) {
         return order;
       }
     }
@@ -622,7 +652,8 @@ class OrderProvider extends ChangeNotifier {
         normalizedOrderId,
       );
 
-      _selectedOrder = order;
+      _selectedOrder =
+          order;
 
       _applyOrderLocally(
         order,
@@ -650,13 +681,14 @@ class OrderProvider extends ChangeNotifier {
   void selectOrder(
     OrderModel? order,
   ) {
-    _selectedOrder = order;
+    _selectedOrder =
+        order;
 
     _safeNotifyListeners();
   }
 
   // =====================================================
-  // GET TODAY ORDERS
+  // TODAY ORDERS
   // =====================================================
 
   Future<void> getTodayOrders({
@@ -668,8 +700,7 @@ class OrderProvider extends ChangeNotifier {
 
     try {
       final result =
-          await _repository
-              .getTodayOrders();
+          await _repository.getTodayOrders();
 
       _todayOrders =
           List<OrderModel>.from(
@@ -691,7 +722,7 @@ class OrderProvider extends ChangeNotifier {
   }
 
   // =====================================================
-  // GET RECENT ORDERS
+  // RECENT ORDERS
   // =====================================================
 
   Future<void> getRecentOrders({
@@ -703,8 +734,7 @@ class OrderProvider extends ChangeNotifier {
 
     try {
       final result =
-          await _repository
-              .getRecentOrders();
+          await _repository.getRecentOrders();
 
       _recentOrders =
           List<OrderModel>.from(
@@ -729,24 +759,22 @@ class OrderProvider extends ChangeNotifier {
   // GET ORDERS BY STATUS
   // =====================================================
 
-  Future<List<OrderModel>>
-      getOrdersByStatus(
+  Future<List<OrderModel>> getOrdersByStatus(
     String status,
   ) async {
     final normalizedStatus =
-        _normalizeStatus(status);
+        _normalizeStatus(
+      status,
+    );
 
-    if (
-      normalizedStatus.isEmpty ||
-      normalizedStatus == 'all'
-    ) {
+    if (normalizedStatus.isEmpty ||
+        normalizedStatus == 'all') {
       return orders;
     }
 
     try {
       final result =
-          await _repository
-              .getOrdersByStatus(
+          await _repository.getOrdersByStatus(
         normalizedStatus,
       );
 
@@ -771,10 +799,18 @@ class OrderProvider extends ChangeNotifier {
   Future<void> _refreshAfterMutation(
     String orderId,
   ) async {
+    /*
+     * First refresh all Provider data so dashboard,
+     * earnings, lists and status counts stay synchronized.
+     */
     await refreshData(
       showLoading: false,
     );
 
+    /*
+     * Then fetch the mutated order again so selectedOrder
+     * receives the final backend chat/call/arrival state.
+     */
     await getOrderById(
       orderId,
       showLoading: false,
@@ -803,6 +839,24 @@ class OrderProvider extends ChangeNotifier {
         error,
         fallback:
             'Order ID is required.',
+      );
+
+      return false;
+    }
+
+    final currentOrder =
+        findOrderById(
+      normalizedOrderId,
+    );
+
+    if (currentOrder != null &&
+        !currentOrder.canAccept) {
+      _setError(
+        Exception(
+          'Only a pending order can be accepted.',
+        ),
+        fallback:
+            'Only a pending order can be accepted.',
       );
 
       return false;
@@ -850,9 +904,141 @@ class OrderProvider extends ChangeNotifier {
   }
 
   // =====================================================
+  // PROVIDER ARRIVED
+  //
+  // accepted + providerArrived=false
+  //              ↓
+  // accepted + providerArrived=true
+  //
+  // IMPORTANT:
+  // Provider arrival is NOT a separate Order status.
+  // =====================================================
+
+  Future<bool> markProviderArrived({
+    required String orderId,
+    required double latitude,
+    required double longitude,
+  }) async {
+    String normalizedOrderId;
+
+    try {
+      normalizedOrderId =
+          _normalizeId(
+        orderId,
+        'Order ID',
+      );
+    } catch (error) {
+      _setError(
+        error,
+        fallback:
+            'Order ID is required.',
+      );
+
+      return false;
+    }
+
+    if (!latitude.isFinite ||
+        latitude < -90 ||
+        latitude > 90) {
+      _setError(
+        ArgumentError(
+          'A valid latitude is required.',
+        ),
+        fallback:
+            'A valid current location is required.',
+      );
+
+      return false;
+    }
+
+    if (!longitude.isFinite ||
+        longitude < -180 ||
+        longitude > 180) {
+      _setError(
+        ArgumentError(
+          'A valid longitude is required.',
+        ),
+        fallback:
+            'A valid current location is required.',
+      );
+
+      return false;
+    }
+
+    final currentOrder =
+        findOrderById(
+      normalizedOrderId,
+    );
+
+    if (currentOrder != null &&
+        !currentOrder
+            .canProviderMarkArrived) {
+      if (currentOrder.providerArrived) {
+        _setError(
+          Exception(
+            'Provider arrival has already been recorded.',
+          ),
+          fallback:
+              'Provider arrival has already been recorded.',
+        );
+      } else {
+        _setError(
+          Exception(
+            'Provider arrival can only be recorded after the booking is accepted.',
+          ),
+          fallback:
+              'Provider arrival can only be recorded after the booking is accepted.',
+        );
+      }
+
+      return false;
+    }
+
+    _beginRequest();
+    _clearErrorWithoutNotification();
+
+    try {
+      final updatedOrder =
+          await _repository.markProviderArrived(
+        orderId:
+            normalizedOrderId,
+        latitude:
+            latitude,
+        longitude:
+            longitude,
+      );
+
+      _selectedOrder =
+          updatedOrder;
+
+      _applyOrderLocally(
+        updatedOrder,
+      );
+
+      await _refreshAfterMutation(
+        normalizedOrderId,
+      );
+
+      return true;
+    } catch (error) {
+      _setError(
+        error,
+        fallback:
+            'Unable to record Provider arrival.',
+      );
+
+      return false;
+    } finally {
+      _endRequest();
+    }
+  }
+
+  // =====================================================
   // VERIFY SERVICE OTP
   //
-  // accepted -> otp_verified
+  // accepted + Provider arrived
+  //              ↓
+  // otp_verified
   // =====================================================
 
   Future<bool> verifyServiceOtp({
@@ -880,11 +1066,11 @@ class OrderProvider extends ChangeNotifier {
     final normalizedOtp =
         otp.trim();
 
-    if (
-      normalizedOtp.length != 4 ||
-      int.tryParse(normalizedOtp) ==
-          null
-    ) {
+    if (!RegExp(
+      r'^\d{4}$',
+    ).hasMatch(
+      normalizedOtp,
+    )) {
       _setError(
         ArgumentError(
           'A valid 4-digit OTP is required.',
@@ -896,15 +1082,60 @@ class OrderProvider extends ChangeNotifier {
       return false;
     }
 
+    final currentOrder =
+        findOrderById(
+      normalizedOrderId,
+    );
+
+    if (currentOrder != null) {
+      if (!currentOrder.isAccepted) {
+        _setError(
+          Exception(
+            'The booking must be accepted before OTP verification.',
+          ),
+          fallback:
+              'The booking must be accepted before OTP verification.',
+        );
+
+        return false;
+      }
+
+      if (!currentOrder
+          .providerArrived) {
+        _setError(
+          Exception(
+            'Mark Provider arrival before verifying the service OTP.',
+          ),
+          fallback:
+              'Mark Provider arrival before verifying the service OTP.',
+        );
+
+        return false;
+      }
+
+      if (currentOrder.otpVerified) {
+        _setError(
+          Exception(
+            'The service OTP has already been verified.',
+          ),
+          fallback:
+              'The service OTP has already been verified.',
+        );
+
+        return false;
+      }
+    }
+
     _beginRequest();
     _clearErrorWithoutNotification();
 
     try {
       final updatedOrder =
-          await _repository
-              .verifyServiceOtp(
-        orderId: normalizedOrderId,
-        otp: normalizedOtp,
+          await _repository.verifyServiceOtp(
+        orderId:
+            normalizedOrderId,
+        otp:
+            normalizedOtp,
       );
 
       _selectedOrder =
@@ -914,8 +1145,8 @@ class OrderProvider extends ChangeNotifier {
         updatedOrder,
       );
 
-      await refreshData(
-        showLoading: false,
+      await _refreshAfterMutation(
+        normalizedOrderId,
       );
 
       return true;
@@ -964,10 +1195,8 @@ class OrderProvider extends ChangeNotifier {
       normalizedOrderId,
     );
 
-    if (
-      currentOrder != null &&
-      !currentOrder.canStart
-    ) {
+    if (currentOrder != null &&
+        !currentOrder.canStart) {
       _setError(
         Exception(
           'Verify the customer service OTP before starting the service.',
@@ -1034,6 +1263,24 @@ class OrderProvider extends ChangeNotifier {
         error,
         fallback:
             'Order ID is required.',
+      );
+
+      return false;
+    }
+
+    final currentOrder =
+        findOrderById(
+      normalizedOrderId,
+    );
+
+    if (currentOrder != null &&
+        !currentOrder.canComplete) {
+      _setError(
+        Exception(
+          'Only an in-progress service can be completed.',
+        ),
+        fallback:
+            'Only an in-progress service can be completed.',
       );
 
       return false;
@@ -1115,14 +1362,34 @@ class OrderProvider extends ChangeNotifier {
       return false;
     }
 
+    final currentOrder =
+        findOrderById(
+      normalizedOrderId,
+    );
+
+    if (currentOrder != null &&
+        !currentOrder.canReject) {
+      _setError(
+        Exception(
+          'Only a pending order can be rejected.',
+        ),
+        fallback:
+            'Only a pending order can be rejected.',
+      );
+
+      return false;
+    }
+
     _beginRequest();
     _clearErrorWithoutNotification();
 
     try {
       final success =
           await _repository.rejectOrder(
-        orderId: normalizedOrderId,
-        reason: normalizedReason,
+        orderId:
+            normalizedOrderId,
+        reason:
+            normalizedReason,
       );
 
       if (!success) {
@@ -1190,14 +1457,34 @@ class OrderProvider extends ChangeNotifier {
       return false;
     }
 
+    final currentOrder =
+        findOrderById(
+      normalizedOrderId,
+    );
+
+    if (currentOrder != null &&
+        !currentOrder.canCancel) {
+      _setError(
+        Exception(
+          'This order cannot be cancelled in its current state.',
+        ),
+        fallback:
+            'This order cannot be cancelled in its current state.',
+      );
+
+      return false;
+    }
+
     _beginRequest();
     _clearErrorWithoutNotification();
 
     try {
       final success =
           await _repository.cancelOrder(
-        orderId: normalizedOrderId,
-        reason: normalizedReason,
+        orderId:
+            normalizedOrderId,
+        reason:
+            normalizedReason,
       );
 
       if (!success) {
@@ -1271,8 +1558,10 @@ class OrderProvider extends ChangeNotifier {
     try {
       final success =
           await _repository.refundOrder(
-        orderId: normalizedOrderId,
-        reason: normalizedReason,
+        orderId:
+            normalizedOrderId,
+        reason:
+            normalizedReason,
       );
 
       if (!success) {
@@ -1352,8 +1641,7 @@ class OrderProvider extends ChangeNotifier {
 
     try {
       final result =
-          await _repository
-              .getOrderAnalytics();
+          await _repository.getOrderAnalytics();
 
       _analytics =
           Map<String, dynamic>.from(
@@ -1383,8 +1671,7 @@ class OrderProvider extends ChangeNotifier {
     }
   }
 
-  Future<int>
-      getCompletedOrderCount() async {
+  Future<int> getCompletedOrderCount() async {
     try {
       return await _repository
           .getCompletedOrderCount();
@@ -1393,8 +1680,7 @@ class OrderProvider extends ChangeNotifier {
     }
   }
 
-  Future<int>
-      getPendingOrderCount() async {
+  Future<int> getPendingOrderCount() async {
     try {
       return await _repository
           .getPendingOrderCount();
@@ -1403,8 +1689,7 @@ class OrderProvider extends ChangeNotifier {
     }
   }
 
-  Future<int>
-      getAcceptedOrderCount() async {
+  Future<int> getAcceptedOrderCount() async {
     if (_analytics.isEmpty) {
       await getOrderAnalytics();
     }
@@ -1414,8 +1699,7 @@ class OrderProvider extends ChangeNotifier {
         : acceptedOrderCount;
   }
 
-  Future<int>
-      getOtpVerifiedOrderCount() async {
+  Future<int> getOtpVerifiedOrderCount() async {
     if (_analytics.isEmpty) {
       await getOrderAnalytics();
     }
@@ -1425,8 +1709,7 @@ class OrderProvider extends ChangeNotifier {
         : otpVerifiedOrderCount;
   }
 
-  Future<int>
-      getInProgressOrderCount() async {
+  Future<int> getInProgressOrderCount() async {
     if (_analytics.isEmpty) {
       await getOrderAnalytics();
     }
@@ -1436,8 +1719,7 @@ class OrderProvider extends ChangeNotifier {
         : inProgressOrderCount;
   }
 
-  Future<int>
-      getCancelledOrderCount() async {
+  Future<int> getCancelledOrderCount() async {
     if (_analytics.isEmpty) {
       await getOrderAnalytics();
     }
@@ -1447,8 +1729,7 @@ class OrderProvider extends ChangeNotifier {
         : cancelledOrderCount;
   }
 
-  Future<int>
-      getRejectedOrderCount() async {
+  Future<int> getRejectedOrderCount() async {
     if (_analytics.isEmpty) {
       await getOrderAnalytics();
     }
@@ -1465,20 +1746,19 @@ class OrderProvider extends ChangeNotifier {
   Future<double> getTotalRevenue({
     bool forceRefresh = true,
   }) async {
-    if (
-      !forceRefresh &&
-      _lastRefreshedAt != null
-    ) {
+    if (!forceRefresh &&
+        _lastRefreshedAt != null) {
       return _totalRevenue;
     }
 
     try {
       final result =
-          await _repository
-              .getTotalRevenue();
+          await _repository.getTotalRevenue();
 
       _totalRevenue =
-          _toDouble(result);
+          _toDouble(
+        result,
+      );
 
       _safeNotifyListeners();
 
@@ -1508,8 +1788,7 @@ class OrderProvider extends ChangeNotifier {
         'Order ID',
       );
 
-      return await _repository
-          .downloadInvoice(
+      return await _repository.downloadInvoice(
         normalizedOrderId,
       );
     } catch (error) {
@@ -1534,7 +1813,10 @@ class OrderProvider extends ChangeNotifier {
       if (event is Map) {
         final eventMap =
             event.map(
-          (key, value) {
+          (
+            key,
+            dynamic value,
+          ) {
             return MapEntry(
               key.toString(),
               value,
@@ -1544,14 +1826,17 @@ class OrderProvider extends ChangeNotifier {
 
         final candidate =
             eventMap['booking'] ??
-            eventMap['order'] ??
-            eventMap['data'] ??
-            eventMap;
+                eventMap['order'] ??
+                eventMap['data'] ??
+                eventMap;
 
         if (candidate is Map) {
           final orderMap =
               candidate.map(
-            (key, value) {
+            (
+              key,
+              dynamic value,
+            ) {
               return MapEntry(
                 key.toString(),
                 value,
@@ -1572,6 +1857,19 @@ class OrderProvider extends ChangeNotifier {
         }
       }
 
+      /*
+       * Backend socket updates include chat/call state.
+       * Refreshing here keeps:
+       *
+       * chatEnabled
+       * chatClosedAt
+       * canCall
+       * phoneVisible
+       * providerArrived
+       * otpVerified
+       *
+       * synchronized with the backend.
+       */
       await refreshData(
         showLoading: false,
       );
@@ -1640,10 +1938,26 @@ class OrderProvider extends ChangeNotifier {
           DateTime.now();
 
       if (_selectedOrder != null) {
-        final matchingOrder =
-            findOrderById(
-          _selectedOrder!.id,
-        );
+        final selectedOrderId =
+            _selectedOrder!.id;
+
+        final selectedBookingId =
+            _selectedOrder!.bookingId;
+
+        OrderModel? matchingOrder;
+
+        for (final order in _orders) {
+          if (order.id ==
+                  selectedOrderId ||
+              (selectedBookingId.isNotEmpty &&
+                  order.bookingId ==
+                      selectedBookingId)) {
+            matchingOrder =
+                order;
+
+            break;
+          }
+        }
 
         if (matchingOrder != null) {
           _selectedOrder =
@@ -1661,8 +1975,7 @@ class OrderProvider extends ChangeNotifier {
 
       try {
         final fallbackOrders =
-            await _repository
-                .getOrders();
+            await _repository.getOrders();
 
         _orders =
             List<OrderModel>.from(
@@ -1714,6 +2027,10 @@ class OrderProvider extends ChangeNotifier {
 
     _safeNotifyListeners();
   }
+
+  // =====================================================
+  // DISPOSE
+  // =====================================================
 
   @override
   void dispose() {

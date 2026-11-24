@@ -38,9 +38,8 @@ class SocketService {
   String get customerId {
     return _customerId;
   }
-
   static const List<String> bookingEvents =
-      <String>[
+    <String>[
     'newBooking',
     'bookingUpdate',
     'bookingUpdated',
@@ -51,11 +50,10 @@ class SocketService {
     'bookingStarted',
     'bookingCompleted',
     'bookingCancelled',
-    'bookingRated',
     'refreshBookings',
     'refreshCustomerBookings',
   ];
-
+  
   // =====================================================
   // VALUE HELPERS
   // =====================================================

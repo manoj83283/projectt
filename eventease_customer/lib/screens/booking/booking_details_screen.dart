@@ -9,8 +9,14 @@ import '../../models/booking_model.dart';
 import '../../providers/booking_provider.dart';
 import '../../services/socket_service.dart';
 
+// =====================================================
+// BOOKING DETAILS SCREEN
+// =====================================================
+
 class BookingDetailsScreen extends StatefulWidget {
-  const BookingDetailsScreen({super.key});
+  const BookingDetailsScreen({
+    super.key,
+  });
 
   @override
   State<BookingDetailsScreen> createState() {
@@ -31,6 +37,10 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen>
   bool _isInvoiceLoading = false;
 
   String? _serviceOtp;
+
+  // =====================================================
+  // LIFECYCLE
+  // =====================================================
 
   @override
   void initState() {
@@ -54,40 +64,57 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen>
         ModalRoute.of(context)?.settings.arguments,
       );
     } catch (error, stackTrace) {
-      debugPrint('BOOKING DETAILS ARGUMENT ERROR: $error');
+      debugPrint(
+        'BOOKING DETAILS ARGUMENT ERROR: $error',
+      );
 
-      debugPrint('$stackTrace');
+      debugPrint(
+        '$stackTrace',
+      );
     }
 
     final booking = _initialBooking;
 
-    if (booking == null || booking.id.trim().isEmpty) {
+    if (booking == null ||
+        booking.id.trim().isEmpty) {
       return;
     }
 
-    context.read<BookingProvider>().setSelectedBooking(booking);
+    context.read<BookingProvider>().setSelectedBooking(
+          booking,
+        );
 
-    SocketService.instance.joinBookingRoom(booking.id);
+    SocketService.instance.joinBookingRoom(
+      booking.id,
+    );
 
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (!mounted) {
-        return;
-      }
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) async {
+        if (!mounted) {
+          return;
+        }
 
-      await _refreshBooking(showIndicator: true);
+        await _refreshBooking(
+          showIndicator: true,
+        );
 
-      if (!mounted) {
-        return;
-      }
+        if (!mounted) {
+          return;
+        }
 
-      _startAutomaticRefresh();
-    });
+        _startAutomaticRefresh();
+      },
+    );
   }
 
   @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
+  void didChangeAppLifecycleState(
+    AppLifecycleState state,
+  ) {
     if (state == AppLifecycleState.resumed) {
-      _refreshBooking(showIndicator: false);
+      _refreshBooking(
+        showIndicator: false,
+      );
 
       _startAutomaticRefresh();
 
@@ -103,10 +130,13 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen>
 
   @override
   void dispose() {
-    final bookingId = _initialBooking?.id.trim() ?? '';
+    final bookingId =
+        _initialBooking?.id.trim() ?? '';
 
     if (bookingId.isNotEmpty) {
-      SocketService.instance.leaveBookingRoom(bookingId);
+      SocketService.instance.leaveBookingRoom(
+        bookingId,
+      );
     }
 
     WidgetsBinding.instance.removeObserver(this);
@@ -117,21 +147,37 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen>
     super.dispose();
   }
 
-  Map<String, dynamic> _asMap(dynamic value) {
+  // =====================================================
+  // ARGUMENT HELPERS
+  // =====================================================
+
+  Map<String, dynamic> _asMap(
+    dynamic value,
+  ) {
     if (value is Map<String, dynamic>) {
       return value;
     }
 
     if (value is Map) {
-      return value.map((key, dynamic item) {
-        return MapEntry(key.toString(), item);
-      });
+      return value.map(
+        (
+          key,
+          dynamic item,
+        ) {
+          return MapEntry(
+            key.toString(),
+            item,
+          );
+        },
+      );
     }
 
     return <String, dynamic>{};
   }
 
-  BookingModel? _extractBookingFromArguments(dynamic arguments) {
+  BookingModel? _extractBookingFromArguments(
+    dynamic arguments,
+  ) {
     if (arguments is BookingModel) {
       return arguments;
     }
@@ -140,41 +186,55 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen>
       return null;
     }
 
-    final argumentMap = _asMap(arguments);
+    final argumentMap =
+        _asMap(arguments);
 
     final dynamic payload =
         argumentMap['booking'] ??
-        argumentMap['data'] ??
-        argumentMap['bookingData'] ??
-        argumentMap['order'];
+            argumentMap['data'] ??
+            argumentMap['bookingData'] ??
+            argumentMap['order'];
 
     if (payload is BookingModel) {
       return payload;
     }
 
     if (payload is Map) {
-      return BookingModel.fromMap(_asMap(payload));
+      return BookingModel.fromMap(
+        _asMap(payload),
+      );
     }
 
     final hasBookingData =
         argumentMap.containsKey('_id') ||
-        argumentMap.containsKey('id') ||
-        argumentMap.containsKey('bookingId') ||
-        argumentMap.containsKey('bookingNumber');
+            argumentMap.containsKey('id') ||
+            argumentMap.containsKey(
+              'bookingId',
+            ) ||
+            argumentMap.containsKey(
+              'bookingNumber',
+            );
 
     if (hasBookingData) {
-      return BookingModel.fromMap(argumentMap);
+      return BookingModel.fromMap(
+        argumentMap,
+      );
     }
 
     return null;
   }
 
-  BookingModel? _currentBooking(BookingProvider provider) {
-    final bookingId = _initialBooking?.id.trim() ?? '';
+  BookingModel? _currentBooking(
+    BookingProvider provider,
+  ) {
+    final bookingId =
+        _initialBooking?.id.trim() ?? '';
 
-    final selectedBooking = provider.selectedBooking;
+    final selectedBooking =
+        provider.selectedBooking;
 
-    if (selectedBooking != null && selectedBooking.id == bookingId) {
+    if (selectedBooking != null &&
+        selectedBooking.id == bookingId) {
       return selectedBooking;
     }
 
@@ -187,22 +247,36 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen>
     return _initialBooking;
   }
 
+  // =====================================================
+  // AUTOMATIC REFRESH
+  // =====================================================
+
   void _startAutomaticRefresh() {
     _refreshTimer?.cancel();
 
-    _refreshTimer = Timer.periodic(const Duration(seconds: 8), (_) {
-      if (mounted && !_isRefreshing) {
-        _refreshBooking(showIndicator: false);
-      }
-    });
+    _refreshTimer = Timer.periodic(
+      const Duration(seconds: 8),
+      (_) {
+        if (mounted &&
+            !_isRefreshing) {
+          _refreshBooking(
+            showIndicator: false,
+          );
+        }
+      },
+    );
   }
 
-  Future<void> _refreshBooking({required bool showIndicator}) async {
-    if (!mounted || _isRefreshing) {
+  Future<void> _refreshBooking({
+    required bool showIndicator,
+  }) async {
+    if (!mounted ||
+        _isRefreshing) {
       return;
     }
 
-    final bookingId = _initialBooking?.id.trim() ?? '';
+    final bookingId =
+        _initialBooking?.id.trim() ?? '';
 
     if (bookingId.isEmpty) {
       return;
@@ -217,19 +291,26 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen>
     }
 
     try {
-      await context.read<BookingProvider>().getBookingById(
-        bookingId,
-        showLoading: false,
-      );
+      await context
+          .read<BookingProvider>()
+          .getBookingById(
+            bookingId,
+            showLoading: false,
+          );
 
       if (!mounted) {
         return;
       }
 
-      final updatedBooking = context.read<BookingProvider>().selectedBooking;
+      final updatedBooking =
+          context
+              .read<BookingProvider>()
+              .selectedBooking;
 
-      if (updatedBooking != null && updatedBooking.id == bookingId) {
-        _initialBooking = updatedBooking;
+      if (updatedBooking != null &&
+          updatedBooking.id == bookingId) {
+        _initialBooking =
+            updatedBooking;
       }
 
       if (updatedBooking != null &&
@@ -240,9 +321,13 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen>
         });
       }
     } catch (error, stackTrace) {
-      debugPrint('BOOKING REFRESH ERROR: $error');
+      debugPrint(
+        'BOOKING REFRESH ERROR: $error',
+      );
 
-      debugPrint('$stackTrace');
+      debugPrint(
+        '$stackTrace',
+      );
     } finally {
       if (mounted) {
         setState(() {
@@ -254,69 +339,131 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen>
     }
   }
 
-  String _formatDate(DateTime date) {
-    final localDate = date.toLocal();
+  // =====================================================
+  // FORMATTERS
+  // =====================================================
 
-    final day = localDate.day.toString().padLeft(2, '0');
+  String _formatDate(
+    DateTime date,
+  ) {
+    final localDate =
+        date.toLocal();
 
-    final month = localDate.month.toString().padLeft(2, '0');
+    final day = localDate.day
+        .toString()
+        .padLeft(
+          2,
+          '0',
+        );
+
+    final month = localDate.month
+        .toString()
+        .padLeft(
+          2,
+          '0',
+        );
 
     return '$day-$month-${localDate.year}';
   }
 
-  String _formatDateTime(DateTime? date) {
+  String _formatDateTime(
+    DateTime? date,
+  ) {
     if (date == null) {
       return 'Not available';
     }
 
-    final localDate = date.toLocal();
+    final localDate =
+        date.toLocal();
 
-    final day = localDate.day.toString().padLeft(2, '0');
+    final day = localDate.day
+        .toString()
+        .padLeft(
+          2,
+          '0',
+        );
 
-    final month = localDate.month.toString().padLeft(2, '0');
+    final month = localDate.month
+        .toString()
+        .padLeft(
+          2,
+          '0',
+        );
 
-    final hour = localDate.hour.toString().padLeft(2, '0');
+    final hour = localDate.hour
+        .toString()
+        .padLeft(
+          2,
+          '0',
+        );
 
-    final minute = localDate.minute.toString().padLeft(2, '0');
+    final minute = localDate.minute
+        .toString()
+        .padLeft(
+          2,
+          '0',
+        );
 
     return '$day-$month-${localDate.year} '
         '$hour:$minute';
   }
 
-  String _formatAmount(double amount) {
+  String _formatAmount(
+    double amount,
+  ) {
     return '₹${amount.toStringAsFixed(2)}';
   }
 
-  String _formatDuration(int minutes) {
+  String _formatDuration(
+    int minutes,
+  ) {
     if (minutes <= 0) {
       return 'Not available';
     }
 
-    final hours = minutes ~/ 60;
+    final hours =
+        minutes ~/ 60;
 
-    final remainingMinutes = minutes % 60;
+    final remainingMinutes =
+        minutes % 60;
 
     if (hours == 0) {
       return '$remainingMinutes minutes';
     }
 
     if (remainingMinutes == 0) {
-      return hours == 1 ? '1 hour' : '$hours hours';
+      return hours == 1
+          ? '1 hour'
+          : '$hours hours';
     }
 
     return '$hours hr '
         '$remainingMinutes min';
   }
 
-  String _textOrFallback(String? value, {String fallback = 'Not available'}) {
-    final text = value?.trim() ?? '';
+  String _textOrFallback(
+    String? value, {
+    String fallback = 'Not available',
+  }) {
+    final text =
+        value?.trim() ?? '';
 
-    return text.isEmpty ? fallback : text;
+    return text.isEmpty
+        ? fallback
+        : text;
   }
 
-  Color _statusColor(BookingModel booking) {
+  // =====================================================
+  // STATUS UI
+  // =====================================================
+
+  Color _statusColor(
+    BookingModel booking,
+  ) {
     if (booking.isAccepted) {
-      return booking.providerArrived ? Colors.teal : Colors.blue;
+      return booking.providerArrived
+          ? Colors.teal
+          : Colors.blue;
     }
 
     if (booking.isOtpVerified) {
@@ -342,8 +489,11 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen>
     return Colors.amber.shade800;
   }
 
-  IconData _statusIcon(BookingModel booking) {
-    if (booking.isAccepted && booking.providerArrived) {
+  IconData _statusIcon(
+    BookingModel booking,
+  ) {
+    if (booking.isAccepted &&
+        booking.providerArrived) {
       return Icons.location_on_outlined;
     }
 
@@ -374,7 +524,14 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen>
     return Icons.schedule;
   }
 
-  void _showMessage(String message, {bool isError = false}) {
+  // =====================================================
+  // MESSAGE
+  // =====================================================
+
+  void _showMessage(
+    String message, {
+    bool isError = false,
+  }) {
     if (!mounted) {
       return;
     }
@@ -383,14 +540,290 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen>
       ..hideCurrentSnackBar()
       ..showSnackBar(
         SnackBar(
-          content: Text(message),
-          backgroundColor: isError ? Colors.red : Colors.green,
-          behavior: SnackBarBehavior.floating,
+          content:
+              Text(message),
+          backgroundColor:
+              isError
+                  ? Colors.red
+                  : Colors.green,
+          behavior:
+              SnackBarBehavior.floating,
         ),
       );
   }
 
-  Future<void> _showServiceOtp(BookingModel booking) async {
+  // =====================================================
+  // BOOKING CHAT
+  // =====================================================
+
+  Future<void> _openBookingChat(
+    BookingModel booking,
+  ) async {
+    final roomId =
+        booking.effectiveChatRoomId;
+
+    if (booking.id.trim().isEmpty ||
+        booking.providerId.trim().isEmpty ||
+        roomId.isEmpty) {
+      _showMessage(
+        'Booking chat information is unavailable.',
+        isError: true,
+      );
+
+      return;
+    }
+
+    /*
+     * Active booking:
+     * Chat is writable.
+     *
+     * Terminal booking:
+     * Chat history remains available as read-only.
+     */
+    if (!booking.canOpenBookingChat &&
+        !booking.canViewChatHistory) {
+      _showMessage(
+        'Chat is currently unavailable for this booking.',
+        isError: true,
+      );
+
+      return;
+    }
+
+    await Navigator.pushNamed(
+      context,
+      RouteConfig.chat,
+      arguments: <String, dynamic>{
+        /*
+         * Explicitly distinguish Booking Chat from
+         * pre-booking Negotiation Chat.
+         */
+        'chatType':
+            'booking',
+
+        'negotiationMode':
+            false,
+
+        'bookingId':
+            booking.id,
+
+        'roomId':
+            roomId,
+
+        'chatRoomId':
+            roomId,
+
+        'receiverId':
+            booking.providerId,
+
+        'providerId':
+            booking.providerId,
+
+        'receiverName':
+            booking.displayProviderName,
+
+        'providerName':
+            booking.displayProviderName,
+
+        'userName':
+            booking.displayProviderName,
+
+        /*
+         * Only expose the Provider phone to ChatScreen
+         * when backend/model calling rules permit it.
+         */
+        'receiverPhone':
+            booking.canCallProvider
+                ? booking.providerPhone
+                : '',
+
+        'providerPhone':
+            booking.canCallProvider
+                ? booking.providerPhone
+                : '',
+
+        'readOnly':
+            booking.canViewChatHistory,
+
+        'chatEnabled':
+            booking.canOpenBookingChat,
+
+        'canCall':
+            booking.canCallProvider,
+
+        'phoneVisible':
+            booking.phoneVisible,
+      },
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    /*
+     * Booking state may change while ChatScreen is open.
+     */
+    await _refreshBooking(
+      showIndicator: false,
+    );
+  }
+
+  // =====================================================
+  // CALL PROVIDER
+  // =====================================================
+
+  Future<void> _callProvider(
+    BookingModel booking,
+  ) async {
+    if (!booking.canCallProvider) {
+      _showMessage(
+        booking.isTerminal
+            ? 'Calling is unavailable for this closed booking.'
+            : 'The Provider phone number will be available after the booking is accepted.',
+        isError: true,
+      );
+
+      return;
+    }
+
+    final phone =
+        booking.providerPhone.replaceAll(
+      RegExp(r'[^0-9+]'),
+      '',
+    );
+
+    if (phone.isEmpty) {
+      _showMessage(
+        'Provider phone number is unavailable.',
+        isError: true,
+      );
+
+      return;
+    }
+
+    final uri =
+        Uri(
+      scheme: 'tel',
+      path: phone,
+    );
+
+    try {
+      final opened =
+          await launchUrl(
+        uri,
+        mode:
+            LaunchMode.externalApplication,
+      );
+
+      if (!opened &&
+          mounted) {
+        _showMessage(
+          'Unable to open the phone application.',
+          isError: true,
+        );
+      }
+    } catch (error, stackTrace) {
+      debugPrint(
+        'CALL PROVIDER ERROR: $error',
+      );
+
+      debugPrint(
+        '$stackTrace',
+      );
+
+      if (mounted) {
+        _showMessage(
+          'Unable to open the phone application.',
+          isError: true,
+        );
+      }
+    }
+  }
+
+  // =====================================================
+  // MAPS
+  // =====================================================
+
+  Future<void> _openMaps(
+    BookingModel booking,
+  ) async {
+    Uri? mapsUri;
+
+    if (booking.hasLocation) {
+      mapsUri = Uri.https(
+        'www.google.com',
+        '/maps/dir/',
+        <String, String>{
+          'api': '1',
+          'destination':
+              '${booking.latitude},${booking.longitude}',
+        },
+      );
+    } else {
+      final address =
+          booking.address.trim().isNotEmpty
+              ? booking.address.trim()
+              : booking.location.trim();
+
+      if (address.isNotEmpty) {
+        mapsUri = Uri.https(
+          'www.google.com',
+          '/maps/dir/',
+          <String, String>{
+            'api': '1',
+            'destination':
+                address,
+          },
+        );
+      }
+    }
+
+    if (mapsUri == null) {
+      _showMessage(
+        'Service location is unavailable.',
+        isError: true,
+      );
+
+      return;
+    }
+
+    try {
+      final launched =
+          await launchUrl(
+        mapsUri,
+        mode:
+            LaunchMode.externalApplication,
+      );
+
+      if (!launched) {
+        _showMessage(
+          'Unable to open maps.',
+          isError: true,
+        );
+      }
+    } catch (error, stackTrace) {
+      debugPrint(
+        'OPEN MAPS ERROR: $error',
+      );
+
+      debugPrint(
+        '$stackTrace',
+      );
+
+      _showMessage(
+        'Unable to open maps.',
+        isError: true,
+      );
+    }
+  }
+
+  // =====================================================
+  // SERVICE OTP
+  // =====================================================
+
+  Future<void> _showServiceOtp(
+    BookingModel booking,
+  ) async {
     if (_isOtpLoading) {
       return;
     }
@@ -404,8 +837,19 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen>
       return;
     }
 
+    if (!booking.providerArrived) {
+      _showMessage(
+        'The service OTP becomes available after the Provider arrives at your location.',
+        isError: true,
+      );
+
+      return;
+    }
+
     if (booking.otpVerified) {
-      _showMessage('The service OTP has already been verified.');
+      _showMessage(
+        'The service OTP has already been verified.',
+      );
 
       return;
     }
@@ -415,24 +859,31 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen>
     });
 
     try {
-      String? otp = _serviceOtp;
+      String? otp =
+          _serviceOtp;
 
-      if (otp == null || otp.trim().isEmpty) {
-        otp = await context.read<BookingProvider>().getServiceOtp(
-          booking.id,
-          showLoading: false,
-        );
+      if (otp == null ||
+          otp.trim().isEmpty) {
+        otp = await context
+            .read<BookingProvider>()
+            .getServiceOtp(
+              booking.id,
+              showLoading: false,
+            );
       }
 
       if (!mounted) {
         return;
       }
 
-      final normalizedOtp = otp?.trim() ?? '';
+      final normalizedOtp =
+          otp?.trim() ?? '';
 
       if (normalizedOtp.isEmpty) {
         _showMessage(
-          context.read<BookingProvider>().error ??
+          context
+                  .read<BookingProvider>()
+                  .error ??
               'Service OTP is not available.',
           isError: true,
         );
@@ -441,75 +892,119 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen>
       }
 
       setState(() {
-        _serviceOtp = normalizedOtp;
+        _serviceOtp =
+            normalizedOtp;
       });
 
       await showDialog<void>(
         context: context,
-        builder: (dialogContext) {
+        builder: (
+          BuildContext dialogContext,
+        ) {
           return AlertDialog(
             title: const Row(
               children: [
-                Icon(Icons.password, color: Colors.deepPurple),
-                SizedBox(width: 10),
-                Text('Service OTP'),
+                Icon(
+                  Icons.password,
+                  color:
+                      Colors.deepPurple,
+                ),
+                SizedBox(
+                  width: 10,
+                ),
+                Text(
+                  'Service OTP',
+                ),
               ],
             ),
             content: Column(
-              mainAxisSize: MainAxisSize.min,
+              mainAxisSize:
+                  MainAxisSize.min,
               children: [
-                Text(
-                  booking.providerArrived
-                      ? 'The Provider has arrived. Confirm the Provider identity before sharing this OTP.'
-                      : 'Do not share this OTP until the Provider arrives at your location.',
-                  textAlign: TextAlign.center,
+                const Text(
+                  'The Provider has arrived. Confirm the Provider identity before sharing this OTP.',
+                  textAlign:
+                      TextAlign.center,
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(
+                  height: 20,
+                ),
                 Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(
+                  width:
+                      double.infinity,
+                  padding:
+                      const EdgeInsets.symmetric(
                     horizontal: 20,
                     vertical: 18,
                   ),
-                  decoration: BoxDecoration(
-                    color: Colors.deepPurple.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(
-                      color: Colors.deepPurple.withValues(alpha: 0.25),
+                  decoration:
+                      BoxDecoration(
+                    color:
+                        Colors.deepPurple
+                            .withValues(
+                      alpha: 0.08,
+                    ),
+                    borderRadius:
+                        BorderRadius.circular(
+                      14,
+                    ),
+                    border:
+                        Border.all(
+                      color:
+                          Colors.deepPurple
+                              .withValues(
+                        alpha: 0.25,
+                      ),
                     ),
                   ),
                   child: Text(
                     normalizedOtp,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
+                    textAlign:
+                        TextAlign.center,
+                    style:
+                        const TextStyle(
                       fontSize: 34,
-                      fontWeight: FontWeight.bold,
+                      fontWeight:
+                          FontWeight.bold,
                       letterSpacing: 12,
-                      color: Colors.deepPurple,
+                      color:
+                          Colors.deepPurple,
                     ),
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(
+                  height: 16,
+                ),
                 const Text(
                   'This OTP remains valid until the assigned Provider verifies it.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.grey),
+                  textAlign:
+                      TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.grey,
+                  ),
                 ),
               ],
             ),
             actions: [
               ElevatedButton(
                 onPressed: () {
-                  Navigator.of(dialogContext).pop();
+                  Navigator.of(
+                    dialogContext,
+                  ).pop();
                 },
-                child: const Text('Close'),
+                child: const Text(
+                  'Close',
+                ),
               ),
             ],
           );
         },
       );
     } catch (error) {
-      _showMessage(error.toString(), isError: true);
+      _showMessage(
+        error.toString(),
+        isError: true,
+      );
     } finally {
       if (mounted) {
         setState(() {
@@ -519,104 +1014,13 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen>
     }
   }
 
-  Future<void> _callProvider(BookingModel booking) async {
-    final phoneNumber = booking.providerPhone.replaceAll(
-      RegExp(r'[^0-9+]'),
-      '',
-    );
+  // =====================================================
+  // INVOICE
+  // =====================================================
 
-    if (phoneNumber.isEmpty) {
-      _showMessage('Provider phone number is unavailable.', isError: true);
-
-      return;
-    }
-
-    try {
-      final launched = await launchUrl(
-        Uri(scheme: 'tel', path: phoneNumber),
-        mode: LaunchMode.externalApplication,
-      );
-
-      if (!launched) {
-        _showMessage('Unable to open the phone application.', isError: true);
-      }
-    } catch (_) {
-      _showMessage('Unable to open the phone application.', isError: true);
-    }
-  }
-
-  Future<void> _openMaps(BookingModel booking) async {
-    Uri? mapsUri;
-
-    if (booking.hasLocation) {
-      mapsUri = Uri.https('www.google.com', '/maps/dir/', <String, String>{
-        'api': '1',
-        'destination': '${booking.latitude},${booking.longitude}',
-      });
-    } else {
-      final address =
-          booking.address.trim().isNotEmpty
-              ? booking.address.trim()
-              : booking.location.trim();
-
-      if (address.isNotEmpty) {
-        mapsUri = Uri.https('www.google.com', '/maps/dir/', <String, String>{
-          'api': '1',
-          'destination': address,
-        });
-      }
-    }
-
-    if (mapsUri == null) {
-      _showMessage('Service location is unavailable.', isError: true);
-
-      return;
-    }
-
-    try {
-      final launched = await launchUrl(
-        mapsUri,
-        mode: LaunchMode.externalApplication,
-      );
-
-      if (!launched) {
-        _showMessage('Unable to open maps.', isError: true);
-      }
-    } catch (error, stackTrace) {
-      debugPrint('OPEN MAPS ERROR: $error');
-
-      debugPrint('$stackTrace');
-
-      _showMessage('Unable to open maps.', isError: true);
-    }
-  }
-
-  void _openChat(BookingModel booking) {
-    if (booking.providerId.trim().isEmpty || booking.id.trim().isEmpty) {
-      _showMessage('Chat details are unavailable.', isError: true);
-
-      return;
-    }
-
-    final roomId = booking.effectiveChatRoomId;
-
-    Navigator.pushNamed(
-      context,
-      RouteConfig.chat,
-      arguments: <String, dynamic>{
-        'bookingId': booking.id,
-        'roomId': roomId,
-        'chatRoomId': roomId,
-        'receiverId': booking.providerId,
-        'providerId': booking.providerId,
-        'receiverName': booking.displayProviderName,
-        'providerName': booking.displayProviderName,
-        'userName': booking.displayProviderName,
-      },
-    );
-  }
-
-  Future<void> _showInvoice(BookingModel booking) async {
+  Future<void> _showInvoice(
+    BookingModel booking,
+  ) async {
     if (_isInvoiceLoading) {
       return;
     }
@@ -626,103 +1030,171 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen>
     });
 
     try {
-      final invoice = await context.read<BookingProvider>().getInvoice(
-        booking.id,
-        showLoading: false,
-      );
+      final invoice =
+          await context
+              .read<BookingProvider>()
+              .getInvoice(
+                booking.id,
+                showLoading: false,
+              );
 
       if (!mounted) {
         return;
       }
 
-      if (invoice == null || invoice.isEmpty) {
+      if (invoice == null ||
+          invoice.isEmpty) {
         _showMessage(
-          context.read<BookingProvider>().error ?? 'Invoice is unavailable.',
+          context
+                  .read<BookingProvider>()
+                  .error ??
+              'Invoice is unavailable.',
           isError: true,
         );
 
         return;
       }
 
-      double invoiceNumberValue(String key, double fallback) {
-        return double.tryParse(invoice[key]?.toString() ?? '') ?? fallback;
+      double invoiceNumberValue(
+        String key,
+        double fallback,
+      ) {
+        return double.tryParse(
+              invoice[key]?.toString() ??
+                  '',
+            ) ??
+            fallback;
       }
 
       final invoiceNumber =
-          invoice['invoiceNumber']?.toString() ??
-          booking.invoiceNumber ??
-          'Not available';
+          invoice['invoiceNumber']
+                  ?.toString() ??
+              booking.invoiceNumber ??
+              'Not available';
 
       final duration =
-          int.tryParse(invoice['durationMinutes']?.toString() ?? '') ??
+          int.tryParse(
+            invoice['durationMinutes']
+                    ?.toString() ??
+                '',
+          ) ??
           booking.durationMinutes;
 
       await showDialog<void>(
         context: context,
-        builder: (dialogContext) {
+        builder: (
+          BuildContext dialogContext,
+        ) {
           return AlertDialog(
             title: const Row(
               children: [
-                Icon(Icons.receipt_long),
-                SizedBox(width: 10),
-                Text('Booking Invoice'),
+                Icon(
+                  Icons.receipt_long,
+                ),
+                SizedBox(
+                  width: 10,
+                ),
+                Text(
+                  'Booking Invoice',
+                ),
               ],
             ),
             content: SizedBox(
               width: 420,
-              child: SingleChildScrollView(
+              child:
+                  SingleChildScrollView(
                 child: Column(
                   children: [
-                    _dialogInfoRow('Invoice Number', invoiceNumber),
+                    _dialogInfoRow(
+                      'Invoice Number',
+                      invoiceNumber,
+                    ),
                     _dialogInfoRow(
                       'Booking Number',
-                      booking.displayBookingNumber,
+                      booking
+                          .displayBookingNumber,
                     ),
-                    _dialogInfoRow('Service', booking.displayServiceName),
-                    _dialogInfoRow('Provider', booking.displayProviderName),
+                    _dialogInfoRow(
+                      'Service',
+                      booking
+                          .displayServiceName,
+                    ),
+                    _dialogInfoRow(
+                      'Provider',
+                      booking
+                          .displayProviderName,
+                    ),
                     _dialogInfoRow(
                       'Started',
-                      _formatDateTime(booking.startedAt),
+                      _formatDateTime(
+                        booking.startedAt,
+                      ),
                     ),
                     _dialogInfoRow(
                       'Completed',
-                      _formatDateTime(booking.completedAt),
+                      _formatDateTime(
+                        booking.completedAt,
+                      ),
                     ),
-                    _dialogInfoRow('Duration', _formatDuration(duration)),
+                    _dialogInfoRow(
+                      'Duration',
+                      _formatDuration(
+                        duration,
+                      ),
+                    ),
                     const Divider(),
                     _dialogInfoRow(
                       'Subtotal',
                       _formatAmount(
-                        invoiceNumberValue('subtotal', booking.amount),
+                        invoiceNumberValue(
+                          'subtotal',
+                          booking.amount,
+                        ),
                       ),
                     ),
                     _dialogInfoRow(
                       'Platform Fee',
                       _formatAmount(
-                        invoiceNumberValue('platformFee', booking.serviceFee),
+                        invoiceNumberValue(
+                          'platformFee',
+                          booking.serviceFee,
+                        ),
                       ),
                     ),
                     _dialogInfoRow(
                       'Tax',
                       _formatAmount(
-                        invoiceNumberValue('taxAmount', booking.gst),
+                        invoiceNumberValue(
+                          'taxAmount',
+                          booking.gst,
+                        ),
                       ),
                     ),
                     _dialogInfoRow(
                       'Discount',
-                      '-${_formatAmount(invoiceNumberValue('discountAmount', booking.discount))}',
+                      '-${_formatAmount(
+                        invoiceNumberValue(
+                          'discountAmount',
+                          booking.discount,
+                        ),
+                      )}',
                     ),
                     const Divider(),
                     _dialogInfoRow(
                       'Total',
                       _formatAmount(
-                        invoiceNumberValue('totalAmount', booking.totalAmount),
+                        invoiceNumberValue(
+                          'totalAmount',
+                          booking
+                              .totalAmount,
+                        ),
                       ),
                       isTotal: true,
                     ),
                     _dialogInfoRow(
                       'Payment Status',
-                      booking.paymentStatus.toUpperCase(),
+                      booking.paymentStatus
+                          .toUpperCase(),
                     ),
                   ],
                 ),
@@ -731,16 +1203,23 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen>
             actions: [
               ElevatedButton(
                 onPressed: () {
-                  Navigator.of(dialogContext).pop();
+                  Navigator.of(
+                    dialogContext,
+                  ).pop();
                 },
-                child: const Text('Close'),
+                child: const Text(
+                  'Close',
+                ),
               ),
             ],
           );
         },
       );
     } catch (error) {
-      _showMessage(error.toString(), isError: true);
+      _showMessage(
+        error.toString(),
+        isError: true,
+      );
     } finally {
       if (mounted) {
         setState(() {
@@ -750,59 +1229,98 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen>
     }
   }
 
-  Future<void> _cancelBooking(BookingModel booking) async {
+  // =====================================================
+  // CANCEL BOOKING
+  // =====================================================
+
+  Future<void> _cancelBooking(
+    BookingModel booking,
+  ) async {
     if (_isCancelling) {
       return;
     }
 
-    final controller = TextEditingController();
+    final controller =
+        TextEditingController();
 
     String? validationMessage;
 
-    final reason = await showDialog<String>(
+    final reason =
+        await showDialog<String>(
       context: context,
       barrierDismissible: false,
-      builder: (dialogContext) {
+      builder: (
+        BuildContext dialogContext,
+      ) {
         return StatefulBuilder(
-          builder: (context, setDialogState) {
+          builder: (
+            BuildContext context,
+            StateSetter setDialogState,
+          ) {
             return AlertDialog(
-              title: const Text('Cancel Booking'),
+              title: const Text(
+                'Cancel Booking',
+              ),
               content: TextField(
-                controller: controller,
+                controller:
+                    controller,
                 maxLines: 4,
                 maxLength: 500,
-                decoration: InputDecoration(
-                  hintText: 'Enter cancellation reason',
-                  errorText: validationMessage,
-                  border: const OutlineInputBorder(),
+                decoration:
+                    InputDecoration(
+                  hintText:
+                      'Enter cancellation reason',
+                  errorText:
+                      validationMessage,
+                  border:
+                      const OutlineInputBorder(),
                 ),
               ),
               actions: [
                 TextButton(
                   onPressed: () {
-                    Navigator.of(dialogContext).pop();
+                    Navigator.of(
+                      dialogContext,
+                    ).pop();
                   },
-                  child: const Text('Back'),
+                  child: const Text(
+                    'Back',
+                  ),
                 ),
                 ElevatedButton(
                   onPressed: () {
-                    final value = controller.text.trim();
+                    final value =
+                        controller.text
+                            .trim();
 
                     if (value.isEmpty) {
-                      setDialogState(() {
-                        validationMessage = 'Cancellation reason is required.';
-                      });
+                      setDialogState(
+                        () {
+                          validationMessage =
+                              'Cancellation reason is required.';
+                        },
+                      );
 
                       return;
                     }
 
-                    Navigator.of(dialogContext).pop(value);
+                    Navigator.of(
+                      dialogContext,
+                    ).pop(
+                      value,
+                    );
                   },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red,
-                    foregroundColor: Colors.white,
+                  style:
+                      ElevatedButton
+                          .styleFrom(
+                    backgroundColor:
+                        Colors.red,
+                    foregroundColor:
+                        Colors.white,
                   ),
-                  child: const Text('Cancel Booking'),
+                  child: const Text(
+                    'Cancel Booking',
+                  ),
                 ),
               ],
             );
@@ -813,7 +1331,9 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen>
 
     controller.dispose();
 
-    if (reason == null || reason.trim().isEmpty || !mounted) {
+    if (reason == null ||
+        reason.trim().isEmpty ||
+        !mounted) {
       return;
     }
 
@@ -822,10 +1342,15 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen>
     });
 
     try {
-      final success = await context.read<BookingProvider>().cancelBooking(
-        bookingId: booking.id,
-        reason: reason.trim(),
-      );
+      final success =
+          await context
+              .read<BookingProvider>()
+              .cancelBooking(
+                bookingId:
+                    booking.id,
+                reason:
+                    reason.trim(),
+              );
 
       if (!mounted) {
         return;
@@ -833,7 +1358,9 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen>
 
       if (!success) {
         _showMessage(
-          context.read<BookingProvider>().error ??
+          context
+                  .read<BookingProvider>()
+                  .error ??
               'Unable to cancel the booking.',
           isError: true,
         );
@@ -843,11 +1370,18 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen>
 
       _serviceOtp = null;
 
-      await _refreshBooking(showIndicator: false);
+      await _refreshBooking(
+        showIndicator: false,
+      );
 
-      _showMessage('Booking cancelled successfully.');
+      _showMessage(
+        'Booking cancelled successfully.',
+      );
     } catch (error) {
-      _showMessage(error.toString(), isError: true);
+      _showMessage(
+        error.toString(),
+        isError: true,
+      );
     } finally {
       if (mounted) {
         setState(() {
@@ -857,34 +1391,67 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen>
     }
   }
 
-  void _rebook(BookingModel booking) {
+  // =====================================================
+  // REBOOK
+  // =====================================================
+
+  void _rebook(
+    BookingModel booking,
+  ) {
     Navigator.pushNamed(
       context,
       RouteConfig.booking,
       arguments: <String, dynamic>{
-        'serviceId': booking.serviceId,
-        'serviceName': booking.serviceName,
-        'providerId': booking.providerId,
+        'serviceId':
+            booking.serviceId,
+        'serviceName':
+            booking.serviceName,
+        'providerId':
+            booking.providerId,
       },
     );
   }
 
+  // =====================================================
+  // BUILD
+  // =====================================================
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(
+    BuildContext context,
+  ) {
     return Consumer<BookingProvider>(
-      builder: (context, provider, child) {
-        final booking = _currentBooking(provider);
+      builder: (
+        BuildContext context,
+        BookingProvider provider,
+        Widget? child,
+      ) {
+        final booking =
+            _currentBooking(
+          provider,
+        );
 
         if (booking == null) {
           return Scaffold(
-            backgroundColor: const Color(0xFFF8F9FC),
-            appBar: AppBar(title: const Text('Booking Details')),
+            backgroundColor:
+                const Color(
+              0xFFF8F9FC,
+            ),
+            appBar: AppBar(
+              title: const Text(
+                'Booking Details',
+              ),
+            ),
             body: const Center(
               child: Padding(
-                padding: EdgeInsets.all(24),
+                padding:
+                    EdgeInsets.all(
+                  24,
+                ),
                 child: Text(
                   'Booking information is unavailable.',
-                  textAlign: TextAlign.center,
+                  textAlign:
+                      TextAlign.center,
                 ),
               ),
             ),
@@ -892,29 +1459,45 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen>
         }
 
         final showBlockingLoader =
-            _isCancelling || _isOtpLoading || _isInvoiceLoading;
+            _isCancelling ||
+                _isOtpLoading ||
+                _isInvoiceLoading;
 
         return Scaffold(
-          backgroundColor: const Color(0xFFF8F9FC),
+          backgroundColor:
+              const Color(
+            0xFFF8F9FC,
+          ),
           appBar: AppBar(
-            title: const Text('Booking Details'),
+            title: const Text(
+              'Booking Details',
+            ),
             actions: [
               IconButton(
-                tooltip: 'Refresh',
+                tooltip:
+                    'Refresh',
                 onPressed:
                     showBlockingLoader
                         ? null
                         : () {
-                          _refreshBooking(showIndicator: true);
-                        },
-                icon:
-                    _isRefreshing
-                        ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                        : const Icon(Icons.refresh),
+                            _refreshBooking(
+                              showIndicator:
+                                  true,
+                            );
+                          },
+                icon: _isRefreshing
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child:
+                            CircularProgressIndicator(
+                          strokeWidth:
+                              2,
+                        ),
+                      )
+                    : const Icon(
+                        Icons.refresh,
+                      ),
               ),
             ],
           ),
@@ -922,76 +1505,199 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen>
             children: [
               RefreshIndicator(
                 onRefresh: () {
-                  return _refreshBooking(showIndicator: false);
+                  return _refreshBooking(
+                    showIndicator:
+                        false,
+                  );
                 },
-                child: SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 130),
+                child:
+                    SingleChildScrollView(
+                  physics:
+                      const AlwaysScrollableScrollPhysics(),
+                  padding:
+                      const EdgeInsets.fromLTRB(
+                    16,
+                    16,
+                    16,
+                    130,
+                  ),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    crossAxisAlignment:
+                        CrossAxisAlignment
+                            .stretch,
                     children: [
-                      _buildStatusCard(booking),
-                      const SizedBox(height: 16),
-                      _buildServiceCard(booking),
-                      const SizedBox(height: 16),
-                      _buildProviderCard(booking),
-                      const SizedBox(height: 16),
-                      _buildBookingInformationCard(booking),
-                      if (booking.isAccepted && !booking.otpVerified) ...[
-                        const SizedBox(height: 16),
-                        _buildOtpCard(booking),
-                      ],
-                      if (booking.isOtpVerified) ...[
-                        const SizedBox(height: 16),
-                        _buildOtpVerifiedCard(booking),
-                      ],
-                      if (booking.isRejected) ...[
-                        const SizedBox(height: 16),
-                        _buildReasonCard(
-                          title: 'Booking Rejected',
-                          reason: booking.rejectionReason,
-                          icon: Icons.block,
+                      _buildStatusCard(
+                        booking,
+                      ),
+
+                      const SizedBox(
+                        height: 16,
+                      ),
+
+                      _buildChatStateCard(
+                        booking,
+                      ),
+
+                      const SizedBox(
+                        height: 16,
+                      ),
+
+                      _buildServiceCard(
+                        booking,
+                      ),
+
+                      const SizedBox(
+                        height: 16,
+                      ),
+
+                      _buildProviderCard(
+                        booking,
+                      ),
+
+                      const SizedBox(
+                        height: 16,
+                      ),
+
+                      _buildBookingInformationCard(
+                        booking,
+                      ),
+
+                      if (booking
+                          .canDisplayServiceOtp) ...[
+                        const SizedBox(
+                          height: 16,
+                        ),
+                        _buildOtpCard(
+                          booking,
                         ),
                       ],
-                      if (booking.isCancelled) ...[
-                        const SizedBox(height: 16),
-                        _buildReasonCard(
-                          title: 'Booking Cancelled',
-                          reason: booking.cancellationReason,
-                          icon: Icons.cancel,
+
+                      if (booking.isAccepted &&
+                          !booking.providerArrived &&
+                          !booking.otpVerified) ...[
+                        const SizedBox(
+                          height: 16,
+                        ),
+                        _buildOtpWaitingCard(),
+                      ],
+
+                      if (booking
+                          .isOtpVerified) ...[
+                        const SizedBox(
+                          height: 16,
+                        ),
+                        _buildOtpVerifiedCard(
+                          booking,
                         ),
                       ],
-                      const SizedBox(height: 16),
-                      _buildTimelineCard(booking),
-                      const SizedBox(height: 16),
-                      _buildPaymentCard(booking),
-                      if (booking.notes.trim().isNotEmpty) ...[
-                        const SizedBox(height: 16),
+
+                      if (booking
+                          .isRejected) ...[
+                        const SizedBox(
+                          height: 16,
+                        ),
+                        _buildReasonCard(
+                          title:
+                              'Booking Rejected',
+                          reason:
+                              booking
+                                  .rejectionReason,
+                          icon:
+                              Icons.block,
+                        ),
+                      ],
+
+                      if (booking
+                          .isCancelled) ...[
+                        const SizedBox(
+                          height: 16,
+                        ),
+                        _buildReasonCard(
+                          title:
+                              'Booking Cancelled',
+                          reason:
+                              booking
+                                  .cancellationReason,
+                          icon:
+                              Icons.cancel,
+                        ),
+                      ],
+
+                      const SizedBox(
+                        height: 16,
+                      ),
+
+                      _buildTimelineCard(
+                        booking,
+                      ),
+
+                      const SizedBox(
+                        height: 16,
+                      ),
+
+                      _buildPaymentCard(
+                        booking,
+                      ),
+
+                      if (booking.notes
+                          .trim()
+                          .isNotEmpty) ...[
+                        const SizedBox(
+                          height: 16,
+                        ),
                         _sectionCard(
-                          title: 'Notes',
-                          child: Text(booking.notes),
+                          title:
+                              'Notes',
+                          child: Text(
+                            booking.notes,
+                          ),
                         ),
                       ],
-                      if (booking.canViewInvoice) ...[
-                        const SizedBox(height: 16),
-                        _buildInvoiceCard(booking),
+
+                      if (booking
+                          .canViewInvoice) ...[
+                        const SizedBox(
+                          height: 16,
+                        ),
+                        _buildInvoiceCard(
+                          booking,
+                        ),
                       ],
-                      if (booking.canCustomerCancel) ...[
-                        const SizedBox(height: 20),
+
+                      if (booking
+                          .canCustomerCancel) ...[
+                        const SizedBox(
+                          height: 20,
+                        ),
                         OutlinedButton.icon(
                           onPressed:
                               _isCancelling
                                   ? null
                                   : () {
-                                    _cancelBooking(booking);
-                                  },
-                          icon: const Icon(Icons.cancel_outlined),
-                          label: Text(
-                            _isCancelling ? 'CANCELLING' : 'CANCEL BOOKING',
+                                      _cancelBooking(
+                                        booking,
+                                      );
+                                    },
+                          icon:
+                              const Icon(
+                            Icons
+                                .cancel_outlined,
                           ),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: Colors.red,
-                            minimumSize: const Size(double.infinity, 50),
+                          label: Text(
+                            _isCancelling
+                                ? 'CANCELLING'
+                                : 'CANCEL BOOKING',
+                          ),
+                          style:
+                              OutlinedButton
+                                  .styleFrom(
+                            foregroundColor:
+                                Colors.red,
+                            minimumSize:
+                                const Size(
+                              double.infinity,
+                              50,
+                            ),
                           ),
                         ),
                       ],
@@ -999,242 +1705,240 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen>
                   ),
                 ),
               ),
+
               if (showBlockingLoader)
                 Positioned.fill(
-                  child: IgnorePointer(
-                    child: ColoredBox(
-                      color: Colors.black.withValues(alpha: 0.06),
-                      child: const Center(child: CircularProgressIndicator()),
+                  child:
+                      IgnorePointer(
+                    child:
+                        ColoredBox(
+                      color:
+                          Colors.black
+                              .withValues(
+                        alpha: 0.06,
+                      ),
+                      child:
+                          const Center(
+                        child:
+                            CircularProgressIndicator(),
+                      ),
                     ),
                   ),
                 ),
             ],
           ),
-          bottomNavigationBar: _buildBottomActions(booking),
+          bottomNavigationBar:
+              _buildBottomActions(
+            booking,
+          ),
         );
       },
     );
   }
 
-  Widget _buildStatusCard(BookingModel booking) {
-    final color = _statusColor(booking);
+  // =====================================================
+  // BOOKING CHAT CARD
+  // =====================================================
+
+  Widget _buildChatStateCard(
+    BookingModel booking,
+  ) {
+    if (booking.canOpenBookingChat) {
+      return Card(
+        color:
+            Colors.blue.shade50,
+        child: Padding(
+          padding:
+              const EdgeInsets.all(
+            16,
+          ),
+          child: Column(
+            crossAxisAlignment:
+                CrossAxisAlignment
+                    .stretch,
+            children: [
+              const ListTile(
+                contentPadding:
+                    EdgeInsets.zero,
+                leading: Icon(
+                  Icons
+                      .chat_bubble_outline,
+                  color:
+                      Colors.blue,
+                ),
+                title: Text(
+                  'Booking Chat',
+                  style: TextStyle(
+                    fontWeight:
+                        FontWeight.bold,
+                  ),
+                ),
+                subtitle: Text(
+                  'Chat with the Provider about this booking.',
+                ),
+              ),
+              ElevatedButton.icon(
+                onPressed: () {
+                  _openBookingChat(
+                    booking,
+                  );
+                },
+                icon: const Icon(
+                  Icons
+                      .chat_bubble_outline,
+                ),
+                label: const Text(
+                  'CHAT WITH PROVIDER',
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (booking.canViewChatHistory) {
+      return Card(
+        color:
+            Colors.grey.shade100,
+        child: Padding(
+          padding:
+              const EdgeInsets.all(
+            16,
+          ),
+          child: Column(
+            crossAxisAlignment:
+                CrossAxisAlignment
+                    .stretch,
+            children: [
+              const ListTile(
+                contentPadding:
+                    EdgeInsets.zero,
+                leading: Icon(
+                  Icons.history,
+                ),
+                title: Text(
+                  'Chat History',
+                  style: TextStyle(
+                    fontWeight:
+                        FontWeight.bold,
+                  ),
+                ),
+                subtitle: Text(
+                  'This booking chat is closed. Previous messages remain available for reference.',
+                ),
+              ),
+              OutlinedButton.icon(
+                onPressed: () {
+                  _openBookingChat(
+                    booking,
+                  );
+                },
+                icon: const Icon(
+                  Icons.history,
+                ),
+                label: const Text(
+                  'VIEW CHAT HISTORY',
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return const SizedBox.shrink();
+  }
+
+  // =====================================================
+  // STATUS CARD
+  // =====================================================
+
+  Widget _buildStatusCard(
+    BookingModel booking,
+  ) {
+    final color =
+        _statusColor(
+      booking,
+    );
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(18),
+        padding:
+            const EdgeInsets.all(
+          18,
+        ),
         child: Column(
           children: [
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(30),
+              padding:
+                  const EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: 8,
+              ),
+              decoration:
+                  BoxDecoration(
+                color:
+                    color.withValues(
+                  alpha: 0.12,
+                ),
+                borderRadius:
+                    BorderRadius.circular(
+                  30,
+                ),
               ),
               child: Row(
-                mainAxisSize: MainAxisSize.min,
+                mainAxisSize:
+                    MainAxisSize.min,
                 children: [
-                  Icon(_statusIcon(booking), size: 19, color: color),
-                  const SizedBox(width: 8),
-                  Text(
-                    booking.statusText.toUpperCase(),
-                    style: TextStyle(color: color, fontWeight: FontWeight.bold),
+                  Icon(
+                    _statusIcon(
+                      booking,
+                    ),
+                    size: 19,
+                    color: color,
                   ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 14),
-            Text(
-              booking.displayBookingNumber,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              booking.statusDescription,
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey.shade700, height: 1.4),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildServiceCard(BookingModel booking) {
-    return _sectionCard(
-      title: 'Service Details',
-      child: ListTile(
-        contentPadding: EdgeInsets.zero,
-        leading: const CircleAvatar(child: Icon(Icons.business_center)),
-        title: Text(
-          booking.displayServiceName,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        subtitle: Text(booking.displayProviderName),
-      ),
-    );
-  }
-
-  Widget _buildProviderCard(BookingModel booking) {
-    final canContactProvider =
-        booking.isAccepted || booking.isOtpVerified || booking.isInProgress;
-
-    return _sectionCard(
-      title: 'Service Provider',
-      child: Column(
-        children: [
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const CircleAvatar(child: Icon(Icons.person)),
-            title: Text(booking.displayProviderName),
-            subtitle: Text(
-              canContactProvider
-                  ? _textOrFallback(booking.providerPhone)
-                  : 'Contact details available after acceptance',
-            ),
-          ),
-          if (booking.providerArrived)
-            Container(
-              width: double.infinity,
-              margin: const EdgeInsets.only(bottom: 12),
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.teal.shade50,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.teal.shade200),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.location_on, color: Colors.teal),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      booking.providerArrivalVerified
-                          ? 'Provider arrival location verified.'
-                          : 'Provider reported arrival at your location.',
-                      style: const TextStyle(fontWeight: FontWeight.w600),
+                  const SizedBox(
+                    width: 8,
+                  ),
+                  Text(
+                    booking.statusText
+                        .toUpperCase(),
+                    style: TextStyle(
+                      color: color,
+                      fontWeight:
+                          FontWeight.bold,
                     ),
                   ),
                 ],
               ),
             ),
-          if (canContactProvider)
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () {
-                      _callProvider(booking);
-                    },
-                    icon: const Icon(Icons.call_outlined),
-                    label: const Text('Call'),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () {
-                      _openMaps(booking);
-                    },
-                    icon: const Icon(Icons.map_outlined),
-                    label: const Text('Maps'),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () {
-                      _openChat(booking);
-                    },
-                    icon: const Icon(Icons.chat_outlined),
-                    label: const Text('Chat'),
-                  ),
-                ),
-              ],
+            const SizedBox(
+              height: 14,
             ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBookingInformationCard(BookingModel booking) {
-    return _sectionCard(
-      title: 'Booking Information',
-      child: Column(
-        children: [
-          _infoRow('Booking Date', _formatDate(booking.bookingDate)),
-          _infoRow('Time Slot', _textOrFallback(booking.bookingTime)),
-          _infoRow(
-            'Location',
-            _textOrFallback(booking.address, fallback: booking.location),
-          ),
-          if (booking.landmark.trim().isNotEmpty)
-            _infoRow('Landmark', booking.landmark),
-          _infoRow('Created', _formatDateTime(booking.createdAt)),
-          if (booking.acceptedAt != null)
-            _infoRow('Accepted', _formatDateTime(booking.acceptedAt)),
-          if (booking.providerArrivedAt != null)
-            _infoRow(
-              'Provider Arrived',
-              _formatDateTime(booking.providerArrivedAt),
-            ),
-          if (booking.otpVerifiedAt != null)
-            _infoRow('OTP Verified', _formatDateTime(booking.otpVerifiedAt)),
-          if (booking.startedAt != null)
-            _infoRow('Started', _formatDateTime(booking.startedAt)),
-          if (booking.completedAt != null)
-            _infoRow('Completed', _formatDateTime(booking.completedAt)),
-          if (booking.durationMinutes > 0)
-            _infoRow(
-              'Service Duration',
-              _formatDuration(booking.durationMinutes),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildOtpCard(BookingModel booking) {
-    return Card(
-      color: Colors.deepPurple.withValues(alpha: 0.05),
-      child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Column(
-          children: [
-            const Icon(Icons.password, size: 34, color: Colors.deepPurple),
-            const SizedBox(height: 10),
-            const Text(
-              'Service Verification OTP',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
             Text(
-              booking.providerArrived
-                  ? 'The Provider has arrived. Confirm identity before sharing the OTP.'
-                  : 'The OTP is available, but do not share it until the Provider arrives.',
-              textAlign: TextAlign.center,
-            ),
-            if (_serviceOtp != null) ...[
-              const SizedBox(height: 16),
-              Text(
-                _serviceOtp!,
-                style: const TextStyle(
-                  fontSize: 30,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 10,
-                  color: Colors.deepPurple,
-                ),
+              booking
+                  .displayBookingNumber,
+              style:
+                  const TextStyle(
+                fontSize: 18,
+                fontWeight:
+                    FontWeight.bold,
               ),
-            ],
-            const SizedBox(height: 16),
-            ElevatedButton.icon(
-              onPressed:
-                  _isOtpLoading
-                      ? null
-                      : () {
-                        _showServiceOtp(booking);
-                      },
-              icon: const Icon(Icons.visibility),
-              label: Text(_isOtpLoading ? 'LOADING OTP' : 'SHOW SERVICE OTP'),
+            ),
+            const SizedBox(
+              height: 8,
+            ),
+            Text(
+              booking
+                  .statusDescription,
+              textAlign:
+                  TextAlign.center,
+              style: TextStyle(
+                color:
+                    Colors.grey.shade700,
+                height: 1.4,
+              ),
             ),
           ],
         ),
@@ -1242,14 +1946,477 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen>
     );
   }
 
-  Widget _buildOtpVerifiedCard(BookingModel booking) {
-    return Card(
-      color: Colors.green.shade50,
+  // =====================================================
+  // SERVICE CARD
+  // =====================================================
+
+  Widget _buildServiceCard(
+    BookingModel booking,
+  ) {
+    return _sectionCard(
+      title:
+          'Service Details',
       child: ListTile(
-        leading: const Icon(Icons.verified, color: Colors.green, size: 34),
-        title: const Text(
+        contentPadding:
+            EdgeInsets.zero,
+        leading:
+            const CircleAvatar(
+          child: Icon(
+            Icons.business_center,
+          ),
+        ),
+        title: Text(
+          booking
+              .displayServiceName,
+          style:
+              const TextStyle(
+            fontWeight:
+                FontWeight.bold,
+          ),
+        ),
+        subtitle: Text(
+          booking
+              .displayProviderName,
+        ),
+      ),
+    );
+  }
+
+  // =====================================================
+  // PROVIDER CARD
+  // =====================================================
+
+  Widget _buildProviderCard(
+    BookingModel booking,
+  ) {
+    return _sectionCard(
+      title:
+          'Service Provider',
+      child: Column(
+        children: [
+          ListTile(
+            contentPadding:
+                EdgeInsets.zero,
+            leading:
+                const CircleAvatar(
+              child: Icon(
+                Icons.person,
+              ),
+            ),
+            title: Text(
+              booking
+                  .displayProviderName,
+            ),
+            subtitle: Text(
+              booking.canCallProvider
+                  ? booking.providerPhone
+                  : booking.isTerminal
+                      ? 'Provider calling is unavailable for this booking'
+                      : 'Phone number available after Provider acceptance',
+            ),
+          ),
+
+          if (booking
+              .providerArrived)
+            Container(
+              width:
+                  double.infinity,
+              margin:
+                  const EdgeInsets.only(
+                bottom: 12,
+              ),
+              padding:
+                  const EdgeInsets.all(
+                12,
+              ),
+              decoration:
+                  BoxDecoration(
+                color:
+                    Colors.teal.shade50,
+                borderRadius:
+                    BorderRadius.circular(
+                  12,
+                ),
+                border:
+                    Border.all(
+                  color:
+                      Colors.teal.shade200,
+                ),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.location_on,
+                    color:
+                        Colors.teal,
+                  ),
+                  const SizedBox(
+                    width: 10,
+                  ),
+                  Expanded(
+                    child: Text(
+                      booking
+                              .providerArrivalVerified
+                          ? 'Provider arrival location verified.'
+                          : 'Provider reported arrival at your location.',
+                      style:
+                          const TextStyle(
+                        fontWeight:
+                            FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+          if (booking.canCallProvider)
+            SizedBox(
+              width:
+                  double.infinity,
+              child:
+                  ElevatedButton.icon(
+                onPressed: () {
+                  _callProvider(
+                    booking,
+                  );
+                },
+                icon:
+                    const Icon(
+                  Icons.call,
+                ),
+                label:
+                    const Text(
+                  'CALL PROVIDER',
+                ),
+              ),
+            )
+          else if (!booking.isTerminal)
+            const ListTile(
+              contentPadding:
+                  EdgeInsets.zero,
+              leading: Icon(
+                Icons
+                    .phone_locked_outlined,
+              ),
+              title: Text(
+                'Provider contact',
+              ),
+              subtitle: Text(
+                'Phone number will be available after the Provider accepts the booking.',
+              ),
+            ),
+
+          const SizedBox(
+            height: 8,
+          ),
+
+          Row(
+            children: [
+              Expanded(
+                child:
+                    OutlinedButton.icon(
+                  onPressed: () {
+                    _openMaps(
+                      booking,
+                    );
+                  },
+                  icon:
+                      const Icon(
+                    Icons.map_outlined,
+                  ),
+                  label:
+                      const Text(
+                    'Maps',
+                  ),
+                ),
+              ),
+
+              if (booking
+                      .canOpenBookingChat ||
+                  booking
+                      .canViewChatHistory) ...[
+                const SizedBox(
+                  width: 8,
+                ),
+                Expanded(
+                  child:
+                      OutlinedButton.icon(
+                    onPressed: () {
+                      _openBookingChat(
+                        booking,
+                      );
+                    },
+                    icon: Icon(
+                      booking
+                              .canViewChatHistory
+                          ? Icons.history
+                          : Icons
+                              .chat_outlined,
+                    ),
+                    label: Text(
+                      booking
+                              .canViewChatHistory
+                          ? 'History'
+                          : 'Chat',
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // =====================================================
+  // BOOKING INFORMATION
+  // =====================================================
+
+  Widget _buildBookingInformationCard(
+    BookingModel booking,
+  ) {
+    return _sectionCard(
+      title:
+          'Booking Information',
+      child: Column(
+        children: [
+          _infoRow(
+            'Booking Date',
+            _formatDate(
+              booking.bookingDate,
+            ),
+          ),
+          _infoRow(
+            'Time Slot',
+            _textOrFallback(
+              booking.bookingTime,
+            ),
+          ),
+          _infoRow(
+            'Location',
+            _textOrFallback(
+              booking.address,
+              fallback:
+                  booking.location,
+            ),
+          ),
+          if (booking.landmark
+              .trim()
+              .isNotEmpty)
+            _infoRow(
+              'Landmark',
+              booking.landmark,
+            ),
+          _infoRow(
+            'Created',
+            _formatDateTime(
+              booking.createdAt,
+            ),
+          ),
+          if (booking.acceptedAt !=
+              null)
+            _infoRow(
+              'Accepted',
+              _formatDateTime(
+                booking.acceptedAt,
+              ),
+            ),
+          if (booking
+                  .providerArrivedAt !=
+              null)
+            _infoRow(
+              'Provider Arrived',
+              _formatDateTime(
+                booking
+                    .providerArrivedAt,
+              ),
+            ),
+          if (booking
+                  .otpVerifiedAt !=
+              null)
+            _infoRow(
+              'OTP Verified',
+              _formatDateTime(
+                booking
+                    .otpVerifiedAt,
+              ),
+            ),
+          if (booking.startedAt !=
+              null)
+            _infoRow(
+              'Started',
+              _formatDateTime(
+                booking.startedAt,
+              ),
+            ),
+          if (booking.completedAt !=
+              null)
+            _infoRow(
+              'Completed',
+              _formatDateTime(
+                booking.completedAt,
+              ),
+            ),
+          if (booking
+                  .durationMinutes >
+              0)
+            _infoRow(
+              'Service Duration',
+              _formatDuration(
+                booking
+                    .durationMinutes,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  // =====================================================
+  // OTP WAITING
+  // =====================================================
+
+  Widget _buildOtpWaitingCard() {
+    return Card(
+      color:
+          Colors.orange.shade50,
+      child: const ListTile(
+        leading: Icon(
+          Icons.location_on_outlined,
+          color:
+              Colors.orange,
+        ),
+        title: Text(
+          'Waiting for Provider Arrival',
+          style: TextStyle(
+            fontWeight:
+                FontWeight.bold,
+          ),
+        ),
+        subtitle: Text(
+          'The service OTP will become available after the Provider arrives at your service location.',
+        ),
+      ),
+    );
+  }
+
+  // =====================================================
+  // OTP CARD
+  // =====================================================
+
+  Widget _buildOtpCard(
+    BookingModel booking,
+  ) {
+    return Card(
+      color:
+          Colors.deepPurple
+              .withValues(
+        alpha: 0.05,
+      ),
+      child: Padding(
+        padding:
+            const EdgeInsets.all(
+          18,
+        ),
+        child: Column(
+          children: [
+            const Icon(
+              Icons.password,
+              size: 34,
+              color:
+                  Colors.deepPurple,
+            ),
+            const SizedBox(
+              height: 10,
+            ),
+            const Text(
+              'Service Verification OTP',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight:
+                    FontWeight.bold,
+              ),
+            ),
+            const SizedBox(
+              height: 8,
+            ),
+            const Text(
+              'The Provider has arrived. Confirm the Provider identity before sharing the OTP.',
+              textAlign:
+                  TextAlign.center,
+            ),
+            if (_serviceOtp !=
+                null) ...[
+              const SizedBox(
+                height: 16,
+              ),
+              Text(
+                _serviceOtp!,
+                style:
+                    const TextStyle(
+                  fontSize: 30,
+                  fontWeight:
+                      FontWeight.bold,
+                  letterSpacing: 10,
+                  color:
+                      Colors.deepPurple,
+                ),
+              ),
+            ],
+            const SizedBox(
+              height: 16,
+            ),
+            ElevatedButton.icon(
+              onPressed:
+                  _isOtpLoading
+                      ? null
+                      : () {
+                          _showServiceOtp(
+                            booking,
+                          );
+                        },
+              icon:
+                  const Icon(
+                Icons.visibility,
+              ),
+              label: Text(
+                _isOtpLoading
+                    ? 'LOADING OTP'
+                    : 'SHOW SERVICE OTP',
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // =====================================================
+  // OTP VERIFIED CARD
+  // =====================================================
+
+  Widget _buildOtpVerifiedCard(
+    BookingModel booking,
+  ) {
+    return Card(
+      color:
+          Colors.green.shade50,
+      child: ListTile(
+        leading:
+            const Icon(
+          Icons.verified,
+          color: Colors.green,
+          size: 34,
+        ),
+        title:
+            const Text(
           'Service OTP Verified',
-          style: TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(
+            fontWeight:
+                FontWeight.bold,
+          ),
         ),
         subtitle: Text(
           booking.isInProgress
@@ -1260,72 +2427,125 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen>
     );
   }
 
+  // =====================================================
+  // REASON CARD
+  // =====================================================
+
   Widget _buildReasonCard({
     required String title,
     required String reason,
     required IconData icon,
   }) {
     return Card(
-      color: Colors.red.shade50,
+      color:
+          Colors.red.shade50,
       child: ListTile(
-        leading: Icon(icon, color: Colors.red, size: 32),
+        leading: Icon(
+          icon,
+          color: Colors.red,
+          size: 32,
+        ),
         title: Text(
           title,
-          style: const TextStyle(
+          style:
+              const TextStyle(
             color: Colors.red,
-            fontWeight: FontWeight.bold,
+            fontWeight:
+                FontWeight.bold,
           ),
         ),
         subtitle: Text(
-          reason.trim().isEmpty ? 'No reason was provided.' : reason.trim(),
+          reason.trim().isEmpty
+              ? 'No reason was provided.'
+              : reason.trim(),
         ),
       ),
     );
   }
 
-  Widget _buildTimelineCard(BookingModel booking) {
+  // =====================================================
+  // TIMELINE
+  // =====================================================
+
+  Widget _buildTimelineCard(
+    BookingModel booking,
+  ) {
     return _sectionCard(
-      title: 'Booking Timeline',
+      title:
+          'Booking Timeline',
       child: Column(
         children: [
           _timelineItem(
-            title: 'Booking Created',
+            title:
+                'Booking Created',
             completed: true,
-            subtitle: _formatDateTime(booking.createdAt),
+            subtitle:
+                _formatDateTime(
+              booking.createdAt,
+            ),
             isLast: false,
           ),
           _timelineItem(
-            title: 'Provider Accepted',
+            title:
+                'Provider Accepted',
             completed:
                 booking.isAccepted ||
-                booking.isOtpVerified ||
+                    booking.isOtpVerified ||
+                    booking.isInProgress ||
+                    booking.isCompleted,
+            subtitle:
+                _formatDateTime(
+              booking.acceptedAt,
+            ),
+            isLast: false,
+          ),
+          _timelineItem(
+            title:
+                'Provider Arrived',
+            completed:
+                booking
+                    .providerArrived,
+            subtitle:
+                _formatDateTime(
+              booking
+                  .providerArrivedAt,
+            ),
+            isLast: false,
+          ),
+          _timelineItem(
+            title:
+                'OTP Verified',
+            completed:
+                booking
+                    .isOtpVerified,
+            subtitle:
+                _formatDateTime(
+              booking
+                  .otpVerifiedAt,
+            ),
+            isLast: false,
+          ),
+          _timelineItem(
+            title:
+                'Service Started',
+            completed:
                 booking.isInProgress ||
+                    booking.isCompleted,
+            subtitle:
+                _formatDateTime(
+              booking.startedAt,
+            ),
+            isLast: false,
+          ),
+          _timelineItem(
+            title:
+                'Service Completed',
+            completed:
                 booking.isCompleted,
-            subtitle: _formatDateTime(booking.acceptedAt),
-            isLast: false,
-          ),
-          _timelineItem(
-            title: 'Provider Arrived',
-            completed: booking.providerArrived,
-            subtitle: _formatDateTime(booking.providerArrivedAt),
-            isLast: false,
-          ),
-          _timelineItem(
-            title: 'OTP Verified',
-            completed: booking.isOtpVerified,
-            subtitle: _formatDateTime(booking.otpVerifiedAt),
-            isLast: false,
-          ),
-          _timelineItem(
-            title: 'Service Started',
-            completed: booking.isInProgress || booking.isCompleted,
-            subtitle: _formatDateTime(booking.startedAt),
-            isLast: false,
-          ),
-          _timelineItem(
-            title: 'Service Completed',
-            completed: booking.isCompleted,
-            subtitle: _formatDateTime(booking.completedAt),
+            subtitle:
+                _formatDateTime(
+              booking.completedAt,
+            ),
             isLast: true,
           ),
         ],
@@ -1333,73 +2553,147 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen>
     );
   }
 
-  Widget _buildPaymentCard(BookingModel booking) {
+  // =====================================================
+  // PAYMENT
+  // =====================================================
+
+  Widget _buildPaymentCard(
+    BookingModel booking,
+  ) {
     final calculatedSubtotal =
         booking.totalAmount -
-        booking.serviceFee -
-        booking.gst +
-        booking.discount;
+            booking.serviceFee -
+            booking.gst +
+            booking.discount;
 
     final subtotal =
-        calculatedSubtotal >= 0 ? calculatedSubtotal : booking.amount;
+        calculatedSubtotal >= 0
+            ? calculatedSubtotal
+            : booking.amount;
 
     return _sectionCard(
-      title: 'Payment Summary',
+      title:
+          'Payment Summary',
       child: Column(
         children: [
-          _infoRow('Service Amount', _formatAmount(subtotal)),
-          _infoRow('Platform Fee', _formatAmount(booking.serviceFee)),
-          _infoRow('Tax', _formatAmount(booking.gst)),
-          if (booking.discount > 0)
+          _infoRow(
+            'Service Amount',
+            _formatAmount(
+              subtotal,
+            ),
+          ),
+          _infoRow(
+            'Platform Fee',
+            _formatAmount(
+              booking.serviceFee,
+            ),
+          ),
+          _infoRow(
+            'Tax',
+            _formatAmount(
+              booking.gst,
+            ),
+          ),
+          if (booking.discount >
+              0)
             _infoRow(
               'Discount',
-              '-${_formatAmount(booking.discount)}',
-              valueColor: Colors.green,
+              '-${_formatAmount(
+                booking.discount,
+              )}',
+              valueColor:
+                  Colors.green,
             ),
           const Divider(),
-          _infoRow('Total', _formatAmount(booking.totalAmount), isTotal: true),
-          _infoRow('Payment Method', booking.paymentMethod),
+          _infoRow(
+            'Total',
+            _formatAmount(
+              booking.totalAmount,
+            ),
+            isTotal: true,
+          ),
+          _infoRow(
+            'Payment Method',
+            booking.paymentMethod,
+          ),
           _infoRow(
             'Payment Status',
-            booking.paymentStatus.toUpperCase(),
-            valueColor: booking.isPaid ? Colors.green : Colors.orange,
+            booking.paymentStatus
+                .toUpperCase(),
+            valueColor:
+                booking.isPaid
+                    ? Colors.green
+                    : Colors.orange,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildInvoiceCard(BookingModel booking) {
+  // =====================================================
+  // INVOICE CARD
+  // =====================================================
+
+  Widget _buildInvoiceCard(
+    BookingModel booking,
+  ) {
     return Card(
-      color: Colors.green.shade50,
+      color:
+          Colors.green.shade50,
       child: Padding(
-        padding: const EdgeInsets.all(18),
+        padding:
+            const EdgeInsets.all(
+          18,
+        ),
         child: Column(
           children: [
-            const Icon(Icons.receipt_long, size: 34, color: Colors.green),
-            const SizedBox(height: 10),
+            const Icon(
+              Icons.receipt_long,
+              size: 34,
+              color:
+                  Colors.green,
+            ),
+            const SizedBox(
+              height: 10,
+            ),
             const Text(
               'Invoice Available',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight:
+                    FontWeight.bold,
+              ),
             ),
-            const SizedBox(height: 6),
+            const SizedBox(
+              height: 6,
+            ),
             Text(
               _textOrFallback(
                 booking.invoiceNumber,
-                fallback: 'View completed booking invoice',
+                fallback:
+                    'View completed booking invoice',
               ),
             ),
-            const SizedBox(height: 14),
+            const SizedBox(
+              height: 14,
+            ),
             ElevatedButton.icon(
               onPressed:
                   _isInvoiceLoading
                       ? null
                       : () {
-                        _showInvoice(booking);
-                      },
-              icon: const Icon(Icons.receipt_long),
+                          _showInvoice(
+                            booking,
+                          );
+                        },
+              icon:
+                  const Icon(
+                Icons.receipt_long,
+              ),
               label: Text(
-                _isInvoiceLoading ? 'LOADING INVOICE' : 'VIEW INVOICE',
+                _isInvoiceLoading
+                    ? 'LOADING INVOICE'
+                    : 'VIEW INVOICE',
               ),
             ),
           ],
@@ -1408,108 +2702,273 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen>
     );
   }
 
-  Widget _buildBottomActions(BookingModel booking) {
-    if (booking.isCompleted) {
+  // =====================================================
+  // BOTTOM ACTIONS
+  // =====================================================
+
+  Widget _buildBottomActions(
+    BookingModel booking,
+  ) {
+    if (booking.isTerminal) {
       return SafeArea(
         child: Container(
-          padding: const EdgeInsets.all(14),
-          color: Colors.white,
-          child: Row(
+          padding:
+              const EdgeInsets.all(
+            14,
+          ),
+          color:
+              Colors.white,
+          child: Wrap(
+            spacing: 10,
+            runSpacing: 10,
             children: [
-              Expanded(
-                child: OutlinedButton.icon(
+              if (booking
+                  .canViewChatHistory)
+                OutlinedButton.icon(
+                  onPressed: () {
+                    _openBookingChat(
+                      booking,
+                    );
+                  },
+                  icon:
+                      const Icon(
+                    Icons.history,
+                  ),
+                  label:
+                      const Text(
+                    'Chat History',
+                  ),
+                ),
+
+              if (booking
+                  .isCompleted)
+                OutlinedButton.icon(
                   onPressed:
                       _isInvoiceLoading
                           ? null
                           : () {
-                            _showInvoice(booking);
-                          },
-                  icon: const Icon(Icons.receipt_long),
-                  label: const Text('Invoice'),
+                              _showInvoice(
+                                booking,
+                              );
+                            },
+                  icon:
+                      const Icon(
+                    Icons
+                        .receipt_long,
+                  ),
+                  label:
+                      const Text(
+                    'Invoice',
+                  ),
                 ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: ElevatedButton.icon(
+
+              if (booking
+                  .isCompleted)
+                ElevatedButton.icon(
                   onPressed: () {
-                    _rebook(booking);
+                    _rebook(
+                      booking,
+                    );
                   },
-                  icon: const Icon(Icons.replay),
-                  label: const Text('Rebook'),
+                  icon:
+                      const Icon(
+                    Icons.replay,
+                  ),
+                  label:
+                      const Text(
+                    'Rebook',
+                  ),
                 ),
-              ),
             ],
           ),
         ),
       );
     }
 
-    final canContactProvider =
-        booking.isAccepted || booking.isOtpVerified || booking.isInProgress;
+    /*
+     * Pending:
+     *
+     * Booking Chat yes
+     * Call no
+     */
+    if (booking.isPending) {
+      if (!booking
+          .canOpenBookingChat) {
+        return const SizedBox.shrink();
+      }
 
-    if (!canContactProvider) {
+      return SafeArea(
+        child: Container(
+          padding:
+              const EdgeInsets.all(
+            14,
+          ),
+          color:
+              Colors.white,
+          child:
+              ElevatedButton.icon(
+            onPressed: () {
+              _openBookingChat(
+                booking,
+              );
+            },
+            icon:
+                const Icon(
+              Icons
+                  .chat_bubble_outline,
+            ),
+            label:
+                const Text(
+              'CHAT WITH PROVIDER',
+            ),
+          ),
+        ),
+      );
+    }
+
+    final showCall =
+        booking.canCallProvider;
+
+    final showChat =
+        booking.canOpenBookingChat;
+
+    final showMaps =
+        booking.hasLocation;
+
+    if (!showCall &&
+        !showChat &&
+        !showMaps) {
       return const SizedBox.shrink();
     }
 
     return SafeArea(
       child: Container(
-        padding: const EdgeInsets.all(14),
-        color: Colors.white,
+        padding:
+            const EdgeInsets.all(
+          14,
+        ),
+        color:
+            Colors.white,
         child: Row(
           children: [
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: () {
-                  _callProvider(booking);
-                },
-                icon: const Icon(Icons.call),
-                label: const Text('Call'),
+            if (showCall)
+              Expanded(
+                child:
+                    OutlinedButton.icon(
+                  onPressed: () {
+                    _callProvider(
+                      booking,
+                    );
+                  },
+                  icon:
+                      const Icon(
+                    Icons.call,
+                  ),
+                  label:
+                      const Text(
+                    'Call',
+                  ),
+                ),
               ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: () {
-                  _openMaps(booking);
-                },
-                icon: const Icon(Icons.map),
-                label: const Text('Maps'),
+
+            if (showCall &&
+                showMaps)
+              const SizedBox(
+                width: 8,
               ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  _openChat(booking);
-                },
-                icon: const Icon(Icons.chat),
-                label: const Text('Chat'),
+
+            if (showMaps)
+              Expanded(
+                child:
+                    OutlinedButton.icon(
+                  onPressed: () {
+                    _openMaps(
+                      booking,
+                    );
+                  },
+                  icon:
+                      const Icon(
+                    Icons.map,
+                  ),
+                  label:
+                      const Text(
+                    'Maps',
+                  ),
+                ),
               ),
-            ),
+
+            if ((showCall ||
+                    showMaps) &&
+                showChat)
+              const SizedBox(
+                width: 8,
+              ),
+
+            if (showChat)
+              Expanded(
+                child:
+                    ElevatedButton.icon(
+                  onPressed: () {
+                    _openBookingChat(
+                      booking,
+                    );
+                  },
+                  icon:
+                      const Icon(
+                    Icons.chat,
+                  ),
+                  label:
+                      const Text(
+                    'Chat',
+                  ),
+                ),
+              ),
           ],
         ),
       ),
     );
   }
 
-  Widget _sectionCard({required String title, required Widget child}) {
+  // =====================================================
+  // COMMON SECTION
+  // =====================================================
+
+  Widget _sectionCard({
+    required String title,
+    required Widget child,
+  }) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding:
+            const EdgeInsets.all(
+          16,
+        ),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment:
+              CrossAxisAlignment.start,
           children: [
             Text(
               title,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style:
+                  const TextStyle(
+                fontSize: 18,
+                fontWeight:
+                    FontWeight.bold,
+              ),
             ),
-            const SizedBox(height: 14),
+            const SizedBox(
+              height: 14,
+            ),
             child,
           ],
         ),
       ),
     );
   }
+
+  // =====================================================
+  // INFO ROW
+  // =====================================================
 
   Widget _infoRow(
     String title,
@@ -1518,22 +2977,45 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen>
     Color? valueColor,
   }) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 7),
+      padding:
+          const EdgeInsets.symmetric(
+        vertical: 7,
+      ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment:
+            CrossAxisAlignment.start,
         children: [
           Expanded(
-            child: Text(title, style: TextStyle(color: Colors.grey.shade700)),
+            child: Text(
+              title,
+              style: TextStyle(
+                color:
+                    Colors.grey.shade700,
+              ),
+            ),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(
+            width: 16,
+          ),
           Flexible(
             child: Text(
               value,
-              textAlign: TextAlign.right,
+              textAlign:
+                  TextAlign.right,
               style: TextStyle(
-                fontWeight: isTotal ? FontWeight.bold : FontWeight.w600,
-                fontSize: isTotal ? 17 : 14,
-                color: valueColor ?? (isTotal ? Colors.green : Colors.black87),
+                fontWeight:
+                    isTotal
+                        ? FontWeight.bold
+                        : FontWeight.w600,
+                fontSize:
+                    isTotal
+                        ? 17
+                        : 14,
+                color:
+                    valueColor ??
+                    (isTotal
+                        ? Colors.green
+                        : Colors.black87),
               ),
             ),
           ),
@@ -1542,21 +3024,46 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen>
     );
   }
 
-  Widget _dialogInfoRow(String title, String value, {bool isTotal = false}) {
+  // =====================================================
+  // DIALOG INFO ROW
+  // =====================================================
+
+  Widget _dialogInfoRow(
+    String title,
+    String value, {
+    bool isTotal = false,
+  }) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 7),
+      padding:
+          const EdgeInsets.symmetric(
+        vertical: 7,
+      ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment:
+            CrossAxisAlignment.start,
         children: [
-          Expanded(child: Text(title)),
-          const SizedBox(width: 14),
+          Expanded(
+            child: Text(
+              title,
+            ),
+          ),
+          const SizedBox(
+            width: 14,
+          ),
           Flexible(
             child: Text(
               value,
-              textAlign: TextAlign.right,
+              textAlign:
+                  TextAlign.right,
               style: TextStyle(
-                fontWeight: isTotal ? FontWeight.bold : FontWeight.w600,
-                color: isTotal ? Colors.green : Colors.black87,
+                fontWeight:
+                    isTotal
+                        ? FontWeight.bold
+                        : FontWeight.w600,
+                color:
+                    isTotal
+                        ? Colors.green
+                        : Colors.black87,
               ),
             ),
           ),
@@ -1564,6 +3071,10 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen>
       ),
     );
   }
+
+  // =====================================================
+  // TIMELINE ITEM
+  // =====================================================
 
   Widget _timelineItem({
     required String title,
@@ -1572,13 +3083,20 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen>
     required bool isLast,
   }) {
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment:
+          CrossAxisAlignment.start,
       children: [
         Column(
           children: [
             Icon(
-              completed ? Icons.check_circle : Icons.radio_button_unchecked,
-              color: completed ? Colors.green : Colors.grey,
+              completed
+                  ? Icons.check_circle
+                  : Icons
+                      .radio_button_unchecked,
+              color:
+                  completed
+                      ? Colors.green
+                      : Colors.grey,
             ),
             if (!isLast)
               Container(
@@ -1586,27 +3104,46 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen>
                 height: 44,
                 color:
                     completed
-                        ? Colors.green.withValues(alpha: 0.4)
-                        : Colors.grey.shade300,
+                        ? Colors.green
+                            .withValues(
+                            alpha: 0.4,
+                          )
+                        : Colors
+                            .grey.shade300,
               ),
           ],
         ),
-        const SizedBox(width: 12),
+        const SizedBox(
+          width: 12,
+        ),
         Expanded(
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment:
+                CrossAxisAlignment.start,
             children: [
               Text(
                 title,
                 style: TextStyle(
-                  fontWeight: completed ? FontWeight.w600 : FontWeight.normal,
-                  color: completed ? Colors.black87 : Colors.grey,
+                  fontWeight:
+                      completed
+                          ? FontWeight.w600
+                          : FontWeight.normal,
+                  color:
+                      completed
+                          ? Colors.black87
+                          : Colors.grey,
                 ),
               ),
-              if (completed && subtitle != 'Not available')
+              if (completed &&
+                  subtitle !=
+                      'Not available')
                 Text(
                   subtitle,
-                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color:
+                        Colors.grey.shade600,
+                  ),
                 ),
             ],
           ),

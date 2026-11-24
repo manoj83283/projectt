@@ -457,8 +457,8 @@ class _LoginScreenState extends State<LoginScreen> {
       await _completeLoginNavigation();
     } catch (
       error,
-      stackTrace,
-    ) {
+      stackTrace)
+     {
       debugPrint(
         'GOOGLE SIGN-IN ERROR: $error',
       );
@@ -540,7 +540,7 @@ class _LoginScreenState extends State<LoginScreen> {
       );
     } catch (
       error,
-      stackTrace,
+      stackTrace
     ) {
       debugPrint(
         'CUSTOMER SIGN-UP SESSION ERROR: $error',

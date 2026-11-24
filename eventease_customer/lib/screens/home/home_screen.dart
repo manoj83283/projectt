@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../config/route_config.dart';
 import '../../config/theme_config.dart';
+import '../../providers/booking_provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({
@@ -60,13 +62,17 @@ class _HomeScreenState extends State<HomeScreen> {
       'price': '₹12,000',
     },
   ];
-
   Future<void> refreshData() async {
-    await Future.delayed(
-      const Duration(seconds: 1),
+    await context
+      .read<BookingProvider>()
+      .getMyBookings(
+        page: 1,
+        limit: 100,
+        forceRefresh: true,
+        showLoading: false,
     );
   }
-
+  
   void _openRoute(
     String routeName, {
     Object? arguments,
@@ -132,6 +138,33 @@ class _HomeScreenState extends State<HomeScreen> {
       RouteConfig.serviceDetails,
       arguments: {
         'service': service,
+      },
+    );
+  }
+  
+  bool _bookingLoaded = false;
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    
+    if (_bookingLoaded) {
+      return;
+    }
+    _bookingLoaded = true;
+    WidgetsBinding.instance.addPostFrameCallback(
+    (_) async {
+      if (!mounted) {
+        return;
+      }
+
+      await context
+          .read<BookingProvider>()
+          .getMyBookings(
+            page: 1,
+            limit: 100,
+            forceRefresh: true,
+            showLoading: false,
+          );
       },
     );
   }

@@ -12,6 +12,7 @@ import 'providers/auth_provider.dart';
 import 'providers/booking_provider.dart';
 import 'providers/cart_provider.dart';
 import 'providers/category_provider.dart';
+import 'providers/chat_provider.dart';
 import 'providers/order_provider.dart';
 import 'providers/service_provider.dart';
 
@@ -89,12 +90,10 @@ Future<void> main() async {
 
   try {
     final sessionRestored =
-        await AuthService.instance
-            .restoreSession();
+        await AuthService.instance.restoreSession();
 
     debugPrint(
-      'APPLICATION SESSION RESTORED: '
-      '$sessionRestored',
+      'APPLICATION SESSION RESTORED: $sessionRestored',
     );
 
     debugPrint(
@@ -108,13 +107,11 @@ Future<void> main() async {
     );
   } catch (error, stackTrace) {
     debugPrint(
-      'APPLICATION SESSION RESTORE ERROR: '
-      '$error',
+      'APPLICATION SESSION RESTORE ERROR: $error',
     );
 
     debugPrint(
-      'SESSION RESTORE STACK TRACE: '
-      '$stackTrace',
+      'SESSION RESTORE STACK TRACE: $stackTrace',
     );
   }
 
@@ -138,6 +135,10 @@ class EventEaseApp extends StatelessWidget {
   ) {
     return MultiProvider(
       providers: [
+        // =================================================
+        // AUTHENTICATION
+        // =================================================
+
         ChangeNotifierProvider<AuthProvider>(
           create: (
             BuildContext context,
@@ -154,6 +155,11 @@ class EventEaseApp extends StatelessWidget {
             return authProvider;
           },
         ),
+
+        // =================================================
+        // SERVICES
+        // =================================================
+
         ChangeNotifierProvider<ServiceProvider>(
           create: (
             BuildContext context,
@@ -161,6 +167,11 @@ class EventEaseApp extends StatelessWidget {
             return ServiceProvider();
           },
         ),
+
+        // =================================================
+        // CATEGORIES
+        // =================================================
+
         ChangeNotifierProvider<CategoryProvider>(
           create: (
             BuildContext context,
@@ -168,6 +179,11 @@ class EventEaseApp extends StatelessWidget {
             return CategoryProvider();
           },
         ),
+
+        // =================================================
+        // CART
+        // =================================================
+
         ChangeNotifierProvider<CartProvider>(
           create: (
             BuildContext context,
@@ -175,6 +191,11 @@ class EventEaseApp extends StatelessWidget {
             return CartProvider();
           },
         ),
+
+        // =================================================
+        // BOOKINGS
+        // =================================================
+
         ChangeNotifierProvider<BookingProvider>(
           create: (
             BuildContext context,
@@ -182,11 +203,28 @@ class EventEaseApp extends StatelessWidget {
             return BookingProvider();
           },
         ),
+
+        // =================================================
+        // ORDERS
+        // =================================================
+
         ChangeNotifierProvider<OrderProvider>(
           create: (
             BuildContext context,
           ) {
             return OrderProvider();
+          },
+        ),
+
+        // =================================================
+        // CHAT
+        // =================================================
+
+        ChangeNotifierProvider<ChatProvider>(
+          create: (
+            BuildContext context,
+          ) {
+            return ChatProvider();
           },
         ),
       ],
@@ -396,7 +434,8 @@ class EventEaseApp extends StatelessWidget {
       RouteConfig.myOrders: (
         BuildContext context,
       ) {
-        return const booking_screens.MyBookingsScreen();
+        return const booking_screens
+            .MyBookingsScreen();
       },
 
       RouteConfig.orderDetails: (
@@ -575,8 +614,9 @@ class EventEaseApp extends StatelessWidget {
                   ),
                   ElevatedButton.icon(
                     onPressed: () {
-                      Navigator.of(context)
-                          .pushNamedAndRemoveUntil(
+                      Navigator.of(
+                        context,
+                      ).pushNamedAndRemoveUntil(
                         RouteConfig.home,
                         (
                           Route<dynamic> route,

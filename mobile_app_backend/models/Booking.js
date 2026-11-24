@@ -34,6 +34,25 @@ const TERMINAL_BOOKING_STATUSES = Object.freeze([
   BOOKING_STATUSES.CANCELLED,
 ]);
 
+const WRITABLE_CHAT_STATUSES = Object.freeze([
+  BOOKING_STATUSES.PENDING,
+  BOOKING_STATUSES.ACCEPTED,
+  BOOKING_STATUSES.OTP_VERIFIED,
+  BOOKING_STATUSES.IN_PROGRESS,
+]);
+
+const READ_ONLY_CHAT_STATUSES = Object.freeze([
+  BOOKING_STATUSES.COMPLETED,
+  BOOKING_STATUSES.REJECTED,
+  BOOKING_STATUSES.CANCELLED,
+]);
+
+const CALL_ENABLED_STATUSES = Object.freeze([
+  BOOKING_STATUSES.ACCEPTED,
+  BOOKING_STATUSES.OTP_VERIFIED,
+  BOOKING_STATUSES.IN_PROGRESS,
+]);
+
 // =====================================================
 // STATUS HISTORY SCHEMA
 // =====================================================
@@ -42,9 +61,7 @@ const statusHistorySchema = new Schema(
   {
     status: {
       type: String,
-      enum: Object.values(
-        BOOKING_STATUSES
-      ),
+      enum: Object.values(BOOKING_STATUSES),
       required: [
         true,
         "Booking history status is required",
@@ -102,21 +119,12 @@ const locationPointSchema = new Schema(
             return false;
           }
 
-          const longitude = Number(
-            value[0]
-          );
-
-          const latitude = Number(
-            value[1]
-          );
+          const longitude = Number(value[0]);
+          const latitude = Number(value[1]);
 
           return (
-            Number.isFinite(
-              longitude
-            ) &&
-            Number.isFinite(
-              latitude
-            ) &&
+            Number.isFinite(longitude) &&
+            Number.isFinite(latitude) &&
             longitude >= -180 &&
             longitude <= 180 &&
             latitude >= -90 &&
@@ -162,7 +170,7 @@ const bookingSchema = new Schema(
     },
 
     // =================================================
-    // SERVICE AND PROVIDER
+    // SERVICE / PROVIDER
     // =================================================
 
     service: {
@@ -252,7 +260,7 @@ const bookingSchema = new Schema(
     },
 
     // =================================================
-    // CONTACT INFORMATION
+    // CONTACT
     // =================================================
 
     contactNumber: {
@@ -277,7 +285,7 @@ const bookingSchema = new Schema(
     },
 
     // =================================================
-    // SERVICE ADDRESS
+    // ADDRESS
     // =================================================
 
     locationType: {
@@ -456,21 +464,15 @@ const bookingSchema = new Schema(
 
     paymentMethod: {
       type: String,
-      enum: Object.values(
-        PAYMENT_METHODS
-      ),
-      default:
-        PAYMENT_METHODS.COD,
+      enum: Object.values(PAYMENT_METHODS),
+      default: PAYMENT_METHODS.COD,
       uppercase: true,
     },
 
     paymentStatus: {
       type: String,
-      enum: Object.values(
-        PAYMENT_STATUSES
-      ),
-      default:
-        PAYMENT_STATUSES.PENDING,
+      enum: Object.values(PAYMENT_STATUSES),
+      default: PAYMENT_STATUSES.PENDING,
       lowercase: true,
     },
 
@@ -497,11 +499,8 @@ const bookingSchema = new Schema(
 
     status: {
       type: String,
-      enum: Object.values(
-        BOOKING_STATUSES
-      ),
-      default:
-        BOOKING_STATUSES.PENDING,
+      enum: Object.values(BOOKING_STATUSES),
+      default: BOOKING_STATUSES.PENDING,
       lowercase: true,
       index: true,
     },
@@ -570,7 +569,7 @@ const bookingSchema = new Schema(
     },
 
     // =================================================
-    // SERVICE VERIFICATION OTP
+    // OTP
     // =================================================
 
     serviceOtpHash: {
@@ -702,7 +701,7 @@ const bookingSchema = new Schema(
     },
 
     // =================================================
-    // CHAT
+    // BOOKING CHAT
     // =================================================
 
     chatRoomId: {
@@ -715,6 +714,7 @@ const bookingSchema = new Schema(
     chatEnabled: {
       type: Boolean,
       default: true,
+      index: true,
     },
 
     chatClosedAt: {
@@ -822,6 +822,38 @@ bookingSchema
     );
   });
 
+// =====================================================
+// CALL / CONTACT RULES
+// =====================================================
+
+bookingSchema
+  .virtual("canCall")
+  .get(function canCall() {
+    return CALL_ENABLED_STATUSES.includes(
+      this.status
+    );
+  });
+
+bookingSchema
+  .virtual("phoneVisible")
+  .get(function phoneVisible() {
+    return CALL_ENABLED_STATUSES.includes(
+      this.status
+    );
+  });
+
+bookingSchema
+  .virtual("contactEnabled")
+  .get(function contactEnabled() {
+    return CALL_ENABLED_STATUSES.includes(
+      this.status
+    );
+  });
+
+// =====================================================
+// CUSTOMER / PROVIDER ACTION RULES
+// =====================================================
+
 bookingSchema
   .virtual("canCustomerCancel")
   .get(function canCustomerCancel() {
@@ -892,15 +924,88 @@ bookingSchema
     );
   });
 
+// =====================================================
+// CHAT VIRTUALS
+// =====================================================
+
+bookingSchema
+  .virtual("canChat")
+  .get(function canChat() {
+    const roomId =
+      this.chatRoomId
+        ?.toString()
+        .trim() || "";
+
+    return (
+      this.chatEnabled === true &&
+      roomId.length > 0 &&
+      WRITABLE_CHAT_STATUSES.includes(
+        this.status
+      )
+    );
+  });
+
+bookingSchema
+  .virtual("isChatReadOnly")
+  .get(function isChatReadOnly() {
+    const roomId =
+      this.chatRoomId
+        ?.toString()
+        .trim() || "";
+
+    return (
+      roomId.length > 0 &&
+      READ_ONLY_CHAT_STATUSES.includes(
+        this.status
+      )
+    );
+  });
+
+bookingSchema
+  .virtual("isChatAvailable")
+  .get(function isChatAvailable() {
+    const roomId =
+      this.chatRoomId
+        ?.toString()
+        .trim() || "";
+
+    return roomId.length > 0;
+  });
+
+bookingSchema
+  .virtual("canViewChatHistory")
+  .get(function canViewChatHistory() {
+    const roomId =
+      this.chatRoomId
+        ?.toString()
+        .trim() || "";
+
+    return (
+      roomId.length > 0 &&
+      READ_ONLY_CHAT_STATUSES.includes(
+        this.status
+      )
+    );
+  });
+
+// =====================================================
+// OTP AVAILABILITY
+// =====================================================
+
 bookingSchema
   .virtual("isOtpAvailable")
   .get(function getIsOtpAvailable() {
     return (
       this.status ===
         BOOKING_STATUSES.ACCEPTED &&
+      this.providerArrived === true &&
       this.otpVerified !== true
     );
   });
+
+// =====================================================
+// SERVICE DURATION
+// =====================================================
 
 bookingSchema
   .virtual("serviceDurationMinutes")
@@ -989,12 +1094,16 @@ bookingSchema.methods.addStatusHistory =
     }
 
     this.statusHistory.push({
-      status: normalizedStatus,
+      status:
+        normalizedStatus,
+
       changedBy:
         changedBy || null,
+
       note:
         note?.toString().trim() ||
         "",
+
       changedAt,
     });
 
@@ -1087,13 +1196,18 @@ bookingSchema.methods.markProviderArrived =
       );
     }
 
-    const now = new Date();
+    const now =
+      new Date();
 
-    this.providerArrived = true;
-    this.providerArrivedAt = now;
+    this.providerArrived =
+      true;
+
+    this.providerArrivedAt =
+      now;
 
     this.providerArrivalLocation = {
       type: "Point",
+
       coordinates: [
         normalizedLongitude,
         normalizedLatitude,
@@ -1113,16 +1227,91 @@ bookingSchema.methods.markProviderArrived =
     this.providerArrivalVerified =
       locationVerified === true;
 
+    /*
+     * Provider arrival does not close or change
+     * the booking Chat room.
+     */
+    this.chatEnabled = true;
+    this.chatClosedAt = null;
+
     this.addStatusHistory({
-      status: this.status,
+      status:
+        this.status,
+
       changedBy,
+
       note:
         "Provider arrived at the service location",
-      changedAt: now,
+
+      changedAt:
+        now,
     });
 
     return this;
   };
+
+// =====================================================
+// CHAT LIFECYCLE SYNCHRONIZATION
+// =====================================================
+
+function synchronizeChatLifecycle(
+  booking,
+  now = new Date()
+) {
+  const roomId =
+    booking.chatRoomId
+      ?.toString()
+      .trim() || "";
+
+  /*
+   * There is no usable Booking Chat without a room.
+   */
+  if (!roomId) {
+    booking.chatEnabled = false;
+
+    return booking;
+  }
+
+  /*
+   * Booking Chat is writable while the booking
+   * is active.
+   *
+   * OTP verification is deliberately NOT required
+   * for Chat under the final business rule.
+   */
+  if (
+    WRITABLE_CHAT_STATUSES.includes(
+      booking.status
+    )
+  ) {
+    booking.chatEnabled = true;
+    booking.chatClosedAt = null;
+
+    return booking;
+  }
+
+  /*
+   * Terminal bookings preserve the room and message
+   * history, but no new messages may be sent.
+   */
+  if (
+    READ_ONLY_CHAT_STATUSES.includes(
+      booking.status
+    )
+  ) {
+    booking.chatEnabled = false;
+
+    booking.chatClosedAt =
+      booking.chatClosedAt ||
+      now;
+
+    return booking;
+  }
+
+  booking.chatEnabled = false;
+
+  return booking;
+}
 
 // =====================================================
 // NORMALIZATION BEFORE VALIDATION
@@ -1184,6 +1373,7 @@ bookingSchema.pre(
         "invoiceUrl",
         "paymentId",
         "transactionId",
+        "chatRoomId",
       ];
 
       for (
@@ -1386,21 +1576,23 @@ bookingSchema.pre(
           .toUpperCase() ||
         "";
 
-      if (
-        !this.chatRoomId &&
-        this._id
-      ) {
+      // =================================================
+      // CANONICAL BOOKING CHAT ROOM
+      // =================================================
+
+      if (this._id) {
+        /*
+         * Every Booking Chat uses exactly one canonical
+         * room identifier. This also repairs older records
+         * with empty or non-prefixed room IDs when saved.
+         */
         this.chatRoomId =
           `booking:${this._id.toString()}`;
-      } else if (
-        this.chatRoomId &&
-        !this.chatRoomId.startsWith(
-          "booking:"
-        )
-      ) {
-        this.chatRoomId =
-          `booking:${this.chatRoomId}`;
       }
+
+      // =================================================
+      // BOOKING NUMBER
+      // =================================================
 
       if (
         !this.bookingNumber &&
@@ -1415,6 +1607,19 @@ bookingSchema.pre(
         this.bookingNumber =
           `EB-${suffix}`;
       }
+
+      // =================================================
+      // CHAT STATE
+      // =================================================
+
+      synchronizeChatLifecycle(
+        this,
+        new Date()
+      );
+
+      // =================================================
+      // STATUS HISTORY
+      // =================================================
 
       if (
         !Array.isArray(
@@ -1442,7 +1647,8 @@ bookingSchema.pre(
             BOOKING_STATUSES.PENDING,
 
           changedBy:
-            this.user || null,
+            this.user ||
+            null,
 
           note:
             "Booking created",
@@ -1460,7 +1666,7 @@ bookingSchema.pre(
 );
 
 // =====================================================
-// STATUS VALIDATION AND TIMESTAMP SYNCHRONIZATION
+// STATUS VALIDATION / TIMESTAMP SYNCHRONIZATION
 // =====================================================
 
 bookingSchema.pre(
@@ -1469,172 +1675,215 @@ bookingSchema.pre(
     next
   ) {
     try {
-      if (
-        !this.isModified(
+      const now =
+        new Date();
+
+      const statusModified =
+        this.isModified(
           "status"
-        )
-      ) {
-        return next();
-      }
+        );
 
-      const now = new Date();
+      /*
+       * Validate and synchronize lifecycle timestamps
+       * whenever the status changes.
+       */
+      if (statusModified) {
+        switch (this.status) {
+          case BOOKING_STATUSES.PENDING:
+            /*
+             * Pending is the normal initial state.
+             * Do not reset Provider/OTP state here on every
+             * save unless this is a new Booking. Explicit
+             * workflow methods/controllers own those resets.
+             */
+            break;
 
-      switch (this.status) {
-        case BOOKING_STATUSES.PENDING:
-          break;
+          case BOOKING_STATUSES.ACCEPTED:
+            this.acceptedAt =
+              this.acceptedAt ||
+              now;
 
-        case BOOKING_STATUSES.ACCEPTED:
-          this.acceptedAt =
-            this.acceptedAt ||
-            now;
+            this.rejectedAt =
+              null;
 
-          this.rejectionReason =
-            "";
+            this.rejectionReason =
+              "";
 
-          break;
+            break;
 
-        case BOOKING_STATUSES.OTP_VERIFIED:
-          if (
-            this.providerArrived !==
-            true
-          ) {
-            return next(
-              new Error(
-                "Provider must arrive at the service location before OTP verification"
-              )
-            );
-          }
-
-          if (!this.otpVerified) {
-            return next(
-              new Error(
-                "Service OTP must be verified before setting OTP verified status"
-              )
-            );
-          }
-
-          this.otpVerifiedAt =
-            this.otpVerifiedAt ||
-            now;
-
-          break;
-
-        case BOOKING_STATUSES.REJECTED:
-          this.rejectedAt =
-            this.rejectedAt ||
-            now;
-
-          break;
-
-        case BOOKING_STATUSES.IN_PROGRESS:
-          if (
-            this.providerArrived !==
-            true
-          ) {
-            return next(
-              new Error(
-                "Provider must arrive at the service location before starting the service"
-              )
-            );
-          }
-
-          if (!this.otpVerified) {
-            return next(
-              new Error(
-                "Service OTP must be verified before starting the service"
-              )
-            );
-          }
-
-          this.startedAt =
-            this.startedAt ||
-            now;
-
-          break;
-
-        case BOOKING_STATUSES.COMPLETED:
-          if (!this.startedAt) {
-            return next(
-              new Error(
-                "Service must be started before it can be completed"
-              )
-            );
-          }
-
-          this.completedAt =
-            this.completedAt ||
-            now;
-
-          if (this.startedAt) {
-            const startedTime =
-              new Date(
-                this.startedAt
-              ).getTime();
-
-            const completedTime =
-              new Date(
-                this.completedAt
-              ).getTime();
+          case BOOKING_STATUSES.OTP_VERIFIED:
+            if (
+              this.providerArrived !==
+              true
+            ) {
+              return next(
+                new Error(
+                  "Provider must arrive at the service location before OTP verification"
+                )
+              );
+            }
 
             if (
-              !Number.isNaN(
-                startedTime
-              ) &&
-              !Number.isNaN(
-                completedTime
-              )
+              this.otpVerified !==
+              true
             ) {
-              this.durationMinutes =
-                Math.max(
-                  0,
-                  Math.round(
-                    (
-                      completedTime -
-                      startedTime
-                    ) /
-                      60000
-                  )
-                );
+              return next(
+                new Error(
+                  "Service OTP must be verified before setting OTP verified status"
+                )
+              );
             }
-          }
 
-          if (
-            this.paymentMethod ===
-              PAYMENT_METHODS.COD &&
-            this.paymentStatus ===
-              PAYMENT_STATUSES.PENDING
-          ) {
-            this.paymentStatus =
-              PAYMENT_STATUSES.PAID;
-
-            this.paidAt =
-              this.paidAt ||
+            this.otpVerifiedAt =
+              this.otpVerifiedAt ||
               now;
-          }
 
-          if (
-            !this.invoiceNumber
-          ) {
-            this.invoiceNumber =
-              `INV-${this.bookingNumber}`;
-          }
+            break;
 
-          this.invoiceGeneratedAt =
-            this.invoiceGeneratedAt ||
-            now;
+          case BOOKING_STATUSES.REJECTED:
+            this.rejectedAt =
+              this.rejectedAt ||
+              now;
 
-          break;
+            break;
 
-        case BOOKING_STATUSES.CANCELLED:
-          this.cancelledAt =
-            this.cancelledAt ||
-            now;
+          case BOOKING_STATUSES.IN_PROGRESS:
+            if (
+              this.providerArrived !==
+              true
+            ) {
+              return next(
+                new Error(
+                  "Provider must arrive at the service location before starting the service"
+                )
+              );
+            }
 
-          break;
+            if (
+              this.otpVerified !==
+              true
+            ) {
+              return next(
+                new Error(
+                  "Service OTP must be verified before starting the service"
+                )
+              );
+            }
 
-        default:
-          break;
+            this.startedAt =
+              this.startedAt ||
+              now;
+
+            break;
+
+          case BOOKING_STATUSES.COMPLETED:
+            if (
+              this.otpVerified !==
+              true
+            ) {
+              return next(
+                new Error(
+                  "Service OTP must be verified before completing the service"
+                )
+              );
+            }
+
+            if (!this.startedAt) {
+              return next(
+                new Error(
+                  "Service must be started before it can be completed"
+                )
+              );
+            }
+
+            this.completedAt =
+              this.completedAt ||
+              now;
+
+            {
+              const startedTime =
+                new Date(
+                  this.startedAt
+                ).getTime();
+
+              const completedTime =
+                new Date(
+                  this.completedAt
+                ).getTime();
+
+              if (
+                !Number.isNaN(
+                  startedTime
+                ) &&
+                !Number.isNaN(
+                  completedTime
+                )
+              ) {
+                this.durationMinutes =
+                  Math.max(
+                    0,
+                    Math.round(
+                      (
+                        completedTime -
+                        startedTime
+                      ) /
+                        60000
+                    )
+                  );
+              }
+            }
+
+            if (
+              this.paymentMethod ===
+                PAYMENT_METHODS.COD &&
+              this.paymentStatus ===
+                PAYMENT_STATUSES.PENDING
+            ) {
+              this.paymentStatus =
+                PAYMENT_STATUSES.PAID;
+
+              this.paidAt =
+                this.paidAt ||
+                now;
+            }
+
+            if (
+              !this.invoiceNumber
+            ) {
+              this.invoiceNumber =
+                `INV-${
+                  this.bookingNumber ||
+                  this._id.toString()
+                }`;
+            }
+
+            this.invoiceGeneratedAt =
+              this.invoiceGeneratedAt ||
+              now;
+
+            break;
+
+          case BOOKING_STATUSES.CANCELLED:
+            this.cancelledAt =
+              this.cancelledAt ||
+              now;
+
+            break;
+
+          default:
+            break;
+        }
       }
+
+      /*
+       * Chat state remains synchronized even if the
+       * controller changes chatEnabled manually.
+       * The booking lifecycle is the authority.
+       */
+      synchronizeChatLifecycle(
+        this,
+        now
+      );
 
       return next();
     } catch (error) {
@@ -1644,7 +1893,7 @@ bookingSchema.pre(
 );
 
 // =====================================================
-// RESET ARRIVAL WHEN PROVIDER CHANGES
+// RESET ARRIVAL / OTP WHEN PROVIDER CHANGES
 // =====================================================
 
 bookingSchema.pre(
@@ -1675,6 +1924,40 @@ bookingSchema.pre(
           type: "Point",
           coordinates: [0, 0],
         };
+
+        /*
+         * A newly assigned Provider must verify the OTP
+         * again before starting the service.
+         */
+        this.otpVerified =
+          false;
+
+        this.otpVerifiedAt =
+          null;
+
+        this.otpVerifiedBy =
+          null;
+
+        this.otpAttempts =
+          0;
+
+        this.otpLockedUntil =
+          null;
+
+        /*
+         * The Booking itself remains the same, so the Chat
+         * room ID and existing MongoDB message history
+         * remain unchanged.
+         */
+        this.chatRoomId =
+          this._id
+            ? `booking:${this._id.toString()}`
+            : "";
+
+        synchronizeChatLifecycle(
+          this,
+          new Date()
+        );
       }
 
       return next();
@@ -1702,6 +1985,7 @@ bookingSchema.set(
   "toJSON",
   {
     virtuals: true,
+
     transform:
       hideSensitiveBookingFields,
   }
@@ -1711,6 +1995,7 @@ bookingSchema.set(
   "toObject",
   {
     virtuals: true,
+
     transform:
       hideSensitiveBookingFields,
   }
@@ -1726,7 +2011,8 @@ bookingSchema.pre(
     next
   ) {
     const options =
-      this.getOptions?.() || {};
+      this.getOptions?.() ||
+      {};
 
     const currentQuery =
       this.getQuery();
@@ -1757,6 +2043,13 @@ bookingSchema.index({
 bookingSchema.index({
   customer: 1,
   createdAt: -1,
+});
+
+bookingSchema.index({
+  customer: 1,
+  provider: 1,
+  chatEnabled: 1,
+  updatedAt: -1,
 });
 
 bookingSchema.index({
@@ -1794,6 +2087,17 @@ bookingSchema.index({
   createdAt: -1,
 });
 
+/*
+ * Supports active-slot availability lookups.
+ */
+bookingSchema.index({
+  service: 1,
+  provider: 1,
+  bookingDate: 1,
+  bookingTime: 1,
+  status: 1,
+});
+
 bookingSchema.index({
   bookingDate: 1,
   status: 1,
@@ -1826,7 +2130,8 @@ bookingSchema.index(
 );
 
 bookingSchema.index({
-  locationPoint: "2dsphere",
+  locationPoint:
+    "2dsphere",
 });
 
 bookingSchema.index({

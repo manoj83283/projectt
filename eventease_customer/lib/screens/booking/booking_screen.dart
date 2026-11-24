@@ -1327,7 +1327,7 @@ class _BookingScreenState extends State<BookingScreen> {
 
   Widget _buildPaymentMethod() {
     return DropdownButtonFormField<String>(
-      value: _selectedPaymentMethod,
+      initialValue: _selectedPaymentMethod,
       decoration: const InputDecoration(
         prefixIcon: Icon(Icons.payments),
         border: OutlineInputBorder(),

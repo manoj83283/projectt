@@ -1,6 +1,8 @@
 import mongoose from "mongoose";
 
-import Booking from "../models/Booking.js";
+import Booking, {
+  BOOKING_STATUSES,
+} from "../models/Booking.js";
 import Chat from "../models/chat.js";
 import Message from "../models/Message.js";
 
@@ -107,31 +109,46 @@ const asPlainObject = (document) => {
   };
 };
 
-const normalizeRoomId = (
-  value
-) => {
-  const roomId =
+const normalizeRoomId = (value) => {
+  const rawValue =
     normalizeString(value);
 
-  if (!roomId) {
+  if (!rawValue) {
     return "";
   }
 
   if (
-    roomId.startsWith(
+    rawValue.startsWith(
       "booking:"
     )
   ) {
-    return roomId;
+    const bookingId =
+      rawValue
+        .substring(
+          "booking:".length
+        )
+        .trim();
+
+    if (
+      !isValidObjectId(
+        bookingId
+      )
+    ) {
+      return "";
+    }
+
+    return `booking:${bookingId}`;
   }
 
   if (
-    isValidObjectId(roomId)
+    isValidObjectId(
+      rawValue
+    )
   ) {
-    return `booking:${roomId}`;
+    return `booking:${rawValue}`;
   }
 
-  return roomId;
+  return "";
 };
 
 const extractBookingId = (
@@ -614,6 +631,7 @@ const validateBookingChatAccess =
     bookingId,
     currentUserId,
     role,
+    requireWriteAccess = false,
   }) => {
     const booking =
       await getBookingForChat(
@@ -636,7 +654,8 @@ const validateBookingChatAccess =
       );
 
     const isAdmin =
-      role === "admin";
+      role === "admin" ||
+      role === "super_admin";
 
     if (
       !participantData.hasAccess &&
@@ -650,15 +669,76 @@ const validateBookingChatAccess =
       };
     }
 
+    const roomId =
+      normalizeRoomId(
+        booking.chatRoomId ||
+        booking._id.toString()
+      );
+
+    if (!roomId) {
+      return {
+        success: false,
+        statusCode: 409,
+        message:
+          "Booking chat room is not configured",
+      };
+    }
+
     if (
-      booking.chatEnabled ===
-      false
+      booking.otpVerified !==
+      true
     ) {
       return {
         success: false,
         statusCode: 403,
         message:
-          "Chat is disabled for this booking",
+          "Chat becomes available after service OTP verification",
+      };
+    }
+
+    const activeChatStatuses = [
+      BOOKING_STATUSES.OTP_VERIFIED,
+      BOOKING_STATUSES.IN_PROGRESS,
+    ];
+
+    const historyStatuses = [
+      BOOKING_STATUSES.COMPLETED,
+      BOOKING_STATUSES.CANCELLED,
+      BOOKING_STATUSES.REJECTED,
+    ];
+
+    const canWrite =
+      booking.chatEnabled === true &&
+      activeChatStatuses.includes(
+        booking.status
+      );
+
+    const canReadHistory =
+      historyStatuses.includes(
+        booking.status
+      );
+
+    if (
+      !canWrite &&
+      !canReadHistory
+    ) {
+      return {
+        success: false,
+        statusCode: 403,
+        message:
+          "Chat is not available for the current booking status",
+      };
+    }
+
+    if (
+      requireWriteAccess &&
+      !canWrite
+    ) {
+      return {
+        success: false,
+        statusCode: 403,
+        message:
+          "This booking chat is read-only",
       };
     }
 
@@ -666,6 +746,13 @@ const validateBookingChatAccess =
       success: true,
       booking,
       participantData,
+      roomId,
+
+      chatEnabled: canWrite,
+
+      readOnly:
+        !canWrite &&
+        canReadHistory,
     };
   };
 
@@ -738,12 +825,10 @@ export const getUserRooms = async (
             provider: userId,
           },
         ],
-
-        chatEnabled: {
-          $ne: false,
-        },
+        otpVerified: true,
 
         deletedAt: null,
+        
       })
         .populate(
           "user",
@@ -857,6 +942,10 @@ export const getUserRooms = async (
         chatEnabled:
           booking.chatEnabled !==
           false,
+
+        readOnly:
+           booking.chatEnabled !==
+           true,
 
         participantId:
           participantData
@@ -1004,6 +1093,8 @@ export const sendRoomMessage = async (
           senderId,
         role:
           senderRole,
+          requireWriteAccess:
+            true,
       });
 
     if (!access.success) {
@@ -1013,6 +1104,17 @@ export const sendRoomMessage = async (
         access.message
       );
     }
+
+    if (
+      !access.participantData
+         .hasAccess
+) {
+  return sendError(
+    res,
+    403,
+    "Only booking participants can send chat messages"
+  );
+}
 
     const message =
       normalizeString(
@@ -1039,40 +1141,32 @@ export const sendRoomMessage = async (
       );
     }
 
-    const requestedReceiverId =
-      normalizeString(
-        req.body.receiverId ||
-        req.body.receiver
-      );
-
     const receiverId =
-      requestedReceiverId ||
-      access.participantData
-        .otherUserId;
+  access.participantData
+    .otherUserId;
 
-    if (
-      !receiverId ||
-      !isValidObjectId(
-        receiverId
-      )
-    ) {
-      return sendError(
-        res,
-        400,
-        "A valid receiver ID is required"
-      );
-    }
+if (
+  !receiverId ||
+  !isValidObjectId(
+    receiverId
+  )
+) {
+  return sendError(
+    res,
+    400,
+    "Booking chat receiver is unavailable"
+  );
+}
 
-    if (
-      receiverId ===
-      senderId
-    ) {
-      return sendError(
-        res,
-        400,
-        "You cannot send a message to yourself"
-      );
-    }
+if (
+  receiverId === senderId
+) {
+  return sendError(
+    res,
+    400,
+    "Invalid booking chat participants"
+  );
+}
 
     const allowedReceiverIds = [
       access.participantData
@@ -1313,6 +1407,11 @@ export const getRoomMessages = async (
         "Room messages fetched successfully",
       roomId,
       bookingId,
+      chatEnabled:
+        access.chatEnabled === true,
+
+      readOnly:
+        access.readOnly === true,
       messages: data,
       data,
       count: data.length,
@@ -1561,7 +1660,8 @@ export const markRoomMessagesAsRead =
           access.booking
             .chatRoomId ||
           requestedRoomId ||
-          bookingId
+          bookingId ||
+          req.params.roomId
         );
 
       const receipt = {

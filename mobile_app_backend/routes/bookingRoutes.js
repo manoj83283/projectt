@@ -179,6 +179,13 @@ router.patch(
   providerOrAdmin,
   updateBookingStatus
 );
+
+router.post(
+  "/:id/arrived",
+  protect,
+  providerOrAdmin,
+  markProviderArrived
+);
 // =====================================================
 // SERVICE OTP ROUTES
 // =====================================================
@@ -194,6 +201,13 @@ router.get(
 // POST /api/bookings/:id/verify-service-otp
 router.post(
   "/:id/verify-service-otp",
+  protect,
+  providerOrAdmin,
+  verifyServiceOtp
+);
+
+router.post(
+  "/:id/verify-otp",
   protect,
   providerOrAdmin,
   verifyServiceOtp
@@ -283,6 +297,13 @@ router.patch(
 
 // PUT /api/bookings/:id/cancel
 router.put(
+  "/:id/cancel",
+  protect,
+  customerOrAdmin,
+  cancelBooking
+);
+
+router.post(
   "/:id/cancel",
   protect,
   customerOrAdmin,

@@ -13,22 +13,16 @@ extension OrderStatusExtension on OrderStatus {
     switch (this) {
       case OrderStatus.pending:
         return 'pending';
-
       case OrderStatus.accepted:
         return 'accepted';
-
       case OrderStatus.otpVerified:
         return 'otp_verified';
-
       case OrderStatus.inProgress:
         return 'in_progress';
-
       case OrderStatus.completed:
         return 'completed';
-
       case OrderStatus.cancelled:
         return 'cancelled';
-
       case OrderStatus.rejected:
         return 'rejected';
     }
@@ -38,22 +32,16 @@ extension OrderStatusExtension on OrderStatus {
     switch (this) {
       case OrderStatus.pending:
         return 'Pending';
-
       case OrderStatus.accepted:
         return 'Accepted';
-
       case OrderStatus.otpVerified:
         return 'OTP Verified';
-
       case OrderStatus.inProgress:
         return 'In Progress';
-
       case OrderStatus.completed:
         return 'Completed';
-
       case OrderStatus.cancelled:
         return 'Cancelled';
-
       case OrderStatus.rejected:
         return 'Rejected';
     }
@@ -82,9 +70,11 @@ extension OrderStatusExtension on OrderStatus {
       case 'processing':
       case 'inprogress':
       case 'in_progress':
+      case 'started':
         return OrderStatus.inProgress;
 
       case 'completed':
+      case 'complete':
       case 'delivered':
         return OrderStatus.completed;
 
@@ -159,16 +149,40 @@ class OrderModel {
   final String eventDate;
   final String bookingTime;
 
+  // =====================================================
+  // PROVIDER ARRIVAL
+  // =====================================================
+
   final bool providerArrived;
   final DateTime? providerArrivedAt;
   final bool providerArrivalVerified;
   final double? providerArrivalDistanceMeters;
 
+  // =====================================================
+  // OTP
+  // =====================================================
+
   final bool otpVerified;
   final DateTime? otpVerifiedAt;
 
+  // =====================================================
+  // BOOKING CHAT
+  // =====================================================
+
   final String chatRoomId;
   final bool chatEnabled;
+  final DateTime? chatClosedAt;
+
+  // =====================================================
+  // CALL / CONTACT
+  // =====================================================
+
+  final bool canCall;
+  final bool phoneVisible;
+
+  // =====================================================
+  // INVOICE
+  // =====================================================
 
   final String invoiceNumber;
   final String invoiceUrl;
@@ -245,7 +259,10 @@ class OrderModel {
     this.otpVerified = false,
     this.otpVerifiedAt,
     this.chatRoomId = '',
-    this.chatEnabled = true,
+    this.chatEnabled = false,
+    this.chatClosedAt,
+    this.canCall = false,
+    this.phoneVisible = false,
     this.invoiceNumber = '',
     this.invoiceUrl = '',
     this.invoiceGeneratedAt,
@@ -265,6 +282,10 @@ class OrderModel {
     this.rawProvider,
     this.rawBooking,
   });
+
+  // =====================================================
+  // EMPTY
+  // =====================================================
 
   factory OrderModel.empty() {
     return const OrderModel(
@@ -298,17 +319,28 @@ class OrderModel {
     );
   }
 
+  // =====================================================
+  // FROM JSON
+  // =====================================================
+
   factory OrderModel.fromJson(
     Map<String, dynamic> json,
   ) {
-    return OrderModel.fromMap(json);
+    return OrderModel.fromMap(
+      json,
+    );
   }
+
+  // =====================================================
+  // FROM MAP
+  // =====================================================
 
   factory OrderModel.fromMap(
     Map<String, dynamic> map,
   ) {
     final user = _asMap(
-      map['customer'] ?? map['user'],
+      map['customer'] ??
+          map['user'],
     );
 
     final service = _asMap(
@@ -324,83 +356,118 @@ class OrderModel {
     );
 
     final customerFirstName =
-        _asString(user?['firstName']);
+        _asString(
+      user?['firstName'],
+    );
 
     final customerLastName =
-        _asString(user?['lastName']);
+        _asString(
+      user?['lastName'],
+    );
 
-    final generatedCustomerName = [
+    final generatedCustomerName = <String>[
       customerFirstName,
       customerLastName,
-    ].where(
-      (value) => value.isNotEmpty,
-    ).join(' ').trim();
+    ]
+        .where(
+          (value) => value.isNotEmpty,
+        )
+        .join(' ')
+        .trim();
 
     final providerFirstName =
-        _asString(provider?['firstName']);
+        _asString(
+      provider?['firstName'],
+    );
 
     final providerLastName =
-        _asString(provider?['lastName']);
+        _asString(
+      provider?['lastName'],
+    );
 
-    final generatedProviderName = [
+    final generatedProviderName = <String>[
       providerFirstName,
       providerLastName,
-    ].where(
-      (value) => value.isNotEmpty,
-    ).join(' ').trim();
+    ]
+        .where(
+          (value) => value.isNotEmpty,
+        )
+        .join(' ')
+        .trim();
 
-    final parsedBookingId = _extractId(
+    final parsedBookingId =
+        _extractId(
       booking ??
           map['bookingId'] ??
           map['booking'],
     );
 
-    final parsedId = _asString(
-      map['_id'] ?? map['id'],
-      fallback: parsedBookingId,
+    final parsedId =
+        _asString(
+      map['_id'] ??
+          map['id'],
+      fallback:
+          parsedBookingId,
     );
 
-    final parsedCustomerId = _asString(
-      map['customerId'] ?? map['userId'],
-      fallback: _extractId(
+    final effectiveParsedBookingId =
+        parsedBookingId.isNotEmpty
+            ? parsedBookingId
+            : parsedId;
+
+    final parsedCustomerId =
+        _asString(
+      map['customerId'] ??
+          map['userId'],
+      fallback:
+          _extractId(
         user ??
             map['customer'] ??
             map['user'],
       ),
     );
 
-    final parsedProviderId = _asString(
+    final parsedProviderId =
+        _asString(
       map['providerId'],
-      fallback: _extractId(
+      fallback:
+          _extractId(
         provider ??
             map['provider'] ??
             service?['provider'],
       ),
     );
 
-    final parsedServiceId = _asString(
+    final parsedServiceId =
+        _asString(
       map['serviceId'],
-      fallback: _extractId(
-        service ?? map['service'],
+      fallback:
+          _extractId(
+        service ??
+            map['service'],
       ),
     );
 
-    final parsedOrderDate = _asString(
+    final parsedOrderDate =
+        _asString(
       map['orderDate'] ??
           map['date'] ??
           booking?['date'] ??
           map['createdAt'],
     );
 
-    final parsedEventDate = _asString(
+    final parsedEventDate =
+        _asString(
       map['eventDate'] ??
           map['bookingDate'] ??
           booking?['bookingDate'] ??
           booking?['date'],
-      fallback: parsedOrderDate,
+      fallback:
+          parsedOrderDate,
     );
 
-    final parsedAddress = _asString(
+    final parsedAddress =
+        _asString(
       map['eventAddress'] ??
           map['address'] ??
           map['location'] ??
@@ -408,7 +475,8 @@ class OrderModel {
           booking?['location'],
     );
 
-    final parsedSubtotal = _toDouble(
+    final parsedSubtotal =
+        _toDouble(
       map['subtotal'] ??
           map['amount'] ??
           map['price'] ??
@@ -416,23 +484,27 @@ class OrderModel {
           booking?['totalPrice'],
     );
 
-    final parsedTotal = _toDouble(
+    final parsedTotal =
+        _toDouble(
       map['totalAmount'] ??
           map['totalPrice'] ??
           map['amount'] ??
           booking?['totalAmount'] ??
           booking?['totalPrice'],
-      fallback: parsedSubtotal,
+      fallback:
+          parsedSubtotal,
     );
 
-    final parsedStatus = _normalizeStatus(
+    final parsedStatus =
+        _normalizeStatus(
       map['status'] ??
           map['bookingStatus'] ??
           booking?['status'] ??
           booking?['bookingStatus'],
     );
 
-    final locationPoint = _asMap(
+    final locationPoint =
+        _asMap(
       map['locationPoint'] ??
           booking?['locationPoint'],
     );
@@ -443,50 +515,133 @@ class OrderModel {
     double? latitude;
     double? longitude;
 
-    if (
-      coordinates is List &&
-      coordinates.length >= 2
-    ) {
-      longitude = _toNullableDouble(
+    if (coordinates is List &&
+        coordinates.length >= 2) {
+      longitude =
+          _toNullableDouble(
         coordinates[0],
       );
 
-      latitude = _toNullableDouble(
+      latitude =
+          _toNullableDouble(
         coordinates[1],
       );
     }
 
-    latitude ??= _toNullableDouble(
+    latitude ??=
+        _toNullableDouble(
       map['latitude'] ??
           booking?['latitude'],
     );
 
-    longitude ??= _toNullableDouble(
+    longitude ??=
+        _toNullableDouble(
       map['longitude'] ??
           booking?['longitude'],
     );
 
-    final resolvedBookingNumber = _asString(
+    final resolvedBookingNumber =
+        _asString(
       map['bookingNumber'] ??
           booking?['bookingNumber'],
     );
 
-    final resolvedOrderNumber = _asString(
+    final resolvedOrderNumber =
+        _asString(
       map['orderNumber'] ??
           map['orderNo'],
-      fallback: resolvedBookingNumber,
+      fallback:
+          resolvedBookingNumber,
+    );
+
+    final resolvedChatRoomId =
+        _asString(
+      map['chatRoomId'] ??
+          booking?['chatRoomId'],
+      fallback:
+          effectiveParsedBookingId.isNotEmpty
+              ? 'booking:$effectiveParsedBookingId'
+              : '',
+    );
+
+    final statusIsWritable =
+        <String>{
+      'pending',
+      'accepted',
+      'otp_verified',
+      'in_progress',
+    }.contains(
+      parsedStatus,
+    );
+
+    final statusAllowsCall =
+        <String>{
+      'accepted',
+      'otp_verified',
+      'in_progress',
+    }.contains(
+      parsedStatus,
+    );
+
+    final parsedChatEnabled =
+        _asBool(
+      map['chatEnabled'] ??
+          booking?['chatEnabled'],
+      fallback:
+          statusIsWritable &&
+          resolvedChatRoomId.isNotEmpty,
+    );
+
+    final parsedCanCall =
+        _asBool(
+      map['canCall'] ??
+          booking?['canCall'] ??
+          map['callEnabled'] ??
+          booking?['callEnabled'] ??
+          map['contactEnabled'] ??
+          booking?['contactEnabled'],
+      fallback:
+          statusAllowsCall,
+    );
+
+    final parsedPhoneVisible =
+        _asBool(
+      map['phoneVisible'] ??
+          booking?['phoneVisible'],
+      fallback:
+          parsedCanCall,
+    );
+
+    /*
+     * IMPORTANT:
+     *
+     * Use the serialized customerPhone first.
+     * The backend is responsible for hiding customer contact
+     * information until calling is permitted.
+     */
+    final parsedCustomerPhone =
+        _asString(
+      map['customerPhone'] ??
+          booking?['customerPhone'],
+      fallback:
+          parsedPhoneVisible
+              ? _asString(
+                  user?['phone'] ??
+                      user?['mobile'] ??
+                      booking?['contactNumber'],
+                )
+              : '',
     );
 
     return OrderModel(
-      id: parsedId,
+      id:
+          parsedId,
 
       orderNumber:
           resolvedOrderNumber,
 
       bookingId:
-          parsedBookingId.isNotEmpty
-          ? parsedBookingId
-          : parsedId,
+          effectiveParsedBookingId,
 
       bookingNumber:
           resolvedBookingNumber,
@@ -494,9 +649,11 @@ class OrderModel {
       customerId:
           parsedCustomerId,
 
-      customerName: _asString(
+      customerName:
+          _asString(
         map['customerName'],
-        fallback: _asString(
+        fallback:
+            _asString(
           user?['fullName'] ??
               user?['name'],
           fallback:
@@ -504,19 +661,17 @@ class OrderModel {
         ),
       ),
 
-      customerEmail: _asString(
+      customerEmail:
+          _asString(
         map['customerEmail'] ??
             user?['email'],
       ),
 
-      customerPhone: _asString(
-        map['customerPhone'] ??
-            user?['phone'] ??
-            user?['mobile'] ??
-            booking?['contactNumber'],
-      ),
+      customerPhone:
+          parsedCustomerPhone,
 
-      customerImage: _asString(
+      customerImage:
+          _asString(
         map['customerImage'] ??
             user?['profileImage'],
       ),
@@ -524,9 +679,11 @@ class OrderModel {
       providerId:
           parsedProviderId,
 
-      providerName: _asString(
+      providerName:
+          _asString(
         map['providerName'],
-        fallback: _asString(
+        fallback:
+            _asString(
           provider?['businessName'] ??
               provider?['shopName'] ??
               provider?['fullName'] ??
@@ -536,18 +693,21 @@ class OrderModel {
         ),
       ),
 
-      providerEmail: _asString(
+      providerEmail:
+          _asString(
         map['providerEmail'] ??
             provider?['email'],
       ),
 
-      providerPhone: _asString(
+      providerPhone:
+          _asString(
         map['providerPhone'] ??
             provider?['phone'] ??
             provider?['mobile'],
       ),
 
-      providerImage: _asString(
+      providerImage:
+          _asString(
         map['providerImage'] ??
             provider?['profileImage'],
       ),
@@ -555,25 +715,30 @@ class OrderModel {
       serviceId:
           parsedServiceId,
 
-      serviceName: _asString(
+      serviceName:
+          _asString(
         map['serviceName'] ??
             service?['name'] ??
             service?['title'],
-        fallback: 'Service',
+        fallback:
+            'Service',
       ),
 
-      serviceImage: _extractServiceImage(
+      serviceImage:
+          _extractServiceImage(
         map,
         service,
       ),
 
-      basePrice: _toDouble(
+      basePrice:
+          _toDouble(
         map['basePrice'] ??
             booking?['basePrice'] ??
             service?['basePrice'],
       ),
 
-      pricePerHour: _toDouble(
+      pricePerHour:
+          _toDouble(
         map['pricePerHour'] ??
             booking?['pricePerHour'] ??
             service?['pricePerHour'],
@@ -582,19 +747,22 @@ class OrderModel {
       subtotal:
           parsedSubtotal,
 
-      taxAmount: _toDouble(
+      taxAmount:
+          _toDouble(
         map['taxAmount'] ??
             map['gst'] ??
             booking?['taxAmount'],
       ),
 
-      discountAmount: _toDouble(
+      discountAmount:
+          _toDouble(
         map['discountAmount'] ??
             map['discount'] ??
             booking?['discountAmount'],
       ),
 
-      platformFee: _toDouble(
+      platformFee:
+          _toDouble(
         map['platformFee'] ??
             map['serviceFee'] ??
             booking?['platformFee'],
@@ -603,32 +771,39 @@ class OrderModel {
       totalAmount:
           parsedTotal,
 
-      currency: _asString(
+      currency:
+          _asString(
         map['currency'] ??
             booking?['currency'],
-        fallback: 'INR',
+        fallback:
+            'INR',
       ).toUpperCase(),
 
       status:
           parsedStatus,
 
-      paymentStatus: _asString(
+      paymentStatus:
+          _asString(
         map['paymentStatus'] ??
             booking?['paymentStatus'],
-        fallback: 'pending',
+        fallback:
+            'pending',
       ).toLowerCase(),
 
-      paymentMethod: _asString(
+      paymentMethod:
+          _asString(
         map['paymentMethod'] ??
             booking?['paymentMethod'],
       ).toUpperCase(),
 
-      paymentId: _asString(
+      paymentId:
+          _asString(
         map['paymentId'] ??
             booking?['paymentId'],
       ),
 
-      transactionId: _asString(
+      transactionId:
+          _asString(
         map['transactionId'] ??
             map['paymentId'] ??
             booking?['transactionId'] ??
@@ -638,42 +813,52 @@ class OrderModel {
       eventAddress:
           parsedAddress,
 
-      city: _asString(
+      city:
+          _asString(
         map['city'] ??
             booking?['city'],
       ),
 
-      state: _asString(
+      state:
+          _asString(
         map['state'] ??
             booking?['state'],
       ),
 
-      location: _asString(
+      location:
+          _asString(
         map['location'] ??
             booking?['location'],
-        fallback: parsedAddress,
+        fallback:
+            parsedAddress,
       ),
 
-      landmark: _asString(
+      landmark:
+          _asString(
         map['landmark'] ??
             booking?['landmark'],
       ),
 
-      nearbyLocation: _asString(
+      nearbyLocation:
+          _asString(
         map['nearbyLocation'] ??
             booking?['nearbyLocation'],
       ),
 
-      latitude: latitude,
+      latitude:
+          latitude,
 
-      longitude: longitude,
+      longitude:
+          longitude,
 
-      notes: _asString(
+      notes:
+          _asString(
         map['notes'] ??
             booking?['notes'],
       ),
 
-      specialInstructions: _asString(
+      specialInstructions:
+          _asString(
         map['specialInstructions'] ??
             booking?['specialInstructions'],
       ),
@@ -684,248 +869,494 @@ class OrderModel {
       eventDate:
           parsedEventDate,
 
-      bookingTime: _asString(
+      bookingTime:
+          _asString(
         map['bookingTime'] ??
             booking?['bookingTime'],
       ),
 
-      providerArrived: _asBool(
+      // =================================================
+      // PROVIDER ARRIVAL
+      // =================================================
+
+      providerArrived:
+          _asBool(
         map['providerArrived'] ??
-           booking?['providerArrived'],
+            booking?['providerArrived'],
       ),
 
-      providerArrivedAt: _toDateTime(
+      providerArrivedAt:
+          _toDateTime(
         map['providerArrivedAt'] ??
-           booking?['providerArrivedAt'],
+            booking?['providerArrivedAt'],
       ),
 
-      providerArrivalVerified: _asBool(
+      providerArrivalVerified:
+          _asBool(
         map['providerArrivalVerified'] ??
-           booking?['providerArrivalVerified'],
+            booking?['providerArrivalVerified'],
       ),
 
       providerArrivalDistanceMeters:
-           _toNullableDouble(
+          _toNullableDouble(
         map['providerArrivalDistanceMeters'] ??
-           booking?['providerArrivalDistanceMeters'],
+            booking?['providerArrivalDistanceMeters'],
       ),
 
-      otpVerified: _asBool(
-         map['otpVerified'] ??
-          booking?['otpVerified'],
+      // =================================================
+      // OTP
+      // =================================================
+
+      otpVerified:
+          _asBool(
+        map['otpVerified'] ??
+            booking?['otpVerified'],
+        fallback:
+            parsedStatus ==
+                'otp_verified',
       ),
 
-      otpVerifiedAt: _toDateTime(
+      otpVerifiedAt:
+          _toDateTime(
         map['otpVerifiedAt'] ??
             booking?['otpVerifiedAt'],
       ),
 
-      chatRoomId: _asString(
-        map['chatRoomId'] ??
-            booking?['chatRoomId'],
-        fallback:
-            parsedBookingId.isNotEmpty
-            ? 'booking:$parsedBookingId'
-            : '',
+      // =================================================
+      // BOOKING CHAT
+      // =================================================
+
+      chatRoomId:
+          resolvedChatRoomId,
+
+      chatEnabled:
+          parsedChatEnabled,
+
+      chatClosedAt:
+          _toDateTime(
+        map['chatClosedAt'] ??
+            booking?['chatClosedAt'],
       ),
 
-      chatEnabled: _asBool(
-        map['chatEnabled'] ??
-            booking?['chatEnabled'],
-        fallback: true,
-      ),
+      // =================================================
+      // CALL / PHONE
+      // =================================================
 
-      invoiceNumber: _asString(
+      canCall:
+          parsedCanCall,
+
+      phoneVisible:
+          parsedPhoneVisible,
+
+      // =================================================
+      // INVOICE
+      // =================================================
+
+      invoiceNumber:
+          _asString(
         map['invoiceNumber'] ??
             booking?['invoiceNumber'],
       ),
 
-      invoiceUrl: _asString(
+      invoiceUrl:
+          _asString(
         map['invoiceUrl'] ??
             booking?['invoiceUrl'],
       ),
 
-      invoiceGeneratedAt: _toDateTime(
+      invoiceGeneratedAt:
+          _toDateTime(
         map['invoiceGeneratedAt'] ??
             booking?['invoiceGeneratedAt'],
       ),
 
-      durationMinutes: _toInt(
+      durationMinutes:
+          _toInt(
         map['durationMinutes'] ??
             map['serviceDurationMinutes'] ??
             booking?['durationMinutes'],
       ),
 
-      rejectionReason: _asString(
+      rejectionReason:
+          _asString(
         map['rejectionReason'] ??
             booking?['rejectionReason'],
       ),
 
-      cancellationReason: _asString(
+      cancellationReason:
+          _asString(
         map['cancellationReason'] ??
             booking?['cancellationReason'],
       ),
 
-      acceptedAt: _toDateTime(
+      acceptedAt:
+          _toDateTime(
         map['acceptedAt'] ??
             booking?['acceptedAt'],
       ),
 
-      rejectedAt: _toDateTime(
+      rejectedAt:
+          _toDateTime(
         map['rejectedAt'] ??
             booking?['rejectedAt'],
       ),
 
-      startedAt: _toDateTime(
+      startedAt:
+          _toDateTime(
         map['startedAt'] ??
             booking?['startedAt'],
       ),
 
-      completedDate: _toDateTime(
+      completedDate:
+          _toDateTime(
         map['completedDate'] ??
             map['completedAt'] ??
             booking?['completedAt'],
       ),
 
-      cancelledDate: _toDateTime(
+      cancelledDate:
+          _toDateTime(
         map['cancelledDate'] ??
             map['cancelledAt'] ??
             booking?['cancelledAt'],
       ),
 
-      paidAt: _toDateTime(
+      paidAt:
+          _toDateTime(
         map['paidAt'] ??
             booking?['paidAt'],
       ),
 
-      createdAt: _toDateTime(
+      createdAt:
+          _toDateTime(
         map['createdAt'] ??
             booking?['createdAt'],
       ),
 
-      updatedAt: _toDateTime(
+      updatedAt:
+          _toDateTime(
         map['updatedAt'] ??
             booking?['updatedAt'],
       ),
 
-      rawUser: user,
-      rawService: service,
-      rawProvider: provider,
-      rawBooking: booking,
+      rawUser:
+          user,
+
+      rawService:
+          service,
+
+      rawProvider:
+          provider,
+
+      rawBooking:
+          booking,
     );
   }
 
+  // =====================================================
+  // TO JSON / MAP
+  // =====================================================
+
   Map<String, dynamic> toJson() {
-    return {
+    return <String, dynamic>{
       '_id': id,
       'id': id,
-      'orderNumber': orderNumber,
-      'bookingId': bookingId,
-      'bookingNumber': bookingNumber,
-      'customerId': customerId,
-      'customerName': customerName,
-      'customerEmail': customerEmail,
-      'customerPhone': customerPhone,
-      'customerImage': customerImage,
-      'providerId': providerId,
-      'providerName': providerName,
-      'providerEmail': providerEmail,
-      'providerPhone': providerPhone,
-      'providerImage': providerImage,
-      'serviceId': serviceId,
-      'serviceName': serviceName,
-      'serviceImage': serviceImage,
-      'basePrice': basePrice,
-      'pricePerHour': pricePerHour,
-      'subtotal': subtotal,
-      'taxAmount': taxAmount,
-      'discountAmount': discountAmount,
-      'platformFee': platformFee,
-      'totalAmount': totalAmount,
-      'totalPrice': totalAmount,
-      'currency': currency,
-      'status': status,
-      'bookingStatus': status,
-      'paymentStatus': paymentStatus,
-      'paymentMethod': paymentMethod,
-      'paymentId': paymentId,
-      'transactionId': transactionId,
-      'eventAddress': eventAddress,
-      'address': eventAddress,
-      'city': city,
-      'state': state,
-      'location': location,
-      'landmark': landmark,
-      'nearbyLocation': nearbyLocation,
-      'latitude': latitude,
-      'longitude': longitude,
-      'locationPoint': {
+
+      'orderNumber':
+          orderNumber,
+
+      'bookingId':
+          bookingId,
+
+      'bookingNumber':
+          bookingNumber,
+
+      'customerId':
+          customerId,
+
+      'customerName':
+          customerName,
+
+      'customerEmail':
+          customerEmail,
+
+      'customerPhone':
+          customerPhone,
+
+      'customerImage':
+          customerImage,
+
+      'providerId':
+          providerId,
+
+      'providerName':
+          providerName,
+
+      'providerEmail':
+          providerEmail,
+
+      'providerPhone':
+          providerPhone,
+
+      'providerImage':
+          providerImage,
+
+      'serviceId':
+          serviceId,
+
+      'serviceName':
+          serviceName,
+
+      'serviceImage':
+          serviceImage,
+
+      'basePrice':
+          basePrice,
+
+      'pricePerHour':
+          pricePerHour,
+
+      'subtotal':
+          subtotal,
+
+      'taxAmount':
+          taxAmount,
+
+      'discountAmount':
+          discountAmount,
+
+      'platformFee':
+          platformFee,
+
+      'totalAmount':
+          totalAmount,
+
+      'totalPrice':
+          totalAmount,
+
+      'currency':
+          currency,
+
+      'status':
+          status,
+
+      'bookingStatus':
+          status,
+
+      'paymentStatus':
+          paymentStatus,
+
+      'paymentMethod':
+          paymentMethod,
+
+      'paymentId':
+          paymentId,
+
+      'transactionId':
+          transactionId,
+
+      'eventAddress':
+          eventAddress,
+
+      'address':
+          eventAddress,
+
+      'city':
+          city,
+
+      'state':
+          state,
+
+      'location':
+          location,
+
+      'landmark':
+          landmark,
+
+      'nearbyLocation':
+          nearbyLocation,
+
+      'latitude':
+          latitude,
+
+      'longitude':
+          longitude,
+
+      'locationPoint':
+          <String, dynamic>{
         'type': 'Point',
-        'coordinates': [
+        'coordinates': <double>[
           longitude ?? 0,
           latitude ?? 0,
         ],
       },
-      'notes': notes,
+
+      'notes':
+          notes,
+
       'specialInstructions':
           specialInstructions,
-      'orderDate': orderDate,
-      'eventDate': eventDate,
-      'bookingDate': eventDate,
-      'bookingTime': bookingTime,
-      'providerArrived': providerArrived,
+
+      'orderDate':
+          orderDate,
+
+      'eventDate':
+          eventDate,
+
+      'bookingDate':
+          eventDate,
+
+      'bookingTime':
+          bookingTime,
+
+      // =================================================
+      // ARRIVAL
+      // =================================================
+
+      'providerArrived':
+          providerArrived,
+
       'providerArrivedAt':
-          providerArrivedAt?.toIso8601String(),
+          providerArrivedAt
+              ?.toIso8601String(),
+
       'providerArrivalVerified':
           providerArrivalVerified,
+
       'providerArrivalDistanceMeters':
           providerArrivalDistanceMeters,
-      'otpVerified': otpVerified,
+
+      // =================================================
+      // OTP
+      // =================================================
+
+      'otpVerified':
+          otpVerified,
+
       'otpVerifiedAt':
-          otpVerifiedAt?.toIso8601String(),
-      'chatRoomId': chatRoomId,
-      'chatEnabled': chatEnabled,
-      'invoiceNumber': invoiceNumber,
-      'invoiceUrl': invoiceUrl,
+          otpVerifiedAt
+              ?.toIso8601String(),
+
+      // =================================================
+      // CHAT
+      // =================================================
+
+      'chatRoomId':
+          effectiveChatRoomId,
+
+      'chatEnabled':
+          chatEnabled,
+
+      'chatClosedAt':
+          chatClosedAt
+              ?.toIso8601String(),
+
+      'canOpenChat':
+          canOpenChat,
+
+      'canViewChatHistory':
+          canViewChatHistory,
+
+      'isChatReadOnly':
+          isChatReadOnly,
+
+      // =================================================
+      // CALL
+      // =================================================
+
+      'canCall':
+          canCall,
+
+      'phoneVisible':
+          phoneVisible,
+
+      'canCallCustomer':
+          canCallCustomer,
+
+      // =================================================
+      // INVOICE
+      // =================================================
+
+      'invoiceNumber':
+          invoiceNumber,
+
+      'invoiceUrl':
+          invoiceUrl,
+
       'invoiceGeneratedAt':
           invoiceGeneratedAt
               ?.toIso8601String(),
+
       'durationMinutes':
           durationMinutes,
+
       'rejectionReason':
           rejectionReason,
+
       'cancellationReason':
           cancellationReason,
+
       'acceptedAt':
-          acceptedAt?.toIso8601String(),
+          acceptedAt
+              ?.toIso8601String(),
+
       'rejectedAt':
-          rejectedAt?.toIso8601String(),
+          rejectedAt
+              ?.toIso8601String(),
+
       'startedAt':
-          startedAt?.toIso8601String(),
+          startedAt
+              ?.toIso8601String(),
+
       'completedDate':
-          completedDate?.toIso8601String(),
+          completedDate
+              ?.toIso8601String(),
+
       'completedAt':
-          completedDate?.toIso8601String(),
+          completedDate
+              ?.toIso8601String(),
+
       'cancelledDate':
-          cancelledDate?.toIso8601String(),
+          cancelledDate
+              ?.toIso8601String(),
+
       'cancelledAt':
-          cancelledDate?.toIso8601String(),
+          cancelledDate
+              ?.toIso8601String(),
+
       'paidAt':
-          paidAt?.toIso8601String(),
+          paidAt
+              ?.toIso8601String(),
+
       'createdAt':
-          createdAt?.toIso8601String(),
+          createdAt
+              ?.toIso8601String(),
+
       'updatedAt':
-          updatedAt?.toIso8601String(),
-      'user': rawUser,
-      'service': rawService,
-      'provider': rawProvider,
-      'booking': rawBooking,
+          updatedAt
+              ?.toIso8601String(),
+
+      'user':
+          rawUser,
+
+      'service':
+          rawService,
+
+      'provider':
+          rawProvider,
+
+      'booking':
+          rawBooking,
     };
   }
 
   Map<String, dynamic> toMap() {
     return toJson();
   }
+
+  // =====================================================
+  // STATUS
+  // =====================================================
 
   static OrderStatus _parseStatus(
     dynamic value,
@@ -936,7 +1367,9 @@ class OrderModel {
   }
 
   OrderStatus get statusEnum {
-    return _parseStatus(status);
+    return _parseStatus(
+      status,
+    );
   }
 
   String get statusText {
@@ -948,19 +1381,25 @@ class OrderModel {
   }
 
   DateTime? get orderDateTime {
-    return _toDateTime(orderDate);
+    return _toDateTime(
+      orderDate,
+    );
   }
 
   DateTime? get eventDateTime {
-    return _toDateTime(eventDate);
+    return _toDateTime(
+      eventDate,
+    );
   }
 
   bool get isPending {
-    return normalizedStatus == 'pending';
+    return normalizedStatus ==
+        'pending';
   }
 
   bool get isAccepted {
-    return normalizedStatus == 'accepted';
+    return normalizedStatus ==
+        'accepted';
   }
 
   bool get isConfirmed {
@@ -1010,6 +1449,17 @@ class OrderModel {
         isRejected;
   }
 
+  bool get isActive {
+    return isPending ||
+        isAccepted ||
+        isOtpVerified ||
+        isInProgress;
+  }
+
+  // =====================================================
+  // PROVIDER ACTIONS
+  // =====================================================
+
   bool get canAccept {
     return isPending;
   }
@@ -1020,19 +1470,20 @@ class OrderModel {
 
   bool get canProviderMarkArrived {
     return isAccepted &&
-      !providerArrived;
+        !providerArrived;
   }
 
   bool get canVerifyOtp {
     return isAccepted &&
-      providerArrived &&
-      !otpVerified;
+        providerArrived &&
+        !otpVerified;
   }
 
   bool get canStart {
-    return isOtpVerified &&
-      providerArrived &&
-      otpVerified;
+    return normalizedStatus ==
+            'otp_verified' &&
+        providerArrived &&
+        otpVerified;
   }
 
   bool get canComplete {
@@ -1041,8 +1492,8 @@ class OrderModel {
 
   bool get canCancel {
     return isAccepted ||
-      isOtpVerified ||
-      isInProgress;
+        isOtpVerified ||
+        isInProgress;
   }
 
   bool get hasProviderArrived {
@@ -1051,63 +1502,25 @@ class OrderModel {
 
   bool get isWaitingForProviderArrival {
     return isAccepted &&
-      !providerArrived;
+        !providerArrived;
   }
 
   bool get isWaitingForOtpVerification {
     return isAccepted &&
-      providerArrived &&
-      !otpVerified;
+        providerArrived &&
+        !otpVerified;
   }
 
   bool get isReadyToStart {
-    return isOtpVerified &&
-      providerArrived &&
-      otpVerified;
+    return normalizedStatus ==
+            'otp_verified' &&
+        providerArrived &&
+        otpVerified;
   }
 
-  bool get canChat {
-    return chatEnabled &&
-        (
-          isAccepted ||
-          isOtpVerified ||
-          isInProgress ||
-          isCompleted
-        );
-  }
-
-  bool get canCall {
-    return customerPhone
-            .trim()
-            .isNotEmpty &&
-        (
-          isAccepted ||
-          isOtpVerified ||
-          isInProgress
-        );
-  }
-
-  bool get canOpenMaps {
-    return hasCoordinates ||
-        eventAddress
-            .trim()
-            .isNotEmpty ||
-        location.trim().isNotEmpty;
-  }
-
-  bool get hasCoordinates {
-    return latitude != null &&
-        longitude != null &&
-        latitude != 0 &&
-        longitude != 0;
-  }
-
-  bool get hasInvoice {
-    return isCompleted &&
-        invoiceNumber
-            .trim()
-            .isNotEmpty;
-  }
+  // =====================================================
+  // BOOKING CHAT
+  // =====================================================
 
   bool get hasChatRoom {
     return effectiveChatRoomId
@@ -1115,28 +1528,109 @@ class OrderModel {
   }
 
   String get effectiveChatRoomId {
-    if (chatRoomId.trim().isNotEmpty) {
-      if (
-        chatRoomId.startsWith(
-          'booking:',
-        )
-      ) {
-        return chatRoomId.trim();
-      }
-
-      return 'booking:${chatRoomId.trim()}';
-    }
-
     final resolvedBookingId =
         bookingId.trim().isNotEmpty
-        ? bookingId.trim()
-        : id.trim();
+            ? bookingId.trim()
+            : id.trim();
 
-    if (resolvedBookingId.isEmpty) {
+    /*
+     * Booking rooms are canonical on Customer and
+     * Provider applications.
+     */
+    if (resolvedBookingId.isNotEmpty) {
+      return 'booking:$resolvedBookingId';
+    }
+
+    final room =
+        chatRoomId.trim();
+
+    if (room.isEmpty) {
       return '';
     }
 
-    return 'booking:$resolvedBookingId';
+    if (room.startsWith(
+      'booking:',
+    )) {
+      return room;
+    }
+
+    return 'booking:$room';
+  }
+
+  bool get canOpenChat {
+    return chatEnabled &&
+        !isTerminal &&
+        effectiveChatRoomId
+            .isNotEmpty;
+  }
+
+  /*
+   * Compatibility alias.
+   */
+  bool get canChat {
+    return canOpenChat;
+  }
+
+  bool get isChatReadOnly {
+    return isTerminal &&
+        effectiveChatRoomId
+            .isNotEmpty;
+  }
+
+  bool get canViewChatHistory {
+    return isChatReadOnly;
+  }
+
+  bool get isChatAvailable {
+    return effectiveChatRoomId
+        .isNotEmpty;
+  }
+
+  // =====================================================
+  // CUSTOMER CALLING
+  // =====================================================
+
+  bool get canCallCustomer {
+    return canCall &&
+        phoneVisible &&
+        customerPhone
+            .trim()
+            .isNotEmpty &&
+        (isAccepted ||
+            isOtpVerified ||
+            isInProgress);
+  }
+
+  /*
+   * Compatibility getter for Provider screens that
+   * previously checked canCall directly as a derived
+   * property must now use canCallCustomer.
+   *
+   * canCall is the raw backend permission field.
+   */
+  bool get canShowCustomerPhone {
+    return canCallCustomer;
+  }
+
+  // =====================================================
+  // MAPS / LOCATION
+  // =====================================================
+
+  bool get canOpenMaps {
+    return hasCoordinates ||
+        eventAddress
+            .trim()
+            .isNotEmpty ||
+        location
+            .trim()
+            .isNotEmpty;
+  }
+
+  bool get hasCoordinates {
+    return latitude != null &&
+        longitude != null &&
+        latitude != 0 &&
+        longitude != 0;
   }
 
   String get effectiveAddress {
@@ -1148,6 +1642,21 @@ class OrderModel {
 
     return location.trim();
   }
+
+  // =====================================================
+  // INVOICE
+  // =====================================================
+
+  bool get hasInvoice {
+    return isCompleted &&
+        invoiceNumber
+            .trim()
+            .isNotEmpty;
+  }
+
+  // =====================================================
+  // DURATION
+  // =====================================================
 
   String get formattedDuration {
     if (durationMinutes <= 0) {
@@ -1173,10 +1682,18 @@ class OrderModel {
     return '$hours hr $minutes min';
   }
 
+  // =====================================================
+  // EARNINGS
+  // =====================================================
+
   double get netAmount {
     return totalAmount -
         platformFee;
   }
+
+  // =====================================================
+  // COPY WITH
+  // =====================================================
 
   OrderModel copyWith({
     String? id,
@@ -1230,6 +1747,9 @@ class OrderModel {
     DateTime? otpVerifiedAt,
     String? chatRoomId,
     bool? chatEnabled,
+    DateTime? chatClosedAt,
+    bool? canCall,
+    bool? phoneVisible,
     String? invoiceNumber,
     String? invoiceUrl,
     DateTime? invoiceGeneratedAt,
@@ -1250,134 +1770,178 @@ class OrderModel {
     Map<String, dynamic>? rawBooking,
   }) {
     return OrderModel(
-      id: id ?? this.id,
+      id:
+          id ??
+          this.id,
+
       orderNumber:
           orderNumber ??
           this.orderNumber,
+
       bookingId:
           bookingId ??
           this.bookingId,
+
       bookingNumber:
           bookingNumber ??
           this.bookingNumber,
+
       customerId:
           customerId ??
           this.customerId,
+
       customerName:
           customerName ??
           this.customerName,
+
       customerEmail:
           customerEmail ??
           this.customerEmail,
+
       customerPhone:
           customerPhone ??
           this.customerPhone,
+
       customerImage:
           customerImage ??
           this.customerImage,
+
       providerId:
           providerId ??
           this.providerId,
+
       providerName:
           providerName ??
           this.providerName,
+
       providerEmail:
           providerEmail ??
           this.providerEmail,
+
       providerPhone:
           providerPhone ??
           this.providerPhone,
+
       providerImage:
           providerImage ??
           this.providerImage,
+
       serviceId:
           serviceId ??
           this.serviceId,
+
       serviceName:
           serviceName ??
           this.serviceName,
+
       serviceImage:
           serviceImage ??
           this.serviceImage,
+
       basePrice:
           basePrice ??
           this.basePrice,
+
       pricePerHour:
           pricePerHour ??
           this.pricePerHour,
+
       subtotal:
           subtotal ??
           this.subtotal,
+
       taxAmount:
           taxAmount ??
           this.taxAmount,
+
       discountAmount:
           discountAmount ??
           this.discountAmount,
+
       platformFee:
           platformFee ??
           this.platformFee,
+
       totalAmount:
           totalAmount ??
           this.totalAmount,
+
       currency:
           currency ??
           this.currency,
+
       status:
           status ??
           this.status,
+
       paymentStatus:
           paymentStatus ??
           this.paymentStatus,
+
       paymentMethod:
           paymentMethod ??
           this.paymentMethod,
+
       paymentId:
           paymentId ??
           this.paymentId,
+
       transactionId:
           transactionId ??
           this.transactionId,
+
       eventAddress:
           eventAddress ??
           this.eventAddress,
+
       city:
           city ??
           this.city,
+
       state:
           state ??
           this.state,
+
       location:
           location ??
           this.location,
+
       landmark:
           landmark ??
           this.landmark,
+
       nearbyLocation:
           nearbyLocation ??
           this.nearbyLocation,
+
       latitude:
           latitude ??
           this.latitude,
+
       longitude:
           longitude ??
           this.longitude,
+
       notes:
           notes ??
           this.notes,
+
       specialInstructions:
           specialInstructions ??
           this.specialInstructions,
+
       orderDate:
           orderDate ??
           this.orderDate,
+
       eventDate:
           eventDate ??
           this.eventDate,
+
       bookingTime:
           bookingTime ??
           this.bookingTime,
-          
+
       providerArrived:
           providerArrived ??
           this.providerArrived,
@@ -1391,84 +1955,122 @@ class OrderModel {
           this.providerArrivalVerified,
 
       providerArrivalDistanceMeters:
-         providerArrivalDistanceMeters ??
-         this.providerArrivalDistanceMeters,
-
+          providerArrivalDistanceMeters ??
+          this.providerArrivalDistanceMeters,
 
       otpVerified:
           otpVerified ??
           this.otpVerified,
+
       otpVerifiedAt:
           otpVerifiedAt ??
           this.otpVerifiedAt,
+
       chatRoomId:
           chatRoomId ??
           this.chatRoomId,
+
       chatEnabled:
           chatEnabled ??
           this.chatEnabled,
+
+      chatClosedAt:
+          chatClosedAt ??
+          this.chatClosedAt,
+
+      canCall:
+          canCall ??
+          this.canCall,
+
+      phoneVisible:
+          phoneVisible ??
+          this.phoneVisible,
+
       invoiceNumber:
           invoiceNumber ??
           this.invoiceNumber,
+
       invoiceUrl:
           invoiceUrl ??
           this.invoiceUrl,
+
       invoiceGeneratedAt:
           invoiceGeneratedAt ??
           this.invoiceGeneratedAt,
+
       durationMinutes:
           durationMinutes ??
           this.durationMinutes,
+
       rejectionReason:
           rejectionReason ??
           this.rejectionReason,
+
       cancellationReason:
           cancellationReason ??
           this.cancellationReason,
+
       acceptedAt:
           acceptedAt ??
           this.acceptedAt,
+
       rejectedAt:
           rejectedAt ??
           this.rejectedAt,
+
       startedAt:
           startedAt ??
           this.startedAt,
+
       completedDate:
           completedDate ??
           this.completedDate,
+
       cancelledDate:
           cancelledDate ??
           this.cancelledDate,
+
       paidAt:
           paidAt ??
           this.paidAt,
+
       createdAt:
           createdAt ??
           this.createdAt,
+
       updatedAt:
           updatedAt ??
           this.updatedAt,
+
       rawUser:
           rawUser ??
           this.rawUser,
+
       rawService:
           rawService ??
           this.rawService,
+
       rawProvider:
           rawProvider ??
           this.rawProvider,
+
       rawBooking:
           rawBooking ??
           this.rawBooking,
     );
   }
 
+  // =====================================================
+  // STATIC HELPERS
+  // =====================================================
+
   static String _normalizeStatus(
     dynamic value,
   ) {
     return OrderStatusExtension
-        .fromString(value)
+        .fromString(
+          value,
+        )
         .value;
   }
 
@@ -1499,14 +2101,18 @@ class OrderModel {
       return value.trim();
     }
 
-    final map = _asMap(value);
+    final map =
+        _asMap(
+      value,
+    );
 
     if (map == null) {
       return '';
     }
 
     return _asString(
-      map['_id'] ?? map['id'],
+      map['_id'] ??
+          map['id'],
     );
   }
 
@@ -1523,7 +2129,10 @@ class OrderModel {
 
     if (value is Map) {
       return value.map(
-        (key, item) {
+        (
+          key,
+          dynamic item,
+        ) {
           return MapEntry(
             key.toString(),
             item,
@@ -1608,21 +2217,20 @@ class OrderModel {
     }
 
     final normalized =
-        value.toString().trim().toLowerCase();
+        value
+            .toString()
+            .trim()
+            .toLowerCase();
 
-    if (
-      normalized == 'true' ||
-      normalized == '1' ||
-      normalized == 'yes'
-    ) {
+    if (normalized == 'true' ||
+        normalized == '1' ||
+        normalized == 'yes') {
       return true;
     }
 
-    if (
-      normalized == 'false' ||
-      normalized == '0' ||
-      normalized == 'no'
-    ) {
+    if (normalized == 'false' ||
+        normalized == '0' ||
+        normalized == 'no') {
       return false;
     }
 
@@ -1640,8 +2248,15 @@ class OrderModel {
       return value;
     }
 
+    final normalized =
+        value.toString().trim();
+
+    if (normalized.isEmpty) {
+      return null;
+    }
+
     return DateTime.tryParse(
-      value.toString(),
+      normalized,
     );
   }
 
@@ -1649,7 +2264,8 @@ class OrderModel {
     Map<String, dynamic> map,
     Map<String, dynamic>? service,
   ) {
-    final directImage = _asString(
+    final directImage =
+        _asString(
       map['serviceImage'] ??
           service?['imageUrl'] ??
           service?['image'],
@@ -1663,10 +2279,8 @@ class OrderModel {
         service?['images'] ??
         map['images'];
 
-    if (
-      images is List &&
-      images.isNotEmpty
-    ) {
+    if (images is List &&
+        images.isNotEmpty) {
       final firstImage =
           images.first;
 
@@ -1675,7 +2289,9 @@ class OrderModel {
       }
 
       final imageMap =
-          _asMap(firstImage);
+          _asMap(
+        firstImage,
+      );
 
       return _asString(
         imageMap?['url'] ??
@@ -1686,6 +2302,10 @@ class OrderModel {
 
     return '';
   }
+
+  // =====================================================
+  // OBJECT HELPERS
+  // =====================================================
 
   @override
   bool operator ==(
@@ -1706,6 +2326,15 @@ class OrderModel {
 
   @override
   String toString() {
-    return 'OrderModel(id: $id, bookingNumber: $bookingNumber, status: $status)';
+    return 'OrderModel('
+        'id: $id, '
+        'bookingNumber: $bookingNumber, '
+        'status: $status, '
+        'providerArrived: $providerArrived, '
+        'otpVerified: $otpVerified, '
+        'chatEnabled: $chatEnabled, '
+        'canCall: $canCall, '
+        'phoneVisible: $phoneVisible'
+        ')';
   }
 }

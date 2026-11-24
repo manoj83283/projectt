@@ -60,6 +60,32 @@ const CUSTOMER_CANCELLABLE_STATUSES = [
   BOOKING_STATUSES.ACCEPTED,
 ];
 
+const ACTIVE_BOOKING_STATUSES = [
+  BOOKING_STATUSES.PENDING,
+  BOOKING_STATUSES.ACCEPTED,
+  BOOKING_STATUSES.OTP_VERIFIED,
+  BOOKING_STATUSES.IN_PROGRESS,
+];
+
+const WRITABLE_CHAT_STATUSES = [
+  BOOKING_STATUSES.PENDING,
+  BOOKING_STATUSES.ACCEPTED,
+  BOOKING_STATUSES.OTP_VERIFIED,
+  BOOKING_STATUSES.IN_PROGRESS,
+];
+
+const READ_ONLY_CHAT_STATUSES = [
+  BOOKING_STATUSES.COMPLETED,
+  BOOKING_STATUSES.CANCELLED,
+  BOOKING_STATUSES.REJECTED,
+];
+
+const CALL_ENABLED_STATUSES = [
+  BOOKING_STATUSES.ACCEPTED,
+  BOOKING_STATUSES.OTP_VERIFIED,
+  BOOKING_STATUSES.IN_PROGRESS,
+];
+
 // =====================================================
 // AUTHENTICATION HELPERS
 // =====================================================
@@ -86,7 +112,12 @@ const isProvider = (req) => {
 };
 
 const isAdmin = (req) => {
-  return getUserRole(req) === "admin";
+  const role = getUserRole(req);
+
+  return (
+    role === "admin" ||
+    role === "super_admin"
+  );
 };
 
 // =====================================================
@@ -104,9 +135,8 @@ const normalizeString = (
     return fallback;
   }
 
-  const normalized = value
-    .toString()
-    .trim();
+  const normalized =
+    value.toString().trim();
 
   return normalized || fallback;
 };
@@ -146,10 +176,11 @@ const normalizePositiveNumber = (
 const normalizeBookingStatus = (
   value
 ) => {
-  const status = normalizeString(value)
-    .toLowerCase()
-    .replaceAll("-", "_")
-    .replaceAll(" ", "_");
+  const status =
+    normalizeString(value)
+      .toLowerCase()
+      .replaceAll("-", "_")
+      .replaceAll(" ", "_");
 
   switch (status) {
     case "confirmed":
@@ -171,10 +202,11 @@ const normalizeBookingStatus = (
 const normalizePaymentMethod = (
   value
 ) => {
-  const method = normalizeString(
-    value,
-    PAYMENT_METHODS.COD
-  ).toUpperCase();
+  const method =
+    normalizeString(
+      value,
+      PAYMENT_METHODS.COD
+    ).toUpperCase();
 
   if (
     Object.values(
@@ -289,13 +321,15 @@ const calculateDurationMinutes = (
     );
   }
 
-  const startedAt = new Date(
-    booking.startedAt
-  ).getTime();
+  const startedAt =
+    new Date(
+      booking.startedAt
+    ).getTime();
 
-  const completedAt = new Date(
-    booking.completedAt
-  ).getTime();
+  const completedAt =
+    new Date(
+      booking.completedAt
+    ).getTime();
 
   if (
     Number.isNaN(startedAt) ||
@@ -379,15 +413,17 @@ const normalizeLocationPoint = (
     rawLatitude !== null &&
     rawLatitude !== "";
 
-  const longitude = normalizeNumber(
-    rawLongitude,
-    0
-  );
+  const longitude =
+    normalizeNumber(
+      rawLongitude,
+      0
+    );
 
-  const latitude = normalizeNumber(
-    rawLatitude,
-    0
-  );
+  const latitude =
+    normalizeNumber(
+      rawLatitude,
+      0
+    );
 
   const validLongitude =
     Number.isFinite(longitude) &&
@@ -518,6 +554,83 @@ const calculateDistanceMeters = ({
 };
 
 // =====================================================
+// SLOT AVAILABILITY
+// =====================================================
+
+const isServiceSlotAvailable = async ({
+  serviceId,
+  providerId,
+  bookingDate,
+  bookingTime,
+  excludeBookingId = null,
+}) => {
+  const startOfDay =
+    getStartOfDay(
+      bookingDate
+    );
+
+  const endOfDay =
+    getEndOfDay(
+      bookingDate
+    );
+
+  const filter = {
+    service: serviceId,
+    provider: providerId,
+
+    bookingDate: {
+      $gte: startOfDay,
+      $lte: endOfDay,
+    },
+
+    status: {
+      $in:
+        ACTIVE_BOOKING_STATUSES,
+    },
+
+    deletedAt: null,
+  };
+
+  const normalizedBookingTime =
+    normalizeString(
+      bookingTime
+    );
+
+  if (normalizedBookingTime) {
+    filter.bookingTime =
+      normalizedBookingTime;
+  }
+
+  if (
+    excludeBookingId &&
+    isValidObjectId(
+      excludeBookingId
+    )
+  ) {
+    filter._id = {
+      $ne:
+        new mongoose.Types.ObjectId(
+          excludeBookingId
+        ),
+    };
+  }
+
+  const conflictingBooking =
+    await Booking.findOne(
+      filter
+    ).select(
+      "_id bookingNumber bookingDate bookingTime status"
+    );
+
+  return {
+    available:
+      conflictingBooking == null,
+
+    conflictingBooking,
+  };
+};
+
+// =====================================================
 // SERVICE PRICING
 // =====================================================
 
@@ -549,9 +662,12 @@ const getServicePricing = (
       );
 
     return {
-      unitPrice: hourlyPrice,
+      unitPrice:
+        hourlyPrice,
+
       subtotal:
-        hourlyPrice * hoursBooked,
+        hourlyPrice *
+        hoursBooked,
     };
   }
 
@@ -563,14 +679,20 @@ const getServicePricing = (
       );
 
     return {
-      unitPrice: dailyPrice,
-      subtotal: dailyPrice,
+      unitPrice:
+        dailyPrice,
+
+      subtotal:
+        dailyPrice,
     };
   }
 
   return {
-    unitPrice: fixedPrice,
-    subtotal: fixedPrice,
+    unitPrice:
+      fixedPrice,
+
+    subtotal:
+      fixedPrice,
   };
 };
 
@@ -579,9 +701,10 @@ const getServicePricing = (
 // =====================================================
 
 const getOtpSecret = () => {
-  const secret = normalizeString(
-    process.env.OTP_SECRET
-  );
+  const secret =
+    normalizeString(
+      process.env.OTP_SECRET
+    );
 
   if (!secret) {
     const error = new Error(
@@ -626,10 +749,14 @@ const hashServiceOtp = (
   otp
 ) => {
   const normalizedBookingId =
-    normalizeString(bookingId);
+    normalizeString(
+      bookingId
+    );
 
   const normalizedOtp =
-    normalizeString(otp);
+    normalizeString(
+      otp
+    );
 
   if (!normalizedBookingId) {
     throw new Error(
@@ -792,7 +919,8 @@ const populateBookingQuery = (
       ].join(" "),
 
       populate: {
-        path: "provider",
+        path:
+          "provider",
 
         select: [
           "firstName",
@@ -811,15 +939,16 @@ const populateBookingQuery = (
     });
 };
 
-const getPopulatedBooking = async (
-  bookingId
-) => {
-  return populateBookingQuery(
-    Booking.findById(
-      bookingId
-    )
-  );
-};
+const getPopulatedBooking =
+  async (
+    bookingId
+  ) => {
+    return populateBookingQuery(
+      Booking.findById(
+        bookingId
+      )
+    );
+  };
 
 // =====================================================
 // SERIALIZATION
@@ -838,7 +967,9 @@ const serializeBooking = (
       ? booking.toObject({
           virtuals: true,
         })
-      : { ...booking };
+      : {
+          ...booking,
+        };
 
   delete bookingObject.serviceOtpHash;
   delete bookingObject.serviceOtpDisplay;
@@ -872,9 +1003,11 @@ const serializeBooking = (
     );
 
   const status =
-    bookingObject.status ||
-    bookingObject.bookingStatus ||
-    BOOKING_STATUSES.PENDING;
+    normalizeBookingStatus(
+      bookingObject.status ||
+      bookingObject.bookingStatus ||
+      BOOKING_STATUSES.PENDING
+    );
 
   const chatRoomId =
     normalizeString(
@@ -883,6 +1016,36 @@ const serializeBooking = (
         ? `booking:${bookingId}`
         : ""
     );
+
+  const providerArrived =
+    bookingObject.providerArrived ===
+    true;
+
+  const otpVerified =
+    bookingObject.otpVerified ===
+    true;
+
+  const canCall =
+    CALL_ENABLED_STATUSES.includes(
+      status
+    );
+
+  const canChat =
+    bookingObject.chatEnabled ===
+      true &&
+    chatRoomId.length > 0 &&
+    WRITABLE_CHAT_STATUSES.includes(
+      status
+    );
+
+  const isChatReadOnly =
+    chatRoomId.length > 0 &&
+    READ_ONLY_CHAT_STATUSES.includes(
+      status
+    );
+
+  const isChatAvailable =
+    chatRoomId.length > 0;
 
   return {
     ...bookingObject,
@@ -893,41 +1056,59 @@ const serializeBooking = (
     customer,
 
     customerId:
-      getDocumentId(customer),
+      getDocumentId(
+        customer
+      ),
 
     customerName:
-      getDisplayName(customer),
+      getDisplayName(
+        customer
+      ),
 
     customerPhone:
-      customer?.phone ||
-      customer?.mobile ||
-      bookingObject.contactNumber ||
-      "",
+      canCall
+        ? (
+            customer?.phone ||
+            customer?.mobile ||
+            bookingObject.contactNumber ||
+            ""
+          )
+        : "",
 
     customerEmail:
       customer?.email ||
       "",
 
     providerId:
-      getDocumentId(provider),
+      getDocumentId(
+        provider
+      ),
 
     providerName:
-      getDisplayName(provider) ||
+      getDisplayName(
+        provider
+      ) ||
       service?.providerName ||
       service?.businessName ||
       "",
 
     providerPhone:
-      provider?.phone ||
-      provider?.mobile ||
-      "",
+      canCall
+        ? (
+            provider?.phone ||
+            provider?.mobile ||
+            ""
+          )
+        : "",
 
     providerEmail:
       provider?.email ||
       "",
 
     serviceId:
-      getDocumentId(service),
+      getDocumentId(
+        service
+      ),
 
     serviceName:
       service?.name ||
@@ -948,9 +1129,12 @@ const serializeBooking = (
     bookingStatus:
       status,
 
-    providerArrived:
-      bookingObject
-        .providerArrived === true,
+    isTerminal:
+      READ_ONLY_CHAT_STATUSES.includes(
+        status
+      ),
+
+    providerArrived,
 
     providerArrivedAt:
       bookingObject
@@ -972,9 +1156,7 @@ const serializeBooking = (
         .providerArrivalVerified ===
       true,
 
-    otpVerified:
-      bookingObject
-        .otpVerified === true,
+    otpVerified,
 
     otpVerifiedAt:
       bookingObject
@@ -982,6 +1164,64 @@ const serializeBooking = (
       null,
 
     chatRoomId,
+
+    chatEnabled:
+      canChat,
+
+    chatClosedAt:
+      bookingObject.chatClosedAt ||
+      null,
+
+    canChat,
+
+    isChatAvailable,
+
+    isChatReadOnly,
+
+    canViewChatHistory:
+      isChatReadOnly,
+
+    canCall,
+
+    phoneVisible:
+      canCall,
+
+    contactEnabled:
+      canCall,
+
+    canProviderAccept:
+      status ===
+      BOOKING_STATUSES.PENDING,
+
+    canProviderReject:
+      status ===
+      BOOKING_STATUSES.PENDING,
+
+    canProviderMarkArrived:
+      status ===
+        BOOKING_STATUSES.ACCEPTED &&
+      providerArrived === false,
+
+    canVerifyOtp:
+      status ===
+        BOOKING_STATUSES.ACCEPTED &&
+      providerArrived === true &&
+      otpVerified === false,
+
+    canStart:
+      status ===
+        BOOKING_STATUSES.OTP_VERIFIED &&
+      providerArrived === true &&
+      otpVerified === true,
+
+    canComplete:
+      status ===
+      BOOKING_STATUSES.IN_PROGRESS,
+
+    canCustomerCancel:
+      CUSTOMER_CANCELLABLE_STATUSES.includes(
+        status
+      ),
 
     amount:
       normalizePositiveNumber(
@@ -1012,6 +1252,11 @@ const serializeBooking = (
       ),
 
     durationMinutes:
+      calculateDurationMinutes(
+        bookingObject
+      ),
+
+    serviceDurationMinutes:
       calculateDurationMinutes(
         bookingObject
       ),
@@ -1048,7 +1293,9 @@ const sendBookingResponse = (
   } = {}
 ) => {
   const data =
-    serializeBooking(booking);
+    serializeBooking(
+      booking
+    );
 
   return res
     .status(statusCode)
@@ -1071,9 +1318,12 @@ const sendBookingListResponse = (
     extra = {},
   } = {}
 ) => {
-  const data = bookings
-    .map(serializeBooking)
-    .filter(Boolean);
+  const data =
+    bookings
+      .map(
+        serializeBooking
+      )
+      .filter(Boolean);
 
   return res.status(200).json({
     success: true,
@@ -1105,12 +1355,13 @@ const sendControllerError = (
     error?.name ===
     "ValidationError"
   ) {
-    const errors = Object.values(
-      error.errors || {}
-    ).map(
-      (item) =>
-        item.message
-    );
+    const errors =
+      Object.values(
+        error.errors || {}
+      ).map(
+        (item) =>
+          item.message
+      );
 
     return res.status(400).json({
       success: false,
@@ -1181,12 +1432,17 @@ const emitBookingEvent = (
 ) => {
   const io = global.io;
 
-  if (!io || !booking) {
+  if (
+    !io ||
+    !booking
+  ) {
     return;
   }
 
   const data =
-    serializeBooking(booking);
+    serializeBooking(
+      booking
+    );
 
   if (!data) {
     return;
@@ -1200,6 +1456,11 @@ const emitBookingEvent = (
 
   const customerId =
     data.customerId;
+
+  const canonicalBookingRoom =
+    bookingId
+      ? `booking:${bookingId}`
+      : "";
 
   const refreshPayload = {
     bookingId,
@@ -1226,7 +1487,8 @@ const emitBookingEvent = (
       true,
 
     otpVerified:
-      data.otpVerified === true,
+      data.otpVerified ===
+      true,
 
     otpVerifiedAt:
       data.otpVerifiedAt ||
@@ -1242,11 +1504,57 @@ const emitBookingEvent = (
 
     chatRoomId:
       data.chatRoomId ||
-      (
-        bookingId
-          ? `booking:${bookingId}`
-          : ""
-      ),
+      canonicalBookingRoom,
+
+    chatEnabled:
+      data.chatEnabled ===
+      true,
+
+    chatClosedAt:
+      data.chatClosedAt ||
+      null,
+
+    canChat:
+      data.canChat === true,
+
+    isChatAvailable:
+      data.isChatAvailable ===
+      true,
+
+    isChatReadOnly:
+      data.isChatReadOnly ===
+      true,
+
+    canViewChatHistory:
+      data.canViewChatHistory ===
+      true,
+
+    canCall:
+      data.canCall === true,
+
+    phoneVisible:
+      data.phoneVisible ===
+      true,
+
+    contactEnabled:
+      data.contactEnabled ===
+      true,
+
+    canProviderMarkArrived:
+      data.canProviderMarkArrived ===
+      true,
+
+    canVerifyOtp:
+      data.canVerifyOtp ===
+      true,
+
+    canStart:
+      data.canStart ===
+      true,
+
+    canComplete:
+      data.canComplete ===
+      true,
 
     updatedAt:
       data.updatedAt ||
@@ -1277,32 +1585,44 @@ const emitBookingEvent = (
     const providerRoom =
       `provider:${providerId}`;
 
-    io.to(providerRoom).emit(
+    io.to(
+      providerRoom
+    ).emit(
       eventName,
       data
     );
 
-    io.to(providerRoom).emit(
+    io.to(
+      providerRoom
+    ).emit(
       "bookingUpdated",
       data
     );
 
-    io.to(providerRoom).emit(
+    io.to(
+      providerRoom
+    ).emit(
       "refreshProviderBookings",
       refreshPayload
     );
 
-    io.to(providerRoom).emit(
+    io.to(
+      providerRoom
+    ).emit(
       "refreshProviderOrders",
       refreshPayload
     );
 
-    io.to(providerRoom).emit(
+    io.to(
+      providerRoom
+    ).emit(
       "refreshProviderDashboard",
       refreshPayload
     );
 
-    io.to(providerRoom).emit(
+    io.to(
+      providerRoom
+    ).emit(
       "refreshProviderEarnings",
       refreshPayload
     );
@@ -1312,23 +1632,38 @@ const emitBookingEvent = (
     const customerRoom =
       `user:${customerId}`;
 
-    io.to(customerRoom).emit(
+    io.to(
+      customerRoom
+    ).emit(
       eventName,
       data
     );
 
-    io.to(customerRoom).emit(
+    io.to(
+      customerRoom
+    ).emit(
       "bookingUpdate",
       data
     );
 
-    io.to(customerRoom).emit(
+    io.to(
+      customerRoom
+    ).emit(
       "bookingUpdated",
       data
     );
 
-    io.to(customerRoom).emit(
+    io.to(
+      customerRoom
+    ).emit(
       "refreshCustomerBookings",
+      refreshPayload
+    );
+
+    io.to(
+      customerRoom
+    ).emit(
+      "refreshCustomerDashboard",
       refreshPayload
     );
   }
@@ -1343,27 +1678,38 @@ const emitBookingEvent = (
     refreshPayload
   );
 
-  if (bookingId) {
+  if (canonicalBookingRoom) {
     io.to(
-      `booking:${bookingId}`
+      canonicalBookingRoom
     ).emit(
       eventName,
       data
     );
 
     io.to(
-      `booking:${bookingId}`
+      canonicalBookingRoom
     ).emit(
       "bookingUpdated",
       data
     );
   }
 
-  if (data.chatRoomId) {
+  if (
+    data.chatRoomId &&
+    data.chatRoomId !==
+      canonicalBookingRoom
+  ) {
     io.to(
       data.chatRoomId
     ).emit(
       eventName,
+      data
+    );
+
+    io.to(
+      data.chatRoomId
+    ).emit(
+      "bookingUpdated",
       data
     );
   }
@@ -1383,7 +1729,9 @@ const createDatabaseNotification =
     type = "booking",
   }) => {
     const recipientId =
-      getDocumentId(recipient);
+      getDocumentId(
+        recipient
+      );
 
     if (
       !recipientId ||
@@ -1396,12 +1744,20 @@ const createDatabaseNotification =
 
     try {
       const bookingId =
-        getDocumentId(booking);
+        getDocumentId(
+          booking
+        );
 
       const candidateData = {
-        user: recipientId,
-        recipient: recipientId,
-        receiver: recipientId,
+        user:
+          recipientId,
+
+        recipient:
+          recipientId,
+
+        receiver:
+          recipientId,
+
         sender,
         title,
         message,
@@ -1422,8 +1778,11 @@ const createDatabaseNotification =
         referenceType:
           "booking",
 
-        isRead: false,
-        read: false,
+        isRead:
+          false,
+
+        read:
+          false,
       };
 
       const schemaPaths =
@@ -1506,7 +1865,9 @@ const sendPushNotification =
     message,
   }) => {
     try {
-      if (!receiver?.fcmToken) {
+      if (
+        !receiver?.fcmToken
+      ) {
         return false;
       }
 
@@ -1702,6 +2063,67 @@ export const createBooking =
         });
       }
 
+      const requestedBookingTime =
+        normalizeString(
+          req.body.bookingTime ||
+          req.body.time
+        );
+
+      const slotAvailability =
+        await isServiceSlotAvailable({
+          serviceId:
+            serviceDocument._id,
+
+          providerId,
+
+          bookingDate:
+            parsedBookingDate,
+
+          bookingTime:
+            requestedBookingTime,
+        });
+
+      if (
+        !slotAvailability.available
+      ) {
+        const conflict =
+          slotAvailability
+            .conflictingBooking;
+
+        return res.status(409).json({
+          success: false,
+
+          message:
+            "The selected service slot is already booked. Please choose another available date or time.",
+
+          slotAvailable:
+            false,
+
+          conflict:
+            conflict
+              ? {
+                  bookingId:
+                    conflict._id
+                      .toString(),
+
+                  bookingNumber:
+                    conflict.bookingNumber ||
+                    "",
+
+                  bookingDate:
+                    conflict.bookingDate,
+
+                  bookingTime:
+                    conflict.bookingTime ||
+                    "",
+
+                  status:
+                    conflict.status,
+                }
+              : null,
+        });
+      }
+
       const hoursBooked =
         Math.max(
           1,
@@ -1786,10 +2208,7 @@ export const createBooking =
             parsedBookingDate,
 
           bookingTime:
-            normalizeString(
-              req.body.bookingTime ||
-              req.body.time
-            ),
+            requestedBookingTime,
 
           duration:
             normalizeString(
@@ -1932,6 +2351,9 @@ export const createBooking =
 
           chatEnabled:
             true,
+
+          chatClosedAt:
+            null,
         });
 
       booking.chatRoomId =
@@ -2014,6 +2436,11 @@ export const createBooking =
 
           message:
             "Booking created successfully",
+
+          extra: {
+            slotAvailable:
+              false,
+          },
         }
       );
     } catch (error) {
@@ -2289,10 +2716,37 @@ export const getProviderTodayBookings =
         });
       }
 
-      const providerId =
+      const authenticatedId =
         getAuthenticatedUserId(
           req
         );
+
+      const requestedProviderId =
+        normalizeString(
+          req.query.providerId
+        );
+
+      const providerId =
+        isAdmin(req) &&
+        requestedProviderId &&
+        isValidObjectId(
+          requestedProviderId
+        )
+          ? requestedProviderId
+          : authenticatedId;
+
+      if (
+        !providerId ||
+        !isValidObjectId(
+          providerId
+        )
+      ) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Invalid provider identifier",
+        });
+      }
 
       const bookings =
         await populateBookingQuery(
@@ -2354,10 +2808,37 @@ export const getProviderUpcomingBookings =
         });
       }
 
-      const providerId =
+      const authenticatedId =
         getAuthenticatedUserId(
           req
         );
+
+      const requestedProviderId =
+        normalizeString(
+          req.query.providerId
+        );
+
+      const providerId =
+        isAdmin(req) &&
+        requestedProviderId &&
+        isValidObjectId(
+          requestedProviderId
+        )
+          ? requestedProviderId
+          : authenticatedId;
+
+      if (
+        !providerId ||
+        !isValidObjectId(
+          providerId
+        )
+      ) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Invalid provider identifier",
+        });
+      }
 
       const bookings =
         await populateBookingQuery(
@@ -2371,12 +2852,8 @@ export const getProviderUpcomingBookings =
             },
 
             status: {
-              $in: [
-                BOOKING_STATUSES.PENDING,
-                BOOKING_STATUSES.ACCEPTED,
-                BOOKING_STATUSES.OTP_VERIFIED,
-                BOOKING_STATUSES.IN_PROGRESS,
-              ],
+              $in:
+                ACTIVE_BOOKING_STATUSES,
             },
 
             isProviderDeleted: {
@@ -2459,21 +2936,31 @@ export const getProviderBookingAnalytics =
         });
       }
 
-      const statusResults =
-        await Booking.aggregate([
+      const providerObjectId =
+        new mongoose.Types.ObjectId(
+          providerId
+        );
+
+      const [
+        statusResults,
+        todayBookings,
+        completedEarningsResult,
+        todayEarningsResult,
+      ] = await Promise.all([
+        Booking.aggregate([
           {
             $match: {
               provider:
-                new mongoose.Types.ObjectId(
-                  providerId
-                ),
+                providerObjectId,
 
-              deletedAt: null,
+              deletedAt:
+                null,
             },
           },
           {
             $group: {
-              _id: "$status",
+              _id:
+                "$status",
 
               count: {
                 $sum: 1,
@@ -2489,52 +2976,9 @@ export const getProviderBookingAnalytics =
               },
             },
           },
-        ]);
+        ]),
 
-      const counts = {
-        pending: 0,
-        accepted: 0,
-        otp_verified: 0,
-        rejected: 0,
-        in_progress: 0,
-        completed: 0,
-        cancelled: 0,
-      };
-
-      let totalBookings = 0;
-      let totalRevenue = 0;
-
-      for (
-        const result of
-        statusResults
-      ) {
-        if (
-          Object.hasOwn(
-            counts,
-            result._id
-          )
-        ) {
-          counts[result._id] =
-            result.count;
-        }
-
-        totalBookings +=
-          result.count;
-
-        if (
-          result._id ===
-          BOOKING_STATUSES.COMPLETED
-        ) {
-          totalRevenue +=
-            normalizeNumber(
-              result.amount,
-              0
-            );
-        }
-      }
-
-      const todayBookings =
-        await Booking.countDocuments({
+        Booking.countDocuments({
           provider:
             providerId,
 
@@ -2547,7 +2991,175 @@ export const getProviderBookingAnalytics =
           },
 
           deletedAt: null,
-        });
+        }),
+
+        Booking.aggregate([
+          {
+            $match: {
+              provider:
+                providerObjectId,
+
+              status:
+                BOOKING_STATUSES.COMPLETED,
+
+              deletedAt:
+                null,
+            },
+          },
+          {
+            $group: {
+              _id: null,
+
+              totalEarnings: {
+                $sum: {
+                  $subtract: [
+                    {
+                      $ifNull: [
+                        "$totalAmount",
+                        {
+                          $ifNull: [
+                            "$totalPrice",
+                            0,
+                          ],
+                        },
+                      ],
+                    },
+                    {
+                      $ifNull: [
+                        "$platformFee",
+                        0,
+                      ],
+                    },
+                  ],
+                },
+              },
+
+              totalRevenue: {
+                $sum: {
+                  $ifNull: [
+                    "$totalAmount",
+                    {
+                      $ifNull: [
+                        "$totalPrice",
+                        0,
+                      ],
+                    },
+                  ],
+                },
+              },
+            },
+          },
+        ]),
+
+        Booking.aggregate([
+          {
+            $match: {
+              provider:
+                providerObjectId,
+
+              status:
+                BOOKING_STATUSES.COMPLETED,
+
+              completedAt: {
+                $gte:
+                  getStartOfDay(),
+
+                $lte:
+                  getEndOfDay(),
+              },
+
+              deletedAt:
+                null,
+            },
+          },
+          {
+            $group: {
+              _id: null,
+
+              todayEarnings: {
+                $sum: {
+                  $subtract: [
+                    {
+                      $ifNull: [
+                        "$totalAmount",
+                        {
+                          $ifNull: [
+                            "$totalPrice",
+                            0,
+                          ],
+                        },
+                      ],
+                    },
+                    {
+                      $ifNull: [
+                        "$platformFee",
+                        0,
+                      ],
+                    },
+                  ],
+                },
+              },
+            },
+          },
+        ]),
+      ]);
+
+      const counts = {
+        pending: 0,
+        accepted: 0,
+        otp_verified: 0,
+        rejected: 0,
+        in_progress: 0,
+        completed: 0,
+        cancelled: 0,
+      };
+
+      let totalBookings = 0;
+
+      for (
+        const result of
+        statusResults
+      ) {
+        if (
+          Object.hasOwn(
+            counts,
+            result._id
+          )
+        ) {
+          counts[result._id] =
+            normalizeNumber(
+              result.count,
+              0
+            );
+        }
+
+        totalBookings +=
+          normalizeNumber(
+            result.count,
+            0
+          );
+      }
+
+      const totalRevenue =
+        normalizeNumber(
+          completedEarningsResult[0]
+            ?.totalRevenue,
+          0
+        );
+
+      const totalEarnings =
+        normalizeNumber(
+          completedEarningsResult[0]
+            ?.totalEarnings,
+          0
+        );
+
+      const todayEarnings =
+        normalizeNumber(
+          todayEarningsResult[0]
+            ?.todayEarnings,
+          0
+        );
 
       const analytics = {
         totalBookings,
@@ -2601,8 +3213,12 @@ export const getProviderBookingAnalytics =
 
         totalRevenue,
 
-        totalEarnings:
-          totalRevenue,
+        totalEarnings,
+
+        earnings:
+          totalEarnings,
+
+        todayEarnings,
       };
 
       return res.status(200).json({
@@ -2612,7 +3228,9 @@ export const getProviderBookingAnalytics =
           "Booking analytics fetched successfully",
 
         analytics,
-        data: analytics,
+        data:
+          analytics,
+
         ...analytics,
       });
     } catch (error) {
@@ -2896,7 +3514,8 @@ export const markProviderArrived =
         }
       }
 
-      const now = new Date();
+      const now =
+        new Date();
 
       booking.providerArrived =
         true;
@@ -2912,6 +3531,16 @@ export const markProviderArrived =
 
       booking.providerArrivalVerified =
         locationVerified;
+
+      /*
+       * Booking Chat remains enabled.
+       * Arrival does not create a different room.
+       */
+      booking.chatEnabled =
+        true;
+
+      booking.chatClosedAt =
+        null;
 
       if (
         !Array.isArray(
@@ -3179,6 +3808,28 @@ export const getServiceOtp =
         });
       }
 
+      /*
+       * OTP exists from creation but should only be exposed
+       * to the customer once the Provider has arrived.
+       */
+      if (
+        booking.providerArrived !==
+        true
+      ) {
+        return res.status(409).json({
+          success: false,
+
+          message:
+            "Service OTP will be available after the Provider arrives at the service location",
+
+          otpAvailable:
+            false,
+
+          providerArrived:
+            false,
+        });
+      }
+
       if (
         !booking.serviceOtpDisplay
       ) {
@@ -3213,7 +3864,6 @@ export const getServiceOtp =
           false,
 
         providerArrived:
-          booking.providerArrived ===
           true,
 
         providerArrivedAt:
@@ -3225,7 +3875,7 @@ export const getServiceOtp =
           true,
 
         warning:
-          "Share this OTP only after the Provider arrives and you confirm the Provider.",
+          "Share this OTP only after confirming the Provider.",
       };
 
       return res.status(200).json({
@@ -3339,6 +3989,22 @@ export const verifyServiceOtp =
         booking.otpVerified ===
         true
       ) {
+        if (
+          booking.chatEnabled !==
+          true &&
+          !READ_ONLY_CHAT_STATUSES.includes(
+            booking.status
+          )
+        ) {
+          booking.chatEnabled =
+            true;
+
+          booking.chatClosedAt =
+            null;
+
+          await booking.save();
+        }
+
         booking =
           await getPopulatedBooking(
             booking._id
@@ -3354,6 +4020,14 @@ export const verifyServiceOtp =
             extra: {
               otpVerified:
                 true,
+
+              chatEnabled:
+                booking.chatEnabled ===
+                true,
+
+              chatRoomId:
+                booking.chatRoomId ||
+                `booking:${booking._id}`,
             },
           }
         );
@@ -3429,17 +4103,18 @@ export const verifyServiceOtp =
             0
           ) + 1;
 
-        const attemptsRemaining =
+        const reachedAttemptLimit =
+          booking.otpAttempts >=
+          MAX_OTP_ATTEMPTS;
+
+        let attemptsRemaining =
           Math.max(
             0,
             MAX_OTP_ATTEMPTS -
               booking.otpAttempts
           );
 
-        if (
-          booking.otpAttempts >=
-          MAX_OTP_ATTEMPTS
-        ) {
+        if (reachedAttemptLimit) {
           booking.otpLockedUntil =
             new Date(
               Date.now() +
@@ -3449,6 +4124,9 @@ export const verifyServiceOtp =
             );
 
           booking.otpAttempts =
+            0;
+
+          attemptsRemaining =
             0;
         }
 
@@ -3469,7 +4147,8 @@ export const verifyServiceOtp =
         });
       }
 
-      const now = new Date();
+      const now =
+        new Date();
 
       booking.otpVerified =
         true;
@@ -3488,6 +4167,18 @@ export const verifyServiceOtp =
 
       booking.status =
         BOOKING_STATUSES.OTP_VERIFIED;
+
+      booking.chatEnabled =
+        true;
+
+      booking.chatClosedAt =
+        null;
+
+      booking.chatRoomId =
+        normalizeString(
+          booking.chatRoomId,
+          `booking:${booking._id.toString()}`
+        );
 
       if (
         !Array.isArray(
@@ -3577,6 +4268,13 @@ export const verifyServiceOtp =
 
             status:
               BOOKING_STATUSES.OTP_VERIFIED,
+
+            chatEnabled:
+              true,
+
+            chatRoomId:
+              booking.chatRoomId ||
+              `booking:${booking._id}`,
           },
         }
       );
@@ -3790,34 +4488,109 @@ export const updateBookingStatus =
         });
       }
 
-      const now = new Date();
+      const now =
+        new Date();
 
       booking.status =
         requestedStatus;
 
       if (
         requestedStatus ===
+        BOOKING_STATUSES.ACCEPTED
+      ) {
+        booking.acceptedAt =
+          booking.acceptedAt ||
+          now;
+
+        booking.rejectedAt =
+          null;
+
+        booking.rejectionReason =
+          "";
+
+        booking.providerArrived =
+          false;
+
+        booking.providerArrivedAt =
+          null;
+
+        booking.providerArrivalLocation = {
+          type: "Point",
+          coordinates: [0, 0],
+        };
+
+        booking.providerArrivalDistanceMeters =
+          null;
+
+        booking.providerArrivalVerified =
+          false;
+
+        booking.otpVerified =
+          false;
+
+        booking.otpVerifiedAt =
+          null;
+
+        booking.otpVerifiedBy =
+          null;
+
+        /*
+         * FINAL RULE:
+         * Booking Chat already exists and remains writable.
+         */
+        booking.chatEnabled =
+          true;
+
+        booking.chatClosedAt =
+          null;
+      }
+
+      if (
+        requestedStatus ===
         BOOKING_STATUSES.IN_PROGRESS
       ) {
-        booking.startedAt = now;
+        booking.startedAt =
+          booking.startedAt ||
+          now;
+
+        booking.chatEnabled =
+          true;
+
+        booking.chatClosedAt =
+          null;
       }
-      
+
       if (
         requestedStatus ===
         BOOKING_STATUSES.REJECTED
       ) {
+        booking.rejectedAt =
+          booking.rejectedAt ||
+          now;
+
         booking.rejectionReason =
           normalizeString(
             req.body.reason ||
             req.body.rejectionReason,
             "Rejected by Provider"
           );
+
+        booking.chatEnabled =
+          false;
+
+        booking.chatClosedAt =
+          booking.chatClosedAt ||
+          now;
       }
 
       if (
         requestedStatus ===
         BOOKING_STATUSES.CANCELLED
       ) {
+        booking.cancelledAt =
+          booking.cancelledAt ||
+          now;
+
         booking.cancellationReason =
           normalizeString(
             req.body.reason ||
@@ -3825,6 +4598,13 @@ export const updateBookingStatus =
               .cancellationReason,
             "Cancelled by Provider"
           );
+
+        booking.chatEnabled =
+          false;
+
+        booking.chatClosedAt =
+          booking.chatClosedAt ||
+          now;
       }
 
       if (
@@ -3832,6 +4612,7 @@ export const updateBookingStatus =
         BOOKING_STATUSES.COMPLETED
       ) {
         booking.completedAt =
+          booking.completedAt ||
           now;
 
         booking.durationMinutes =
@@ -3840,12 +4621,21 @@ export const updateBookingStatus =
               booking.startedAt,
 
             completedAt:
-              now,
+              booking.completedAt,
           });
+
+        booking.chatEnabled =
+          false;
+
+        booking.chatClosedAt =
+          booking.chatClosedAt ||
+          now;
 
         if (
           booking.paymentMethod ===
-          PAYMENT_METHODS.COD
+            PAYMENT_METHODS.COD &&
+          booking.paymentStatus ===
+            PAYMENT_STATUSES.PENDING
         ) {
           booking.paymentStatus =
             PAYMENT_STATUSES.PAID;
@@ -3859,7 +4649,10 @@ export const updateBookingStatus =
           !booking.invoiceNumber
         ) {
           booking.invoiceNumber =
-            `INV-${booking.bookingNumber}`;
+            `INV-${
+              booking.bookingNumber ||
+              booking._id
+            }`;
         }
 
         booking.invoiceGeneratedAt =
@@ -4080,12 +4873,20 @@ export const cancelBooking =
         });
       }
 
-      const now = new Date();
+      const now =
+        new Date();
 
       booking.status =
         BOOKING_STATUSES.CANCELLED;
 
       booking.cancelledAt =
+        now;
+
+      booking.chatEnabled =
+        false;
+
+      booking.chatClosedAt =
+        booking.chatClosedAt ||
         now;
 
       booking.cancellationReason =
@@ -4375,7 +5176,8 @@ export const getBookingInvoice =
           "Booking invoice fetched successfully",
 
         invoice,
-        data: invoice,
+        data:
+          invoice,
       });
     } catch (error) {
       return sendControllerError(

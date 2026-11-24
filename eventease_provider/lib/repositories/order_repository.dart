@@ -127,7 +127,23 @@ class OrderRepository {
       orderId,
     );
   }
+  // =====================================================
+// MARK PROVIDER ARRIVED
+//
+// accepted -> arrived
+// =====================================================
 
+  Future<OrderModel> markProviderArrived({
+    required String orderId,
+    required double latitude,
+    required double longitude,
+  }) {
+    return _orderService.markProviderArrived(
+      orderId: orderId,
+      latitude: latitude,
+      longitude: longitude,
+    );
+  }
   // =====================================================
   // VERIFY SERVICE OTP
   //

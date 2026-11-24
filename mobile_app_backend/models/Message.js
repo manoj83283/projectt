@@ -2,137 +2,214 @@ import mongoose from "mongoose";
 
 const { Schema } = mongoose;
 
+// =====================================================
+// CONSTANTS
+// =====================================================
+
+export const MESSAGE_TYPES =
+  Object.freeze({
+    TEXT: "text",
+    IMAGE: "image",
+    FILE: "file",
+    LOCATION: "location",
+    SYSTEM: "system",
+  });
+
+export const MESSAGE_SENDER_ROLES =
+  Object.freeze([
+    "user",
+    "customer",
+    "provider",
+    "admin",
+    "system",
+  ]);
+
+// =====================================================
+// MESSAGE SCHEMA
+// =====================================================
+
 const messageSchema = new Schema(
   {
-    // =====================================================
-    // BOOKING
-    // =====================================================
+    // =================================================
+    // BOOKING CHAT
+    // =================================================
 
     bookingId: {
       type: Schema.Types.ObjectId,
       ref: "Booking",
-      required: true,
+      required: [
+        true,
+        "Booking ID is required",
+      ],
       index: true,
     },
-
-    // =====================================================
-    // CHAT ROOM
-    // =====================================================
 
     roomId: {
       type: String,
-      required: true,
       trim: true,
+      required: [
+        true,
+        "Chat room ID is required",
+      ],
       index: true,
     },
 
-    // =====================================================
-    // USERS
-    // =====================================================
+    // =================================================
+    // PARTICIPANTS
+    // =================================================
 
     senderId: {
       type: Schema.Types.ObjectId,
       ref: "User",
-      required: true,
+      required: [
+        true,
+        "Message sender is required",
+      ],
       index: true,
     },
 
     receiverId: {
       type: Schema.Types.ObjectId,
       ref: "User",
-      required: true,
+      required: [
+        true,
+        "Message receiver is required",
+      ],
       index: true,
     },
 
+    /*
+     * Compatibility fields used by older code and
+     * populateRoomMessageQuery().
+     */
     sender: {
       type: Schema.Types.ObjectId,
       ref: "User",
       default: null,
+      index: true,
     },
 
     receiver: {
       type: Schema.Types.ObjectId,
       ref: "User",
       default: null,
+      index: true,
     },
 
-    // =====================================================
-    // MESSAGE
-    // =====================================================
+    senderRole: {
+      type: String,
+      enum: {
+        values:
+          MESSAGE_SENDER_ROLES,
+        message:
+          "Invalid message sender role",
+      },
+      trim: true,
+      lowercase: true,
+      default: "user",
+    },
+
+    // =================================================
+    // MESSAGE CONTENT
+    // =================================================
 
     message: {
       type: String,
-      required: true,
       trim: true,
-      maxlength: 5000,
+      required: [
+        true,
+        "Message is required",
+      ],
+      maxlength: [
+        5000,
+        "Message cannot exceed 5000 characters",
+      ],
     },
 
+    /*
+     * Compatibility fields. These allow Customer and
+     * Provider applications to read message, text, or
+     * content without losing older chat data.
+     */
     text: {
       type: String,
       trim: true,
       default: "",
+      maxlength: [
+        5000,
+        "Message text cannot exceed 5000 characters",
+      ],
     },
 
     content: {
       type: String,
       trim: true,
       default: "",
+      maxlength: [
+        5000,
+        "Message content cannot exceed 5000 characters",
+      ],
     },
 
     messageType: {
       type: String,
-      enum: [
-        "text",
-        "image",
-        "location",
-        "system",
-      ],
-      default: "text",
+      enum: {
+        values:
+          Object.values(
+            MESSAGE_TYPES
+          ),
+        message:
+          "Invalid message type",
+      },
+      trim: true,
       lowercase: true,
+      default:
+        MESSAGE_TYPES.TEXT,
     },
 
-    // =====================================================
-    // ROLE
-    // =====================================================
+    // =================================================
+    // OPTIONAL ATTACHMENT
+    // =================================================
 
-    senderRole: {
+    attachmentUrl: {
       type: String,
-      enum: [
-        "customer",
-        "provider",
-        "admin",
+      trim: true,
+      default: "",
+    },
+
+    attachmentName: {
+      type: String,
+      trim: true,
+      default: "",
+      maxlength: [
+        500,
+        "Attachment name cannot exceed 500 characters",
       ],
-      default: "customer",
-      lowercase: true,
     },
 
-    // =====================================================
-    // READ STATUS
-    // =====================================================
-
-    isRead: {
-      type: Boolean,
-      default: false,
-      index: true,
+    attachmentMimeType: {
+      type: String,
+      trim: true,
+      default: "",
     },
 
-    read: {
-      type: Boolean,
-      default: false,
+    attachmentSize: {
+      type: Number,
+      default: 0,
+      min: [
+        0,
+        "Attachment size cannot be negative",
+      ],
     },
 
-    readAt: {
-      type: Date,
-      default: null,
-    },
-
-    // =====================================================
+    // =================================================
     // DELIVERY STATUS
-    // =====================================================
+    // =================================================
 
     delivered: {
       type: Boolean,
       default: false,
+      index: true,
     },
 
     deliveredAt: {
@@ -140,9 +217,53 @@ const messageSchema = new Schema(
       default: null,
     },
 
-    // =====================================================
-    // DELETE
-    // =====================================================
+    isRead: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+
+    /*
+     * Compatibility field used by existing backend code.
+     */
+    read: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+
+    readAt: {
+      type: Date,
+      default: null,
+    },
+
+    // =================================================
+    // CLIENT MESSAGE DEDUPLICATION
+    // =================================================
+
+    clientMessageId: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+
+    // =================================================
+    // MESSAGE EDITING
+    // =================================================
+
+    isEdited: {
+      type: Boolean,
+      default: false,
+    },
+
+    editedAt: {
+      type: Date,
+      default: null,
+    },
+
+    // =================================================
+    // MESSAGE DELETION
+    // =================================================
 
     deletedForSender: {
       type: Boolean,
@@ -157,10 +278,14 @@ const messageSchema = new Schema(
     deletedAt: {
       type: Date,
       default: null,
+      index: true,
     },
   },
   {
     timestamps: true,
+
+    optimisticConcurrency:
+      true,
 
     toJSON: {
       virtuals: true,
@@ -173,13 +298,32 @@ const messageSchema = new Schema(
 );
 
 // =====================================================
-// VIRTUALS
+// VIRTUAL FIELDS
 // =====================================================
 
 messageSchema
   .virtual("id")
   .get(function getId() {
-    return this._id.toString();
+    return this._id
+      ?.toString() || "";
+  });
+
+messageSchema
+  .virtual("chatRoomId")
+  .get(function getChatRoomId() {
+    return this.roomId || "";
+  });
+
+messageSchema
+  .virtual("booking")
+  .get(function getBooking() {
+    return this.bookingId || null;
+  });
+
+messageSchema
+  .virtual("isMine")
+  .get(function getIsMine() {
+    return false;
   });
 
 // =====================================================
@@ -192,25 +336,28 @@ messageSchema.pre(
     next
   ) {
     try {
-      this.roomId =
-        this.roomId?.toString().trim() ||
-        "";
-
-      this.message =
-        this.message
-          ?.toString()
-          .trim() || "";
-
-      if (!this.text) {
-        this.text = this.message;
+      if (
+        !this.senderId &&
+        this.sender
+      ) {
+        this.senderId =
+          this.sender;
       }
 
-      if (!this.content) {
-        this.content = this.message;
+      if (
+        !this.sender &&
+        this.senderId
+      ) {
+        this.sender =
+          this.senderId;
       }
 
-      if (!this.sender && this.senderId) {
-        this.sender = this.senderId;
+      if (
+        !this.receiverId &&
+        this.receiver
+      ) {
+        this.receiverId =
+          this.receiver;
       }
 
       if (
@@ -221,10 +368,250 @@ messageSchema.pre(
           this.receiverId;
       }
 
+      const resolvedMessage =
+        (
+          this.message ||
+          this.text ||
+          this.content ||
+          ""
+        )
+          .toString()
+          .trim();
+
+      this.message =
+        resolvedMessage;
+
+      this.text =
+        resolvedMessage;
+
+      this.content =
+        resolvedMessage;
+
+      if (
+        this.bookingId
+      ) {
+        const bookingId =
+          this.bookingId
+            ._id
+            ?.toString() ||
+          this.bookingId
+            .toString();
+
+        if (
+          !this.roomId
+        ) {
+          this.roomId =
+            `booking:${bookingId}`;
+        }
+      }
+
+      if (
+        this.roomId &&
+        !this.roomId.startsWith(
+          "booking:"
+        )
+      ) {
+        const normalizedRoomId =
+          this.roomId
+            .toString()
+            .trim();
+
+        if (
+          mongoose.Types.ObjectId
+            .isValid(
+              normalizedRoomId
+            )
+        ) {
+          this.roomId =
+            `booking:${normalizedRoomId}`;
+        }
+      }
+
+      this.messageType =
+        (
+          this.messageType ||
+          MESSAGE_TYPES.TEXT
+        )
+          .toString()
+          .trim()
+          .toLowerCase();
+
+      this.senderRole =
+        (
+          this.senderRole ||
+          "user"
+        )
+          .toString()
+          .trim()
+          .toLowerCase();
+
+      if (
+        this.senderRole ===
+        "customer"
+      ) {
+        this.senderRole =
+          "customer";
+      }
+
+      if (
+        this.delivered ===
+          true &&
+        !this.deliveredAt
+      ) {
+        this.deliveredAt =
+          new Date();
+      }
+
+      if (
+        this.isRead === true ||
+        this.read === true
+      ) {
+        this.isRead = true;
+        this.read = true;
+
+        this.readAt =
+          this.readAt ||
+          new Date();
+
+        this.delivered =
+          true;
+
+        this.deliveredAt =
+          this.deliveredAt ||
+          this.readAt;
+      } else {
+        this.isRead = false;
+        this.read = false;
+      }
+
+      this.attachmentSize =
+        Math.max(
+          0,
+          Number(
+            this.attachmentSize ||
+            0
+          )
+        );
+
       return next();
     } catch (error) {
       return next(error);
     }
+  }
+);
+
+// =====================================================
+// INSTANCE METHODS
+// =====================================================
+
+messageSchema.methods.markDelivered =
+  async function markDelivered() {
+    if (
+      this.delivered !== true
+    ) {
+      this.delivered = true;
+
+      this.deliveredAt =
+        this.deliveredAt ||
+        new Date();
+
+      await this.save();
+    }
+
+    return this;
+  };
+
+messageSchema.methods.markRead =
+  async function markRead() {
+    const now = new Date();
+
+    this.isRead = true;
+    this.read = true;
+
+    this.readAt =
+      this.readAt ||
+      now;
+
+    this.delivered = true;
+
+    this.deliveredAt =
+      this.deliveredAt ||
+      now;
+
+    await this.save();
+
+    return this;
+  };
+
+messageSchema.methods.softDeleteFor =
+  async function softDeleteFor(
+    userId
+  ) {
+    if (!userId) {
+      return this;
+    }
+
+    const normalizedUserId =
+      userId.toString();
+
+    if (
+      this.senderId
+        ?.toString() ===
+      normalizedUserId
+    ) {
+      this.deletedForSender =
+        true;
+    }
+
+    if (
+      this.receiverId
+        ?.toString() ===
+      normalizedUserId
+    ) {
+      this.deletedForReceiver =
+        true;
+    }
+
+    if (
+      this.deletedForSender &&
+      this.deletedForReceiver
+    ) {
+      this.deletedAt =
+        this.deletedAt ||
+        new Date();
+    }
+
+    await this.save();
+
+    return this;
+  };
+
+// =====================================================
+// QUERY MIDDLEWARE
+// =====================================================
+
+messageSchema.pre(
+  /^find/,
+  function excludeDeletedMessages(
+    next
+  ) {
+    const options =
+      this.getOptions?.() || {};
+
+    const query =
+      this.getQuery();
+
+    if (
+      !options.includeDeleted &&
+      query.deletedAt ===
+        undefined
+    ) {
+      this.where({
+        deletedAt: null,
+      });
+    }
+
+    return next();
   }
 );
 
@@ -234,11 +621,23 @@ messageSchema.pre(
 
 messageSchema.index({
   bookingId: 1,
-  createdAt: -1,
+  createdAt: 1,
 });
 
 messageSchema.index({
   roomId: 1,
+  createdAt: 1,
+});
+
+messageSchema.index({
+  receiverId: 1,
+  isRead: 1,
+  createdAt: -1,
+});
+
+messageSchema.index({
+  receiverId: 1,
+  read: 1,
   createdAt: -1,
 });
 
@@ -249,15 +648,35 @@ messageSchema.index({
 });
 
 messageSchema.index({
+  bookingId: 1,
   receiverId: 1,
   isRead: 1,
+  createdAt: -1,
 });
 
 messageSchema.index({
   bookingId: 1,
-  roomId: 1,
-  createdAt: -1,
+  senderId: 1,
+  receiverId: 1,
+  createdAt: 1,
 });
+
+messageSchema.index(
+  {
+    senderId: 1,
+    clientMessageId: 1,
+  },
+  {
+    unique: true,
+    sparse: true,
+    partialFilterExpression: {
+      clientMessageId: {
+        $type: "string",
+        $ne: "",
+      },
+    },
+  }
+);
 
 // =====================================================
 // MODEL
